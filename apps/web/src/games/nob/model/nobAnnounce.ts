@@ -1,4 +1,5 @@
 import type { Locale } from "@/shared/i18n/locale";
+import { bloodlineTitle } from "./nobBloodlineCopy";
 import { nobCardName } from "./nobCardLabel";
 import type { NobAnnouncement, NobLastRoundResult, NobPlayerPublic } from "./nobTypes";
 
@@ -18,6 +19,10 @@ const COPY: Record<string, { vi: string; en: string }> = {
   },
   "nob.lastHope.triggered": { vi: "LAST HOPE ĐÃ SỐNG SÓT", en: "LAST HOPE HAS SURVIVED" },
   "nob.round.result": { vi: "Phe {bloodline} thắng vòng này.", en: "{bloodline} wins the round." },
+  "nob.bloodline.revealed": {
+    vi: "Bloodline của {target} đã bị công khai: {bloodline}",
+    en: "{target}'s bloodline was revealed: {bloodline}",
+  },
   "nob.round.tie": { vi: "Vòng này hòa / Halfblood.", en: "The round is tied / Halfblood." },
   "nob.timeout.autoAction": {
     vi: "{name} hết giờ — hệ thống đã hành động.",
@@ -56,12 +61,17 @@ export function announceText(
   const card =
     nobCardName(announcement.cardCode ?? announcement.reactionCardCode, locale) ||
     (locale === "vi" ? "một lá" : "a card");
+  const revealedLine = players.find((player) => player.playerId === announcement.targetPlayerId)
+    ?.publiclyRevealedBloodline;
   const vars = {
     name: actor || target,
     actor,
     target,
     card,
-    bloodline: lastRound?.winningBloodline ?? "",
+    bloodline:
+      announcement.messageKey === "nob.bloodline.revealed"
+        ? bloodlineTitle(revealedLine, locale)
+        : (lastRound?.winningBloodline ?? ""),
   };
   if (key === "nob.round.result") {
     if (!lastRound?.winningBloodline) {

@@ -12,6 +12,7 @@ import { NobCountdown } from "../components/NobCountdown";
 import { NobInspectModals } from "../components/NobInspectModals";
 import { NobRoundSummary } from "../components/NobRoundSummary";
 import { NobSeatCards, NobSeatCardsZoom, type SeatCardBoard } from "../components/NobSeatCards";
+import { bloodlineTitle } from "../model/nobBloodlineCopy";
 import { nobCardName, replaceNobCardCodes } from "../model/nobCardLabel";
 import { useMoonPickReveal } from "../components/NobMoonTokens";
 import { animationFromAnnouncement, announceText } from "../model/nobAnnounce";
@@ -168,6 +169,15 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
     : null;
   const hunterArt = hunterBloodline ? getNobBloodlineArt(hunterBloodline.type, hunterBloodline.rank) : null;
   const revealArt = reveal?.bloodline ? getNobBloodlineArt(reveal.bloodline.type, reveal.bloodline.rank) : null;
+  const publicRevealId =
+    view?.announcement?.type === "BLOODLINE_PUBLICLY_REVEALED" ? (view.announcement.targetPlayerId ?? null) : null;
+  const publicRevealLine = publicRevealId
+    ? (seats.find((seat) => seat.playerId === publicRevealId)?.publiclyRevealedBloodline ??
+        view?.myObservations?.find((obs) => obs.kind === "BLOODLINE" && obs.targetPlayerId === publicRevealId)
+          ?.bloodline ??
+        null)
+    : null;
+  const publicRevealArt = publicRevealLine ? getNobBloodlineArt(publicRevealLine.type, publicRevealLine.rank) : null;
   const unmaskPending = pending?.type === "UNMASK_REVEAL";
   const showSeerFlash = Boolean(
     !hunterPending &&
@@ -196,6 +206,7 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
   const announceLine = showAnnounce
     ? announceText(view?.announcement, seats, locale, view?.lastRoundResult)
     : null;
+  const showPublicBloodline = Boolean(showAnnounce && publicRevealId && (publicRevealArt || publicRevealLine));
   const fx = animationFromAnnouncement(view?.announcement?.type);
   const resolveMs = timing.resolutionCardDisplayMs;
   const announceMs = timing.announcementDisplayMs;
@@ -455,6 +466,18 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
     if ((entry.type === "NOB_ROLE_REVEALED" || /revealed/i.test(entry.text ?? "")) && (actor || entry.text) && card) {
       const who = actor || entry.text?.replace(/\s+revealed.*$/i, "").trim() || "";
       return t("historyRevealed").replace("{actor}", who).replace("{card}", card);
+    }
+    if (entry.type === "NOB_BLOODLINE_PUBLICLY_REVEALED") {
+      const who = target || actor || entry.text?.replace(/\s+Bloodline was revealed.*$/i, "").trim() || "";
+      const line =
+        seats.find((seat) => seat.playerId === entry.targetPlayerId)?.publiclyRevealedBloodline ??
+        view?.myObservations?.find(
+          (obs) => obs.kind === "BLOODLINE" && obs.targetPlayerId === entry.targetPlayerId && obs.bloodline,
+        )?.bloodline ??
+        null;
+      return t("historyBloodlineRevealed")
+        .replace("{target}", who)
+        .replace("{bloodline}", bloodlineTitle(line, locale));
     }
     if (entry.type === "NOB_INSPECTED" && actor && target) {
       return t("historyInspect").replace("{actor}", actor).replace("{target}", target);
@@ -802,6 +825,14 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
                     ))}
                   </div>
                 ) : null}
+              </div>
+            ) : showPublicBloodline ? (
+              <div className={styles.inspectFlash} aria-label={nameOf(publicRevealId)}>
+                {publicRevealArt ? (
+                  <img src={publicRevealArt} alt={bloodlineTitle(publicRevealLine, locale)} />
+                ) : null}
+                <p className={styles.hint}>{nameOf(publicRevealId)}</p>
+                <p className={styles.hint}>{bloodlineTitle(publicRevealLine, locale)}</p>
               </div>
             ) : unmaskPending || (showSeerFlash && pending) ? (
               <div className={styles.inspectFlash} aria-label={nameOf(reveal?.targetPlayerId ?? pending?.targetPlayerId)}>

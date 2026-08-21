@@ -197,18 +197,47 @@ function parseAnnouncement(value: unknown): NobAnnouncement | null {
   };
 }
 
+function parseBloodline(value: unknown): NobBloodline | null {
+  const record = asRecord(value);
+  if (!record || typeof record.type !== "string") {
+    return null;
+  }
+  return {
+    type: record.type,
+    rank: typeof record.rank === "number" ? record.rank : null,
+  };
+}
+
+function parsePlayers(value: unknown): NobPlayerPublic[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  const players: NobPlayerPublic[] = [];
+  for (const item of value) {
+    const record = asRecord(item);
+    if (!record || typeof record.playerId !== "string") {
+      continue;
+    }
+    players.push({
+      ...(record as unknown as NobPlayerPublic),
+      playerId: record.playerId,
+      displayName: typeof record.displayName === "string" ? record.displayName : record.playerId,
+      seat: typeof record.seat === "number" ? record.seat : players.length,
+      alive: record.alive !== false,
+      publiclyRevealedBloodline: parseBloodline(record.publiclyRevealedBloodline),
+    });
+  }
+  return players;
+}
+
 function parseInspectReveal(value: unknown): NobInspectReveal | null {
   const record = asRecord(value);
   if (!record || typeof record.targetPlayerId !== "string") {
     return null;
   }
-  const bloodlineRecord = asRecord(record.bloodline);
   return {
     targetPlayerId: record.targetPlayerId,
-    bloodline:
-      bloodlineRecord && typeof bloodlineRecord.type === "string"
-        ? { type: bloodlineRecord.type, rank: typeof bloodlineRecord.rank === "number" ? bloodlineRecord.rank : null }
-        : null,
+    bloodline: parseBloodline(record.bloodline),
     cardCode: typeof record.cardCode === "string" ? record.cardCode : null,
     displayUntil: asIso(record.displayUntil),
   };
@@ -266,7 +295,7 @@ export function parseNobView(value: unknown): NobView | null {
     ...value,
     you: String(value.you ?? ""),
     phase: String(value.phase ?? "UNKNOWN"),
-    players: Array.isArray(value.players) ? value.players : [],
+    players: parsePlayers(value.players),
     myHand: Array.isArray(value.myHand) ? value.myHand : [],
     myDraftHand: Array.isArray(value.myDraftHand) ? value.myDraftHand : [],
     myBloodline: value.myBloodline ?? null,
