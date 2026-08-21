@@ -1,5 +1,13 @@
 # Session snapshot — 2026-08-22
 
+## Card Assets Normalization (Night of Bloodlines)
+
+- Mẫu tham chiếu: 2 ảnh chuẩn là **Hunter** (`NOB-HU-01`) và **Feral Killer** (`NOB-FK-01`) (khung chuẩn `left=15, right=1009, top=15, bottom=1514` trên canvas `1024x1536`).
+- Chuẩn hóa toàn bộ 33 thẻ bài (Blood Seer, Shapeshifter, Shadow Stalker, Hunter, Feral Killer, Special Cards):
+  - Đồng bộ tỉ lệ, viền gothic, lề trên/dưới/trái/phải (margins: 15px top/left/right, 22px bottom).
+  - Phục hồi và căn chỉnh banner tên thẻ bài và huy hiệu cấp độ (shield 1–6).
+- Commit & push lên nhánh `dev`.
+
 ## README & GitHub repository init & push
 
 - Added full project documentation and README to `README.md` (purpose, architecture, tech stack, setup instructions).
