@@ -1,0 +1,10 @@
+{
+  "name": "partygameonline-platform",
+  "description": "Modern real-time multiplayer tabletop & party card game web platform (BoardVerse)",
+  "private": true,
+  "scripts": {
+    "dev": "npm run dev --prefix apps/web",
+    "build": "npm run build --prefix apps/web",
+    "typecheck": "npm run typecheck --prefix apps/web"
+  }
+}

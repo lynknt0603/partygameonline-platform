@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+apps/web/dist/
+apps/server/target/
+.idea/
+.vscode/
+*.tsbuildinfo
+apps/web/tmp-shots/

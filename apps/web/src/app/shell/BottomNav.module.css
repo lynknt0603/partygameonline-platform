@@ -1,0 +1,35 @@
+.nav {
+  position: sticky;
+  bottom: 0;
+  z-index: var(--z-nav);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  min-height: calc(var(--bottom-nav-height) + var(--sab));
+  padding: 6px var(--sal) calc(8px + var(--sab)) var(--sar);
+  border-top: 1px solid var(--border-soft);
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  backdrop-filter: blur(14px);
+}
+
+@media (min-width: 860px) {
+  .nav {
+    display: none;
+  }
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  min-height: var(--touch-min);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.active {
+  color: var(--brand);
+}

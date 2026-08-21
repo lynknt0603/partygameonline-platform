@@ -1,0 +1,55 @@
+import { Clock, Play, Users } from "lucide-react";
+import type { GameManifest } from "@/game/core/GameManifest";
+import { NOB_BRANDING, NOB_CATALOGUE_ID } from "@/games/nob";
+import { usePlayGame } from "@/shared/hooks/useRooms";
+import { useLocale, useT } from "@/shared/i18n/useT";
+import styles from "./GameCard.module.css";
+
+interface GameCardProps {
+  game: GameManifest;
+}
+
+export function GameCard({ game }: GameCardProps) {
+  const t = useT();
+  const locale = useLocale();
+  const play = usePlayGame();
+  const artClass = styles[game.id.replace(/-/g, "")] ?? styles.artDefault;
+  const title = locale === "vi" ? game.displayNameVi : game.displayName;
+  const genre = locale === "vi" ? game.genreVi : game.genre;
+
+  return (
+    <article className={`${styles.card} theme-card`}>
+      <div className={`${styles.art} ${artClass}`} aria-hidden="true">
+        {game.id === NOB_CATALOGUE_ID ? (
+          <img className={styles.artPhoto} src={NOB_BRANDING.visualIdentity} alt="" />
+        ) : (
+          <span className={styles.artMark} />
+        )}
+      </div>
+      <div className={styles.body}>
+        <p className={styles.genre}>{genre}</p>
+        <h3 className={styles.title}>{title}</h3>
+        <div className={styles.meta}>
+          <span className={styles.stat}>
+            <Users size={14} aria-hidden="true" />
+            {game.minPlayers}–{game.maxPlayers}
+          </span>
+          <span className={styles.stat}>
+            <Clock size={14} aria-hidden="true" />
+            {game.durationMin}–{game.durationMax} {t("minutes")}
+          </span>
+          <button
+            type="button"
+            className={styles.play}
+            disabled={!game.enabled || play.isPending}
+            onClick={() => play.mutate(game.id)}
+            aria-label={`${t("play")} ${title}`}
+          >
+            <Play size={14} fill="currentColor" aria-hidden="true" />
+            {game.enabled ? t("play") : t("comingSoon")}
+          </button>
+        </div>
+      </div>
+    </article>
+  );
+}

@@ -1,0 +1,80 @@
+.layer {
+  position: fixed;
+  inset: 0;
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(10, 6, 8, 0.72);
+}
+
+.dialog {
+  position: relative;
+  width: min(520px, 100%);
+  max-height: min(86dvh, 720px);
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  border-radius: 16px;
+  border: 1px solid rgba(201, 164, 92, 0.4);
+  background: #141018;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.head h2,
+.role h3,
+.cards h3,
+.role p,
+.cards p {
+  margin: 0;
+}
+
+.close {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  border: 1px solid rgba(201, 164, 92, 0.35);
+}
+
+.role,
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.role img {
+  width: min(220px, 100%);
+  border-radius: 12px;
+}
+
+.carousel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.carousel button {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid rgba(201, 164, 92, 0.35);
+  font-size: 1.4rem;
+}

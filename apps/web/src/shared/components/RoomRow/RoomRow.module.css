@@ -1,0 +1,82 @@
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  min-height: 72px;
+}
+
+.row:hover {
+  border-color: color-mix(in srgb, var(--brand) 50%, var(--border));
+}
+
+.copy {
+  min-width: 0;
+}
+
+.kicker {
+  margin: 0;
+  color: var(--brand);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.name {
+  margin: 2px 0 0;
+  font-size: 1.1rem;
+}
+
+.meta {
+  margin: 6px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.flag,
+.meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.aside {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.join,
+.spectate {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.join {
+  background: var(--brand);
+  color: var(--on-brand);
+}
+
+.spectate {
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+}

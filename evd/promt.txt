@@ -1,0 +1,255 @@
+1. Shadow Stalker — 1 đến 6
+
+Cả 6 lá có cùng kỹ năng. Chỉ khác số ưu tiên 1 → 6.
+
+Card	Tiếng Việt	English
+Shadow Stalker 1	Chọn 1 người chơi còn sống khác. Bí mật xem Bloodline của người đó.	Choose another living player. Privately view that player's Bloodline.
+Shadow Stalker 2	Chọn 1 người chơi còn sống khác. Bí mật xem Bloodline của người đó.	Choose another living player. Privately view that player's Bloodline.
+Shadow Stalker 3	Chọn 1 người chơi còn sống khác. Bí mật xem Bloodline của người đó.	Choose another living player. Privately view that player's Bloodline.
+Shadow Stalker 4	Chọn 1 người chơi còn sống khác. Bí mật xem Bloodline của người đó.	Choose another living player. Privately view that player's Bloodline.
+Shadow Stalker 5	Chọn 1 người chơi còn sống khác. Bí mật xem Bloodline của người đó.	Choose another living player. Privately view that player's Bloodline.
+Shadow Stalker 6	Chọn 1 người chơi còn sống khác. Bí mật xem Bloodline của người đó.	Choose another living player. Privately view that player's Bloodline.
+Tooltip ngắn
+
+VI: Bí mật xem Bloodline của 1 người chơi.
+EN: Privately inspect 1 player's Bloodline.
+
+2. Blood Seer — 1 đến 6
+
+Blood Seer mạnh hơn Shadow Stalker: ngoài Bloodline còn thấy 1 Role Card ngẫu nhiên của mục tiêu nếu họ còn card.
+
+Card	Tiếng Việt	English
+Blood Seer 1	Chọn 1 người chơi còn sống khác. Bí mật xem Bloodline và 1 Role Card ngẫu nhiên trong tay họ, nếu có.	Choose another living player. Privately view their Bloodline and 1 random Role Card from their hand, if available.
+Blood Seer 2	Như trên.	Same effect.
+Blood Seer 3	Như trên.	Same effect.
+Blood Seer 4	Như trên.	Same effect.
+Blood Seer 5	Như trên.	Same effect.
+Blood Seer 6	Như trên.	Same effect.
+Tooltip
+
+VI: Xem Bloodline + 1 Role Card ngẫu nhiên của mục tiêu.
+EN: Inspect a target's Bloodline + 1 random Role Card.
+
+3. Shapeshifter
+
+Đây là bộ đặc biệt nhất vì mỗi số có một kỹ năng khác nhau.
+
+Shapeshifter 1 — Bloodline Exchange
+
+VI
+
+Chọn 2 người chơi còn sống. Bạn có thể hoán đổi Bloodline của họ. Nếu Bloodline của chính bạn bị đổi, bạn không được biết Bloodline mới.
+
+EN
+
+Choose 2 living players. You may exchange their Bloodlines. If your own Bloodline is exchanged, you do not learn your new Bloodline.
+
+Tooltip:
+Hoán đổi Bloodline của 2 người chơi.
+Exchange the Bloodlines of 2 players.
+
+Shapeshifter 2 — Echoes of the Fallen
+
+VI
+
+Chọn 1 Role Card hợp lệ từ những lá đã trở thành Echo. Giữ lá đó để dùng sau, hoặc sử dụng ngay nếu hiệu ứng của lá cho phép.
+
+EN
+
+Choose an eligible Role Card from the Echo pool. Keep it for later, or play it immediately if its effect allows.
+
+Reaction/Special Card không được PLAY NOW nếu server không cho phép.
+
+Tooltip:
+Thu hồi một Echo và giữ hoặc sử dụng nó.
+Claim an Echo and keep or play it.
+
+Shapeshifter 3 — Unmask
+
+VI
+
+Chọn 1 người chơi còn sống và bí mật xem Bloodline của họ. Sau đó chọn giữ bí mật hoặc công khai Bloodline đó cho mọi người.
+
+EN
+
+Choose a living player and privately view their Bloodline. Then choose to keep it secret or reveal it publicly.
+
+Tooltip:
+Xem Bloodline rồi quyết định có công khai hay không.
+Inspect a Bloodline, then choose whether to reveal it.
+
+Shapeshifter 4 — Moon Broker
+
+VI
+
+Chọn 1 người chơi còn sống. Tùy lựa chọn hiện có, bạn có thể kiểm tra Bloodline, kiểm tra một Moon Mark, thực hiện trao đổi Moon Mark, hoặc bỏ qua.
+
+EN
+
+Choose a living player. Depending on the available options, you may inspect their Bloodline, inspect a Moon Mark, make a Moon Mark exchange, or skip.
+
+Ở UI, FE chỉ được hiển thị những action có trong allowedOptions.
+
+Tooltip:
+Thu thập thông tin hoặc thương lượng Moon Marks.
+Gather information or broker Moon Marks.
+
+Shapeshifter 5 — Moon Thief
+
+VI
+
+Công khai Bloodline của bạn. Chọn một người chơi đang sở hữu nhiều Moon Mark hơn bạn và cướp 1 Moon Mark từ người đó.
+
+EN
+
+Reveal your Bloodline publicly. Choose a player who owns more Moon Marks than you and steal 1 Moon Mark from them.
+
+Giá trị Moon Mark bị lấy do Backend xử lý, FE không tự chọn nếu server không cho.
+
+Tooltip:
+Reveal Bloodline để cướp 1 Moon Mark.
+Reveal your Bloodline to steal 1 Moon Mark.
+
+Shapeshifter 6 — Final Judgement
+
+VI
+
+Công khai Bloodline của bạn, sau đó chọn 1 người chơi còn sống để loại ngay lập tức. Mục tiêu không thể sử dụng Reaction Card để ngăn hiệu ứng này.
+
+EN
+
+Reveal your Bloodline, then choose 1 living player to eliminate immediately. The target cannot use a Reaction Card against this effect.
+
+Tooltip:
+Reveal Bloodline và loại 1 người. Không thể phản ứng.
+Reveal your Bloodline and eliminate 1 player. No reaction.
+
+4. Feral Killer — 1 đến 6
+
+Cả 6 lá cùng mechanic.
+
+Điểm cốt lõi:
+
+Feral Killer không được xem Bloodline trước khi chọn giết.
+
+Card	Tiếng Việt	English
+Feral Killer 1	Chọn 1 người chơi còn sống khác và cố gắng loại người đó mà không được xem Bloodline trước.	Choose another living player and attempt to eliminate them without inspecting their Bloodline first.
+Feral Killer 2	Như trên.	Same effect.
+Feral Killer 3	Như trên.	Same effect.
+Feral Killer 4	Như trên.	Same effect.
+Feral Killer 5	Như trên.	Same effect.
+Feral Killer 6	Như trên.	Same effect.
+
+Mục tiêu có thể sử dụng Reaction hợp lệ như Veil Reversal hoặc Glorious Sacrifice.
+
+Tooltip
+
+VI: Chọn và loại mục tiêu mà không biết Bloodline của họ.
+EN: Attempt to eliminate a target without knowing their Bloodline.
+
+5. Hunter — 1 đến 6
+
+Hunter khác Feral Killer ở đúng một điểm cực quan trọng:
+
+Hunter biết Bloodline trước, rồi mới quyết định giết hay tha.
+
+Card	Tiếng Việt	English
+Hunter 1	Chọn 1 người chơi còn sống khác. Bí mật xem Bloodline của họ, sau đó chọn Tha hoặc Loại.	Choose another living player. Privately view their Bloodline, then choose Spare or Eliminate.
+Hunter 2	Như trên.	Same effect.
+Hunter 3	Như trên.	Same effect.
+Hunter 4	Như trên.	Same effect.
+Hunter 5	Như trên.	Same effect.
+Hunter 6	Như trên.	Same effect.
+
+Nếu Hunter chọn ELIMINATE, mục tiêu vẫn có thể sử dụng Reaction hợp lệ.
+
+Tooltip
+
+VI: Xem Bloodline của mục tiêu rồi quyết định Tha hoặc Loại.
+EN: Inspect the target's Bloodline, then Spare or Eliminate.
+
+6. Special Cards
+Veil Reversal
+Tiếng Việt
+
+Khi bạn trở thành mục tiêu của một hiệu ứng loại hợp lệ từ Feral Killer hoặc Hunter, bạn có thể kích hoạt Veil Reversal.
+Hủy việc bạn bị loại và phản ngược hiệu ứng về người tấn công. Người tấn công bị loại thay bạn.
+
+English
+
+When an eligible elimination from a Feral Killer or Hunter targets you, you may activate Veil Reversal.
+Cancel your elimination and reflect the effect back. The attacker is eliminated instead.
+
+Tooltip
+
+VI: Phản ngược đòn kết liễu về người tấn công.
+EN: Reflect an elimination back to the attacker.
+
+7. Glorious Sacrifice
+Backend code: NOB-SP-LAST-OFFERING
+
+Đây là tên hiển thị mới của LAST_OFFERING.
+
+Tiếng Việt
+
+Khi bạn trở thành mục tiêu của một hiệu ứng loại hợp lệ, bạn có thể kích hoạt Glorious Sacrifice.
+Bạn vẫn bị loại, nhưng sự hy sinh của bạn được tưởng thưởng: nhận 1 Moon Mark trước khi rời vòng chơi.
+
+English
+
+When an eligible elimination targets you, you may activate Glorious Sacrifice.
+You are still eliminated, but your sacrifice is honored: gain 1 Moon Mark before leaving the round.
+
+Không phản damage về attacker.
+
+Tooltip
+
+VI: Chấp nhận bị loại để nhận 1 Moon Mark danh dự.
+EN: Accept elimination to gain 1 Honor Moon Mark.
+
+8. Last Hope
+
+Đây là Special Card quan trọng nhất ở cuối round.
+
+Tiếng Việt
+
+Nếu bạn vẫn còn sống khi Bloodlines được công khai cuối vòng, Last Hope tự động được kích hoạt và công khai.
+Bloodline của bạn lập tức trở thành phe chiến thắng của vòng đó, thay thế kết quả thắng thông thường.
+
+Điều này không có nghĩa người chơi thắng toàn bộ game ngay lập tức. Sau đó vẫn thực hiện trao Moon Mark và kiểm tra điều kiện tổng điểm để thắng game.
+
+English
+
+If you are still alive when Bloodlines are revealed at the end of the round, Last Hope automatically activates and is revealed.
+Your Bloodline immediately becomes the winning Bloodline for that round, overriding the normal round result.
+
+This does not automatically win the entire game. Moon Marks are still awarded, and the normal total-score victory condition is checked afterward.
+
+Tooltip
+
+VI:
+Còn sống đến Final Reveal → Bloodline của bạn thắng vòng.
+
+EN:
+Survive until Final Reveal → your Bloodline wins the round.
+
+Bản siêu ngắn để FE dùng tooltip
+
+Tôi khuyên FE có 2 tầng: hover nhanh dùng text dưới, click card thì hiện description đầy đủ ở trên.
+
+Card	VI	EN
+Shadow Stalker	Xem Bloodline của 1 người.	Inspect 1 player's Bloodline.
+Blood Seer	Xem Bloodline + 1 Role Card ngẫu nhiên.	Inspect Bloodline + 1 random Role Card.
+SH-01	Hoán đổi Bloodline của 2 người.	Exchange 2 players' Bloodlines.
+SH-02	Thu hồi một Echo.	Claim an Echo.
+SH-03	Xem và có thể công khai Bloodline.	Inspect and optionally reveal a Bloodline.
+SH-04	Giao dịch / điều tra Moon Marks.	Broker or inspect Moon Marks.
+SH-05	Reveal Bloodline để cướp Moon Mark.	Reveal your Bloodline to steal a Moon Mark.
+SH-06	Reveal và loại 1 người; không Reaction.	Reveal and eliminate 1 player; no reaction.
+Feral Killer	Loại mục tiêu mà không xem Bloodline.	Eliminate without inspecting Bloodline.
+Hunter	Xem Bloodline rồi Tha hoặc Loại.	Inspect, then Spare or Eliminate.
+Veil Reversal	Phản đòn kết liễu về attacker.	Reflect an elimination to the attacker.
+Glorious Sacrifice	Bị loại nhưng nhận 1 Moon Mark.	Be eliminated but gain 1 Moon Mark.
+Last Hope	Còn sống cuối vòng → Bloodline thắng vòng.	Survive the round → your Bloodline wins it.
+
+Tôi đặc biệt khuyên dùng bản tooltip ngắn + bản mô tả đầy đủ song song. Như vậy trên bàn chơi không bị chữ quá nhiều, nhưng người mới vẫn có thể bấm vào lá để đọc kỹ mechanic.
