@@ -1,0 +1,65 @@
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.token {
+  width: min(112px, 28vw);
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #12080c;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+.token img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.token span {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  color: #e2c47a;
+  font-weight: 800;
+}
+
+.token:not(:disabled):hover {
+  transform: scale(1.05);
+}
+
+.token[data-flip="true"] {
+  animation: tokenGlow 700ms ease;
+}
+
+.token[data-faded="true"] {
+  opacity: 0.35;
+  transform: scale(0.92);
+}
+
+.reduced .token:hover,
+.reduced .token[data-flip="true"] {
+  transform: none;
+  animation: none;
+}
+
+@keyframes tokenGlow {
+  0% {
+    transform: rotateY(90deg) scale(0.9);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+@media (hover: none) {
+  .token:not(:disabled):hover {
+    transform: none;
+  }
+}

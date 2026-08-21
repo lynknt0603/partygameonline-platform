@@ -1,0 +1,84 @@
+.rack {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.layer {
+  position: fixed;
+  inset: 0;
+  z-index: 7;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(10, 6, 8, 0.78);
+}
+
+.dialog {
+  position: relative;
+  width: min(720px, 100%);
+  max-height: min(88dvh, 760px);
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 16px;
+  border: 1px solid rgba(201, 164, 92, 0.4);
+  background: #141018;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.head h2,
+.dialog h3,
+.dialog p {
+  margin: 0;
+}
+
+.dialog h3 {
+  margin-bottom: 8px;
+  color: #c9a45c;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.close {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  border: 1px solid rgba(201, 164, 92, 0.35);
+}
+
+.zoomRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.zoomItem {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 148px;
+}
+
+.zoomItem span {
+  font-size: 13px;
+  text-align: center;
+}
