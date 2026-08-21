@@ -302,6 +302,12 @@
   margin: 0 auto 4px;
 }
 
+.seatArt:not([data-peeked="true"]) {
+  width: 52px;
+  height: 68px;
+  box-shadow: 0 0 0 1px rgba(201, 164, 92, 0.75), 0 8px 18px rgba(0, 0, 0, 0.45);
+}
+
 .seatArt[data-peeked="true"] {
   opacity: 0.48;
   filter: saturate(0.65);
