@@ -1,3 +1,11 @@
+# Session snapshot — 2026-08-22
+
+## README & GitHub repository init & push
+
+- Added full project documentation and README to `README.md` (purpose, architecture, tech stack, setup instructions).
+- Added `description` to `package.json` and `apps/web/package.json`.
+- Initialized git repo, added remote `origin` -> `https://github.com/lynknt0603/partygameonline-platform.git`, and pushed branch `main`.
+
 # Session snapshot — 2026-08-20
 
 ## Bug: Start game → màn đen
