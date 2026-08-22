@@ -215,3 +215,14 @@
 .over p {
   margin: 0;
 }
+
+.overActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.overActions button {
+  flex: 1;
+  justify-content: center;
+}

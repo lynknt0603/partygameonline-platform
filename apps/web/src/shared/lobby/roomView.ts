@@ -53,7 +53,7 @@ export function seatsForRoom(room: RoomView, youId: string | undefined): LobbySe
     initials: initials(player.displayName),
     isYou: player.playerId === youId,
     isHost: player.playerId === room.hostPlayerId,
-    state: toSeatState(player.state),
+    state: player.playerId === room.hostPlayerId ? "ready" : toSeatState(player.state),
   }));
   const seats = [...filled];
   while (seats.length < room.capacity) {

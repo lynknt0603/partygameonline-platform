@@ -63,9 +63,15 @@ export const NOB_MOON_MARK_ART: Record<2 | 3 | 4, string> = {
 export const NOB_MOON_MARK_BACK = `${ROOT}/tokens/moon-mark-back.png`;
 
 export const NOB_CARD_BACK = `${ROOT}/cards/card-back.png`;
+export const NOB_BLOODLINE_CARD_BACK = `${ROOT}/bloodlines/bloodline-card-back.png`;
 
 export const NOB_BRANDING = {
   visualIdentity: `${ROOT}/branding/visual-identity.png`,
+} as const;
+
+export const NOB_UI = {
+  overCrest: `${ROOT}/ui/over-crest.png`,
+  winnerMedal: `${ROOT}/ui/winner-medal.png`,
 } as const;
 
 export type NobBloodlineType = keyof typeof NOB_BLOODLINE_ART;
