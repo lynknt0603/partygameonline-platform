@@ -1,5 +1,12 @@
 # Session snapshot — 2026-08-22
 
+## Game Over UI & Lobby Enhancements
+
+- Cải tiến giao diện kết thúc ván (`GameOver`): vinh danh người thắng (winner medal/crest), hiển thị danh sách người thắng, điểm số, nút chơi lại (`Play Again`) và rời phòng.
+- Cập nhật tài nguyên UI NOB (`apps/web/public/assets/games/nob/ui/`): huy hiệu người thắng (`winner-medal`), huân chương kết thúc ván (`over-crest`), mặt sau thẻ Bloodline (`bloodline-card-back.png`).
+- Tối ưu Lobby: Host mặc định ở trạng thái sẵn sàng, ẩn nút Ready thừa cho host, chỉ hiển thị nút Bắt đầu khi các người chơi khác đã sẵn sàng.
+- Commit & push lên nhánh `dev`.
+
 ## Direct Card Frame Reconstruction (Night of Bloodlines)
 
 - Phát hiện nguyên nhân gốc: Một số thẻ bài (`Blood Seer 3–6` và `Shapeshifter 4–6`) trong source gốc vốn được vẽ với khung vòm cao (tall arch) không có huy hiệu tròn ở đỉnh (top medallion) và khung viền khác biệt so với khung chuẩn (`Hunter`, `Shadow Stalker`, `Feral Killer`).
