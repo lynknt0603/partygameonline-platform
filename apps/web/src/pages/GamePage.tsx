@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { Accessibility, LogOut, MessageCircle, Settings } from "lucide-react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { CardTableCanvas } from "@/game/renderer/CardTableCanvas";
 import { cardFromId, type DemoCard } from "@/game/games/demo-card-game/demoCards";
 import { ConfirmDialog } from "@/shared/components/ConfirmDialog/ConfirmDialog";
@@ -39,6 +39,7 @@ const DEFAULT_PLAY = {
 export function GamePage() {
   const { roomId = "" } = useParams();
   const t = useT();
+  const navigate = useNavigate();
   const leaveRoom = useLeaveRoom();
   const isMobile = useMediaQuery("(max-width: 720px)");
   const resolvedTheme = useThemeStore((state) => state.resolvedTheme);
@@ -76,7 +77,7 @@ export function GamePage() {
       setView(demo);
       setRejectCode(null);
       if (demo.finished) {
-        setNotice(demo.winnerPlayerId === demo.you ? t("youWin") : t("youLose"));
+        setNotice(null);
       }
     },
     onRejected: (code, message) => {
@@ -212,11 +213,25 @@ export function GamePage() {
         <div className={styles.overLayer}>
           <div className={`${styles.over} theme-panel`}>
             <h2>{t("gameOver")}</h2>
-            <p>{notice ?? (view.winnerPlayerId === view.you ? t("youWin") : t("youLose"))}</p>
-            <button type="button" className={styles.leave} onClick={askLeave}>
-              <LogOut size={16} aria-hidden="true" />
-              {t("leaveRoom")}
-            </button>
+            <p>
+              {t("winnerLine")
+                .replace(
+                  "{name}",
+                  room?.players.find((player) => player.playerId === view.winnerPlayerId)?.displayName
+                    ?? view.winnerPlayerId
+                    ?? "",
+                )
+                .replace("{score}", "—")}
+            </p>
+            <div className={styles.overActions}>
+              <button type="button" className={styles.endTurn} onClick={() => navigate(`/rooms/${room?.id ?? roomId}`)}>
+                {t("playAgain")}
+              </button>
+              <button type="button" className={styles.leave} onClick={askLeave}>
+                <LogOut size={16} aria-hidden="true" />
+                {t("leaveRoom")}
+              </button>
+            </div>
           </div>
         </div>
       ) : null}

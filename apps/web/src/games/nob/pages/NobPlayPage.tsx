@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
-import { LogOut, Sparkles, Volume2, VolumeX } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { LogOut, Sparkles, Swords, Volume2, VolumeX } from "lucide-react";
 import { ConfirmDialog } from "@/shared/components/ConfirmDialog/ConfirmDialog";
 import { useLeaveRoom } from "@/shared/hooks/useRooms";
 import type { MessageKey } from "@/shared/i18n/messages";
 import { useLocale, useT } from "@/shared/i18n/useT";
 import type { RoomView } from "@/shared/lobby/roomView";
-import { NOB_BRANDING } from "../assets/nobAssetManifest";
+import { NOB_BRANDING, NOB_UI } from "../assets/nobAssetManifest";
 import { getNobBloodlineArt, getNobCardMeta, getNobCardText, getNobMoonMarkArt } from "../assets/nobArt";
 import { NobCard } from "../components/NobCard";
 import { NobCountdown } from "../components/NobCountdown";
@@ -73,6 +74,7 @@ function canPlayEchoNow(card: NobCardInstance): boolean {
 export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps) {
   const t = useT();
   const locale = useLocale();
+  const navigate = useNavigate();
   const leave = useLeaveRoom();
   const sound = useNobPrefs((state) => state.sound);
   const animations = useNobPrefs((state) => state.animations);
@@ -188,6 +190,7 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
 
   const winners = view?.winnerPlayerIds ?? [];
   const youWon = Boolean(view && winners.includes(view.you));
+  const winnerSeats = seats.filter((seat) => winners.includes(seat.playerId));
   const bloodlineSrc = view?.myBloodline
     ? getNobBloodlineArt(view.myBloodline.type, view.myBloodline.rank)
     : null;
@@ -203,8 +206,15 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
   const showRevealed = view?.phaseState !== "WAITING_FOR_PHASE_SUBMISSIONS";
   const announceUntil = remainingMs(view?.announcement?.displayUntil);
   const showAnnounce = Boolean(view?.announcement) && (announceUntil == null || announceUntil > 0);
+  const hideSubmitterName = Boolean(nightSubmit && !pending);
   const announceLine = showAnnounce
-    ? announceText(view?.announcement, seats, locale, view?.lastRoundResult)
+    ? announceText(
+        view?.announcement,
+        seats,
+        locale,
+        view?.lastRoundResult,
+        hideSubmitterName ? t("anonymousPlayer") : null,
+      )
     : null;
   const showPublicBloodline = Boolean(showAnnounce && publicRevealId && (publicRevealArt || publicRevealLine));
   const fx = animationFromAnnouncement(view?.announcement?.type);
@@ -425,7 +435,7 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
   const youAreActor = Boolean(pending);
   const spectatorHint =
     !youAreActor && actorId
-      ? `${seats.find((seat) => seat.playerId === actorId)?.displayName ?? ""} ${
+      ? `${hideSubmitterName ? t("anonymousPlayer") : (seats.find((seat) => seat.playerId === actorId)?.displayName ?? t("anonymousPlayer"))} ${
           view?.currentDecisionType === "CHOOSE_TARGET" ? t("actorSelecting") : t("actorDeciding")
         }`
       : null;
@@ -507,23 +517,24 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
         cardCode: obs.cardCode as string,
       }));
     const ownUnused = isYou ? (drafting ? draftHand : hand) : [];
-    let hiddenCount = ownUnused.length;
-    if (!isYou) {
-      if (typeof seat.hiddenCardCount === "number") {
-        hiddenCount = seat.hiddenCardCount;
-      } else if (phase === "DRAFT_PICK_1") {
-        hiddenCount = 3;
-      } else if (phase === "DRAFT_PICK_2") {
-        hiddenCount = 2;
-      } else {
-        hiddenCount = Math.max(0, 2 - revealed.length);
-      }
-    }
+    const peekedRoles = isYou ? [] : peeked;
+    const hiddenCount = Math.max(0, 2 - revealed.length - peekedRoles.length);
+    const publicLine = seat.publiclyRevealedBloodline;
+    const peekedLine = view?.myObservations?.find(
+      (obs) => obs.kind === "BLOODLINE" && obs.targetPlayerId === seat.playerId && obs.bloodline,
+    )?.bloodline;
+    const identityLine = publicLine ?? peekedLine ?? null;
+    const identityFace: "up" | "down" = identityLine ? "up" : "down";
     return {
       playerId: seat.playerId,
-      displayName: seat.displayName,
+      displayName: hideSubmitterName && !isYou ? t("anonymousPlayer") : seat.displayName,
+      identity: {
+        face: identityFace,
+        artSrc: identityLine ? getNobBloodlineArt(identityLine.type, identityLine.rank) : null,
+        peeked: Boolean(!publicLine && peekedLine && identityLine === peekedLine),
+      },
       revealed,
-      peeked: isYou ? [] : peeked,
+      peeked: peekedRoles,
       hiddenCount,
       ownUnused,
     };
@@ -681,13 +692,14 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
                   pending.allowedTargetIds.includes(seat.playerId) &&
                   !frozen,
               );
-              const submitted = Boolean(view?.submittedPlayerIds?.includes(seat.playerId));
+              const submitted = Boolean(
+                !hideSubmitterName && view?.submittedPlayerIds?.includes(seat.playerId),
+              );
               const publicLine = seat.publiclyRevealedBloodline;
               const peekedLine = view?.myObservations?.find(
                 (obs) => obs.kind === "BLOODLINE" && obs.targetPlayerId === seat.playerId && obs.bloodline,
               )?.bloodline;
               const line = publicLine ?? peekedLine ?? null;
-              const lineArt = line ? getNobBloodlineArt(line.type, line.rank) : null;
               const board = seatCardBoard(seat);
               return (
                 <div
@@ -697,7 +709,7 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
                   data-you={seat.you || seat.playerId === view?.you ? "true" : "false"}
                   data-dead={seat.alive === false ? "true" : "false"}
                   data-target={targetable ? "true" : "false"}
-                  data-actor={actorId === seat.playerId ? "true" : "false"}
+                  data-actor={!hideSubmitterName && actorId === seat.playerId ? "true" : "false"}
                   data-submitted={submitted ? "true" : "false"}
                   data-selected={
                     selectedTargetId === seat.playerId || publicTargetId === seat.playerId ? "true" : "false"
@@ -709,15 +721,7 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
                     disabled={pending?.type === "CHOOSE_TARGET" && !targetable}
                     onClick={() => onTarget(seat.playerId)}
                   >
-                    {lineArt ? (
-                      <img
-                        className={styles.seatArt}
-                        data-peeked={!publicLine && peekedLine ? "true" : "false"}
-                        src={lineArt}
-                        alt=""
-                      />
-                    ) : null}
-                    <strong>{seat.displayName}</strong>
+                    <strong>{hideSubmitterName && !seat.you && seat.playerId !== view?.you ? t("anonymousPlayer") : seat.displayName}</strong>
                     <span>
                       {line ? `${line.type}${line.rank != null ? ` ${line.rank}` : ""} · ` : ""}
                       {seat.alive === false ? "—" : `M${seat.moonMarkCount ?? 0}`}
@@ -1042,21 +1046,32 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
 
       {phase === "GAME_OVER" || (finished && !isSummary) ? (
         <div className={styles.overLayer}>
-          <div className={`${styles.over} theme-panel`}>
-            <h2>{t("gameOver")}</h2>
-            <p>{youWon ? t("youWin") : winners.length > 1 ? t("sharedWin") : t("youLose")}</p>
-            <ul>
-              {seats
-                .filter((seat) => winners.includes(seat.playerId))
-                .map((seat) => (
-                  <li key={seat.playerId}>
-                    {seat.displayName}
-                    {seat.score != null ? ` · ${seat.score}` : ""}
-                  </li>
-                ))}
-            </ul>
-            <button type="button" className={styles.leave} onClick={() => setConfirmLeave(true)}>
-              <LogOut size={16} />
+          <div className={styles.over} role="dialog" aria-labelledby="nob-game-over-title">
+            <img className={styles.overCrest} src={NOB_UI.overCrest} alt="" />
+            <h2 id="nob-game-over-title">{t("gameOver")}</h2>
+            <span className={styles.overRule} aria-hidden="true" />
+            <p className={styles.overResult} data-win={youWon ? "true" : "false"}>
+              {youWon ? t("youWin") : t("youLose")}
+            </p>
+            <section className={styles.overWinners} aria-label={t("winnerSection")}>
+              <h3>{t("winnerSection")}</h3>
+              {winnerSeats.map((seat) => (
+                <div key={seat.playerId} className={styles.overWinner}>
+                  <img src={NOB_UI.winnerMedal} alt="" />
+                  <span>
+                    {t("winnerLine")
+                      .replace("{name}", seat.displayName)
+                      .replace("{score}", String(seat.score ?? seat.moonMarkCount ?? 0))}
+                  </span>
+                </div>
+              ))}
+            </section>
+            <button type="button" className={styles.overPlay} onClick={() => navigate(`/rooms/${room.id}`)}>
+              <Swords size={18} aria-hidden="true" />
+              {t("playAgain")}
+            </button>
+            <button type="button" className={styles.overLeave} onClick={() => setConfirmLeave(true)}>
+              <LogOut size={16} aria-hidden="true" />
               {t("leaveRoom")}
             </button>
           </div>

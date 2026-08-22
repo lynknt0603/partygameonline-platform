@@ -50,13 +50,19 @@ export function announceText(
   players: NobPlayerPublic[],
   locale: Locale,
   lastRound?: NobLastRoundResult | null,
+  anonymousLabel?: string | null,
 ): string | null {
   if (!announcement) {
     return null;
   }
   const key = announcement.messageKey || "";
   const pack = COPY[key];
-  const actor = playerName(players, announcement.actorPlayerId);
+  const hideSubmitter =
+    Boolean(anonymousLabel) &&
+    (announcement.type === "PLAYER_AUTO_ACTION" || announcement.messageKey === "nob.timeout.autoAction");
+  const actor = hideSubmitter
+    ? anonymousLabel ?? ""
+    : playerName(players, announcement.actorPlayerId);
   const target = playerName(players, announcement.targetPlayerId);
   const card =
     nobCardName(announcement.cardCode ?? announcement.reactionCardCode, locale) ||

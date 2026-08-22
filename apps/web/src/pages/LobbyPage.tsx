@@ -53,7 +53,7 @@ export function LobbyPage() {
   const you = seats.find((seat) => seat.isYou);
   const isHost = Boolean(you?.isHost);
   const occupied = seats.filter((seat) => seat.state !== "empty");
-  const waiting = occupied.filter((seat) => seat.state !== "ready");
+  const waiting = occupied.filter((seat) => !seat.isHost && seat.state !== "ready");
   const canStart = occupied.length >= (game?.minPlayers ?? 2) && waiting.length === 0;
   const gameTitle = locale === "vi" ? game?.displayNameVi : game?.displayName;
 
@@ -176,14 +176,16 @@ export function LobbyPage() {
           <button type="button" className={styles.ghost} onClick={() => leave.mutate(room.id)}>
             {t("leaveRoom")}
           </button>
-          <button
-            type="button"
-            className={styles.ghost}
-            onClick={() => ready.mutate(you?.state !== "ready")}
-            disabled={!you}
-          >
-            {you?.state === "ready" ? t("cancelReady") : t("ready")}
-          </button>
+          {isHost ? null : (
+            <button
+              type="button"
+              className={styles.ghost}
+              onClick={() => ready.mutate(you?.state !== "ready")}
+              disabled={!you}
+            >
+              {you?.state === "ready" ? t("cancelReady") : t("ready")}
+            </button>
+          )}
           {isHost ? (
             <button
               type="button"

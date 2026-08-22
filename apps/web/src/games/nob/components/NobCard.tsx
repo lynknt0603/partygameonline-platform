@@ -6,6 +6,8 @@ import styles from "./NobCard.module.css";
 interface NobCardProps {
   cardCode?: string | null;
   face?: "up" | "down";
+  artSrc?: string | null;
+  backSrc?: string | null;
   selected?: boolean;
   playable?: boolean;
   dimmed?: boolean;
@@ -18,6 +20,8 @@ interface NobCardProps {
 export function NobCard({
   cardCode,
   face = "up",
+  artSrc = null,
+  backSrc = null,
   selected = false,
   playable = false,
   dimmed = false,
@@ -28,8 +32,8 @@ export function NobCard({
 }: NobCardProps) {
   const locale = useLocale();
   const [backBroken, setBackBroken] = useState(false);
-  const art = cardCode && face === "up" ? getNobCardArt(cardCode) : null;
-  const back = face === "down" && !backBroken ? getNobCardBack() : null;
+  const art = face === "up" ? (artSrc ?? (cardCode ? getNobCardArt(cardCode) : null)) : null;
+  const back = face === "down" && !backBroken ? (backSrc ?? getNobCardBack()) : null;
   const text = cardCode ? getNobCardText(cardCode, locale) : null;
   const label = text?.name ?? cardCode ?? "Hidden card";
   const tooltip = text?.tooltip ?? "";
