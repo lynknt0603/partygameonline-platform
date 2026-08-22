@@ -1,46 +1,48 @@
 import { useEffect, useRef, useState } from "react";
 import { useT } from "@/shared/i18n/useT";
 import { getNobMoonMarkArt, getNobMoonMarkBack } from "../assets/nobArt";
+import { playNobSfx } from "../model/nobSfx";
 import styles from "./NobMoonTokens.module.css";
 
 interface NobMoonTokensProps {
   options: string[];
+  remainingOptions?: string[];
   disabled?: boolean;
   reducedMotion?: boolean;
-  revealedValue?: number | null;
-  pickedOption?: string | null;
+  revealedByOption?: Record<string, number>;
+  pickedOptions?: string[];
   onPick: (option: string) => void;
 }
 
 export function NobMoonTokens({
   options,
+  remainingOptions,
   disabled = false,
   reducedMotion = false,
-  revealedValue = null,
-  pickedOption = null,
+  revealedByOption = {},
+  pickedOptions = [],
   onPick,
 }: NobMoonTokensProps) {
   const t = useT();
   const back = getNobMoonMarkBack();
   const [brokenBack, setBrokenBack] = useState(false);
   const [brokenFront, setBrokenFront] = useState(false);
-  const [flipOn, setFlipOn] = useState(false);
-  const front = revealedValue != null ? getNobMoonMarkArt(revealedValue) : null;
+  const flippedCount = Object.keys(revealedByOption).length;
+  const [flipReady, setFlipReady] = useState(0);
 
   useEffect(() => {
-    if (!pickedOption || revealedValue == null) {
-      setFlipOn(false);
+    if (flippedCount === 0) {
+      setFlipReady(0);
       return;
     }
+    playNobSfx("tokenFlip");
     if (reducedMotion) {
-      setFlipOn(true);
+      setFlipReady(flippedCount);
       return;
     }
-    const frame = window.requestAnimationFrame(() => {
-      setFlipOn(true);
-    });
+    const frame = window.requestAnimationFrame(() => setFlipReady(flippedCount));
     return () => window.cancelAnimationFrame(frame);
-  }, [pickedOption, revealedValue, reducedMotion]);
+  }, [flippedCount, reducedMotion]);
 
   if (options.length === 0) {
     return null;
@@ -49,9 +51,12 @@ export function NobMoonTokens({
   return (
     <div className={`${styles.row} ${reducedMotion ? styles.reduced : ""}`} aria-label={t("pickMoonToken")}>
       {options.map((option) => {
-        const chosen = pickedOption === option;
-        const faded = Boolean(pickedOption && !chosen);
-        const flipped = Boolean(chosen && revealedValue != null && flipOn);
+        const chosen = pickedOptions.includes(option);
+        const value = revealedByOption[option];
+        const open = remainingOptions == null || remainingOptions.includes(option);
+        const faded = Boolean(!chosen && pickedOptions.length > 0 && !open);
+        const flipped = Boolean(chosen && value != null && flipReady > 0);
+        const front = value != null ? getNobMoonMarkArt(value) : null;
         return (
           <button
             key={option}
@@ -60,10 +65,10 @@ export function NobMoonTokens({
             data-chosen={chosen ? "true" : "false"}
             data-faded={faded ? "true" : "false"}
             data-flip={flipped ? "true" : "false"}
-            disabled={disabled || Boolean(pickedOption)}
+            disabled={disabled || chosen || !open}
             onClick={() => onPick(option)}
             aria-label={
-              flipped ? t("moonMarkDrawn").replace("{n}", String(revealedValue)) : t("moonTokenBack")
+              flipped ? t("moonMarkDrawn").replace("{n}", String(value)) : t("moonTokenBack")
             }
           >
             <span className={styles.inner}>
@@ -76,9 +81,9 @@ export function NobMoonTokens({
                 {front && !brokenFront ? (
                   <img src={front} alt="" draggable={false} onError={() => setBrokenFront(true)} />
                 ) : (
-                  <span>{revealedValue ?? ""}</span>
+                  <span>{value ?? ""}</span>
                 )}
-                {revealedValue != null ? <em>+{revealedValue}</em> : null}
+                {value != null ? <em>+{value}</em> : null}
               </span>
             </span>
           </button>
@@ -89,24 +94,41 @@ export function NobMoonTokens({
 }
 
 export function useMoonPickReveal(values: number[] | undefined, pickedOption: string | null) {
-  const baseline = useRef<number[] | null>(null);
-  const [revealed, setRevealed] = useState<number | null>(null);
+  const map = useMoonPickReveals(values, pickedOption ? [pickedOption] : []);
+  return pickedOption ? (map[pickedOption] ?? null) : null;
+}
+
+export function useMoonPickReveals(values: number[] | undefined, pickedOptions: string[]) {
+  const baseline = useRef<number[]>([]);
+  const [map, setMap] = useState<Record<string, number>>({});
 
   useEffect(() => {
     const next = values ?? [];
-    if (!pickedOption) {
+    if (pickedOptions.length === 0) {
       baseline.current = next;
-      setRevealed(null);
+      setMap({});
       return;
     }
-    const before = baseline.current ?? [];
-    if (next.length > before.length) {
-      const added = next[next.length - 1];
-      if (added === 2 || added === 3 || added === 4) {
-        setRevealed(added);
-      }
+    const gained = next.slice(baseline.current.length);
+    if (gained.length === 0) {
+      return;
     }
-  }, [values, pickedOption]);
+    setMap((current) => {
+      const copy = { ...current };
+      let index = 0;
+      for (const option of pickedOptions) {
+        if (copy[option] != null) {
+          continue;
+        }
+        const added = gained[index++];
+        if (added === 2 || added === 3 || added === 4) {
+          copy[option] = added;
+        }
+      }
+      return copy;
+    });
+    baseline.current = next;
+  }, [values, pickedOptions]);
 
-  return revealed;
+  return map;
 }

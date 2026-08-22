@@ -1,14 +1,16 @@
 .rack {
   display: flex;
   justify-content: center;
-  gap: 4px;
-  margin-top: 6px;
+  align-items: flex-end;
+  gap: 6px;
+  margin-top: 0;
+  padding-top: 2px;
 }
 
 .layer {
   position: fixed;
   inset: 0;
-  z-index: 7;
+  z-index: 40;
   display: grid;
   place-items: center;
   padding: 16px;
@@ -81,4 +83,34 @@
 .zoomItem span {
   font-size: 13px;
   text-align: center;
+}
+
+.tokenNumbers {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.tokenNumbers strong {
+  min-width: 48px;
+  min-height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  border: 1px solid rgba(201, 164, 92, 0.55);
+  background: rgba(20, 8, 12, 0.9);
+  color: #e2c47a;
+  font-size: 1.4rem;
+}
+
+.tokenNumbers span {
+  min-width: 40px;
+  min-height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(201, 164, 92, 0.4);
+  color: #f2eee5;
+  font-weight: 700;
 }

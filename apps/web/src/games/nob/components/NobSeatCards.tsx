@@ -20,6 +20,8 @@ export interface SeatCardBoard {
   peeked: NobCardInstance[];
   hiddenCount: number;
   ownUnused: NobCardInstance[];
+  moonMarkCount?: number;
+  moonMarkValues?: number[];
 }
 
 interface NobSeatCardsProps {
@@ -100,6 +102,19 @@ export function NobSeatCardsZoom({ board, onClose }: NobSeatCardsZoomProps) {
             <X size={18} />
           </button>
         </header>
+        {(board.moonMarkCount ?? 0) > 0 ? (
+          <>
+            <h3>{t("moonMarkCountLabel")}</h3>
+            <div className={styles.tokenNumbers} aria-label={`${board.moonMarkCount} Moon Marks`}>
+              <strong>{board.moonMarkCount}</strong>
+              {board.moonMarkValues?.length
+                ? board.moonMarkValues.map((value, index) => (
+                    <span key={`${board.playerId}-v-${index}`}>{value}</span>
+                  ))
+                : null}
+            </div>
+          </>
+        ) : null}
         <h3>{t("identityCard")}</h3>
         <div className={styles.zoomRow}>
           <div className={styles.zoomItem}>

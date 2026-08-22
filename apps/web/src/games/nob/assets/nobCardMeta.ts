@@ -133,17 +133,17 @@ export const NOB_CARD_META: Record<string, NobCardMeta> = {
     tooltipVi: "Thu thập thông tin hoặc thương lượng Moon Marks.",
     tooltipEn: "Gather information or broker Moon Marks.",
     descriptionVi:
-      "Chọn 1 người chơi còn sống. Tùy lựa chọn hiện có, bạn có thể kiểm tra Bloodline, kiểm tra một Moon Mark, thực hiện trao đổi Moon Mark, hoặc bỏ qua.",
+      "Chọn 1 người chơi còn sống. Nếu họ có Moon Mark, chọn 1 trong tối đa 2 token úp để xem điểm, rồi mới quyết định đổi token hay không. Không có token thì không xem được; bạn không có token thì không đổi được.",
     descriptionEn:
-      "Choose a living player. Depending on the available options, you may inspect their Bloodline, inspect a Moon Mark, make a Moon Mark exchange, or skip.",
+      "Choose a living player. If they have Moon Marks, pick 1 of up to 2 facedown tokens to see its value, then decide whether to swap. Inspect is unavailable if they have none; swap is unavailable if you have none.",
   }),
   "NOB-SH-05": shapeshifter(5, {
-    tooltipVi: "Reveal Bloodline để cướp 1 Moon Mark.",
-    tooltipEn: "Reveal your Bloodline to steal 1 Moon Mark.",
+    tooltipVi: "Cướp 1 Moon Mark từ người có nhiều token hơn bạn.",
+    tooltipEn: "Steal 1 Moon Mark from someone with more tokens than you.",
     descriptionVi:
-      "Công khai Bloodline của bạn. Chọn một người chơi đang sở hữu nhiều Moon Mark hơn bạn và cướp 1 Moon Mark từ người đó. Giá trị Moon Mark do máy chủ chọn.",
+      "Chỉ chọn người đang có nhiều Moon Mark hơn bạn. Người ít hơn hoặc bằng sẽ bị khóa. Nếu mục tiêu có từ 2 token trở lên, bạn chọn 1 trong 2 token thật của họ. Cướp thành công mới công khai Bloodline của bạn. Nếu không ai nhiều token hơn, bạn đã là người giàu nhất: không lộ Bloodline, thông báo rồi đếm 5 giây.",
     descriptionEn:
-      "Reveal your Bloodline publicly. Choose a player who owns more Moon Marks than you and steal 1 Moon Mark from them. The stolen value is chosen by the server.",
+      "You may only choose a player with more Moon Marks than you. Players with fewer or equal tokens are locked. If the target has 2 or more tokens, pick 1 of 2 of their actual tokens. Your Bloodline is revealed only after a successful steal. If nobody has more tokens than you, you already have the most: no Bloodline reveal, a notice, then a 5-second wait.",
   }),
   "NOB-SH-06": shapeshifter(6, {
     tooltipVi: "Reveal Bloodline và loại 1 người. Không thể phản ứng.",
@@ -160,24 +160,24 @@ export const NOB_CARD_META: Record<string, NobCardMeta> = {
     number: null,
     displayName: "Veil Reversal",
     displayNameVi: "Veil Reversal",
-    tooltipVi: "Phản ngược đòn kết liễu về người tấn công.",
-    tooltipEn: "Reflect an elimination back to the attacker.",
+    tooltipVi: "Tự kích hoạt: phản ngược đòn kết liễu về người tấn công.",
+    tooltipEn: "Auto-activates: reflect an elimination back to the attacker.",
     descriptionVi:
-      "Khi bạn trở thành mục tiêu của một hiệu ứng loại hợp lệ từ Feral Killer hoặc Hunter, bạn có thể kích hoạt Veil Reversal. Hủy việc bạn bị loại và phản ngược hiệu ứng về người tấn công. Người tấn công bị loại thay bạn.",
+      "Khi bạn trở thành mục tiêu loại hợp lệ từ Feral Killer hoặc Hunter, Veil Reversal tự động kích hoạt. Lá được lật giữa bàn và trên bàn cá nhân. Hủy việc bạn bị loại, phản ngược đòn, người tấn công bị loại thay bạn. Nếu bạn cũng có Glorious Sacrifice, Veil Reversal luôn kích hoạt trước.",
     descriptionEn:
-      "When an eligible elimination from a Feral Killer or Hunter targets you, you may activate Veil Reversal. Cancel your elimination and reflect the effect back. The attacker is eliminated instead.",
+      "When an eligible elimination from a Feral Killer or Hunter targets you, Veil Reversal auto-activates. The card is revealed in the center and on your personal board. Cancel your elimination and reflect the effect: the attacker is eliminated instead. If you also hold Glorious Sacrifice, Veil Reversal always activates first.",
   },
   "NOB-SP-LAST-OFFERING": {
     roleType: "SPECIAL",
     number: null,
     displayName: "Glorious Sacrifice",
     displayNameVi: "Glorious Sacrifice",
-    tooltipVi: "Chấp nhận bị loại để nhận 1 Moon Mark danh dự.",
-    tooltipEn: "Accept elimination to gain 1 Honor Moon Mark.",
+    tooltipVi: "Tự kích hoạt khi bị loại. Phe thắng thì mở 2/3 token.",
+    tooltipEn: "Auto-activates on elimination. Open 2 of 3 tokens if your side wins.",
     descriptionVi:
-      "Khi bạn trở thành mục tiêu của một hiệu ứng loại hợp lệ, bạn có thể kích hoạt Glorious Sacrifice. Bạn vẫn bị loại, nhưng sự hy sinh được tưởng thưởng: nhận 1 Moon Mark trước khi rời vòng chơi. Không phản đòn về người tấn công.",
+      "Khi bị loại hợp lệ từ Feral Killer hoặc Hunter, Glorious Sacrifice tự động kích hoạt. Lá được lật giữa bàn và trên bàn cá nhân. Bạn vẫn chết và nhận 1 Moon Mark danh dự; cuối vòng vẫn được bốc token. Nếu phe bạn thắng, bạn mở 2 trong 3 thẻ Moon Mark. Nếu cũng có Veil Reversal, phản đòn kích hoạt trước.",
     descriptionEn:
-      "When an eligible elimination targets you, you may activate Glorious Sacrifice. You are still eliminated, but your sacrifice is honored: gain 1 Moon Mark before leaving the round. This does not reflect the attack.",
+      "When an eligible elimination from a Feral Killer or Hunter targets you, Glorious Sacrifice auto-activates. The card is revealed in the center and on your personal board. You still die and gain 1 honor Moon Mark, then still pick tokens at round end. If your faction wins, you open 2 of 3 Moon Mark cards. If you also hold Veil Reversal, Veil Reversal activates first.",
   },
   "NOB-SP-LAST-HOPE": {
     roleType: "SPECIAL",

@@ -71,7 +71,10 @@ export const NOB_BRANDING = {
 
 export const NOB_UI = {
   overCrest: `${ROOT}/ui/over-crest.png`,
+  overCrestWin: `${ROOT}/ui/over-crest-win.jpg`,
+  overCrestLose: `${ROOT}/ui/over-crest-lose.jpg`,
   winnerMedal: `${ROOT}/ui/winner-medal.png`,
+  winnerMedalWin: `${ROOT}/ui/winner-medal-win.jpg`,
 } as const;
 
 export type NobBloodlineType = keyof typeof NOB_BLOODLINE_ART;

@@ -36,6 +36,7 @@ export interface NobPendingDecision {
   sourceCardCode?: string | null;
   allowedTargetIds: string[];
   allowedOptions: string[];
+  optionValues?: number[];
   sourceCardInstanceId?: string | null;
   startedAt?: string | null;
   expiresAt?: string | null;
@@ -54,6 +55,8 @@ export interface NobPublicLog {
   text?: string;
   actorPlayerId?: string | null;
   targetPlayerId?: string | null;
+  extraTargetPlayerId?: string | null;
+  cardCode?: string | null;
 }
 
 export interface NobInspectReveal {
@@ -116,6 +119,7 @@ export interface NobView {
   myObservations?: NobObservation[];
   inspectReveal?: NobInspectReveal | null;
   echoCards?: NobCardInstance[];
+  echoSourceCard?: NobCardInstance | null;
   publicLog?: NobPublicLog[];
   discardCount?: number;
   undealtCount?: number;
@@ -173,6 +177,9 @@ function parsePending(value: unknown): NobPendingDecision | null {
     sourceCardCode: typeof record.sourceCardCode === "string" ? record.sourceCardCode : null,
     allowedTargetIds: asStringList(record.allowedTargetIds),
     allowedOptions: asStringList(record.allowedOptions),
+    optionValues: Array.isArray(record.optionValues)
+      ? record.optionValues.filter((item): item is number => typeof item === "number")
+      : undefined,
     sourceCardInstanceId: typeof record.sourceCardInstanceId === "string" ? record.sourceCardInstanceId : null,
     startedAt: asIso(record.startedAt),
     expiresAt: asIso(record.expiresAt),
@@ -258,6 +265,8 @@ function parsePublicLog(value: unknown): NobPublicLog[] {
       text: typeof record.text === "string" ? record.text : undefined,
       actorPlayerId: typeof record.actorPlayerId === "string" ? record.actorPlayerId : null,
       targetPlayerId: typeof record.targetPlayerId === "string" ? record.targetPlayerId : null,
+      extraTargetPlayerId: typeof record.extraTargetPlayerId === "string" ? record.extraTargetPlayerId : null,
+      cardCode: typeof record.cardCode === "string" ? record.cardCode : null,
     });
   }
   return entries;
@@ -304,6 +313,7 @@ export function parseNobView(value: unknown): NobView | null {
     myObservations: Array.isArray(value.myObservations) ? value.myObservations : [],
     inspectReveal: parseInspectReveal(value.inspectReveal),
     echoCards: Array.isArray(value.echoCards) ? value.echoCards : [],
+    echoSourceCard: parseCard(value.echoSourceCard),
     publicLog: parsePublicLog(value.publicLog),
     submittedPlayerIds: asStringList(value.submittedPlayerIds),
     serverTime: asIso(value.serverTime),
