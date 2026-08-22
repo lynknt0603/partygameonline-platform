@@ -189,6 +189,12 @@
   font-weight: 700;
 }
 
+.playBoth {
+  flex-basis: 100%;
+  display: flex;
+  justify-content: center;
+}
+
 .echoPick {
   display: flex;
   flex-direction: column;
