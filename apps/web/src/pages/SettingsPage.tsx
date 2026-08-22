@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { AppearanceSettings } from "@/shared/components/AppearanceSettings/AppearanceSettings";
 import { PageHeading } from "@/shared/components/PageHeading/PageHeading";
 import { useLocaleStore } from "@/shared/i18n/useLocaleStore";
@@ -14,11 +14,26 @@ export function SettingsPage() {
   const session = useSessionStore((state) => state.session);
   const rename = useSessionStore((state) => state.rename);
   const [name, setName] = useState(session?.displayName ?? "");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
-  const saveName = (event: FormEvent) => {
+  useEffect(() => {
+    setName(session?.displayName ?? "");
+  }, [session?.displayName]);
+
+  const saveName = async (event: FormEvent) => {
     event.preventDefault();
-    if (name.trim()) {
-      void rename(name.trim());
+    const next = name.trim().slice(0, 32);
+    if (!next) {
+      return;
+    }
+    setSaving(true);
+    setSaved(false);
+    try {
+      await rename(next);
+      setSaved(true);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -50,9 +65,21 @@ export function SettingsPage() {
 
       <section className={`${styles.panel} theme-panel`}>
         <h2>{t("guestName")}</h2>
-        <form className={styles.toggle} onSubmit={saveName}>
-          <input value={name} onChange={(event) => setName(event.target.value)} maxLength={32} />
-          <button type="submit">{t("save")}</button>
+        <p>{t("guestNameHint")}</p>
+        <form className={styles.nameForm} onSubmit={(event) => void saveName(event)}>
+          <input
+            value={name}
+            onChange={(event) => {
+              setName(event.target.value);
+              setSaved(false);
+            }}
+            maxLength={32}
+            autoComplete="nickname"
+            aria-label={t("guestName")}
+          />
+          <button type="submit" disabled={saving || !name.trim()}>
+            {saving ? t("saving") : saved ? t("nameSaved") : t("save")}
+          </button>
         </form>
       </section>
 

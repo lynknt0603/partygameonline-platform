@@ -61,7 +61,10 @@
 
 .role img {
   width: min(220px, 100%);
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
   border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
 }
 
 .carousel {
