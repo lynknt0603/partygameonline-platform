@@ -75,9 +75,15 @@ export function NobRoundSummary({
               ))}
             </ul>
           )}
-          {canPickToken || pickedOption ? (
+          {canPickToken || pickedOption || tokenOptions.length > 0 ? (
             <div className={styles.tokens}>
-              <p>{timedOut ? t("timeUpWaiting") : t("pickMoonToken")}</p>
+              <p>
+                {revealedValue != null
+                  ? t("moonMarkDrawn").replace("{n}", String(revealedValue))
+                  : timedOut
+                    ? t("timeUpWaiting")
+                    : t("pickMoonToken")}
+              </p>
               <NobMoonTokens
                 options={tokenOptions}
                 disabled={timedOut || !canPickToken}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NOB_CATALOGUE_ID } from "@/games/nob";
 import {
   NOB_DEFAULT_TIMING,
@@ -8,6 +8,7 @@ import {
 } from "@/games/nob/model/nobTiming";
 import { useUpdateRoomSettings } from "@/shared/hooks/useRooms";
 import { useT } from "@/shared/i18n/useT";
+import { useSessionStore } from "@/shared/state/sessionStore";
 import type { RoomView } from "@/shared/lobby/roomView";
 import styles from "./LobbyChrome.module.css";
 
@@ -38,13 +39,28 @@ export function RoomSettingsPanel({ room, maxCap, isHost, onClose, onCloseRoom }
   const [spectators, setSpectators] = useState(true);
   const [nob, setNob] = useState<NobTiming>(room.nobTiming ?? NOB_DEFAULT_TIMING);
   const isNob = room.gameId === NOB_CATALOGUE_ID;
+  const sessionName = useSessionStore((state) => state.session?.displayName ?? "");
+  const rename = useSessionStore((state) => state.rename);
+  const [displayName, setDisplayName] = useState(sessionName);
+
+  useEffect(() => {
+    setDisplayName(sessionName);
+  }, [sessionName]);
 
   const save = () => {
-    if (!canEdit || !isNob) {
-      onClose();
+    const nextName = displayName.trim().slice(0, 32);
+    const afterName = () => {
+      if (!canEdit || !isNob) {
+        onClose();
+        return;
+      }
+      update.mutate(nob, { onSuccess: () => onClose() });
+    };
+    if (nextName && nextName !== sessionName) {
+      void rename(nextName).then(afterName);
       return;
     }
-    update.mutate(nob, { onSuccess: () => onClose() });
+    afterName();
   };
 
   return (
@@ -52,6 +68,17 @@ export function RoomSettingsPanel({ room, maxCap, isHost, onClose, onCloseRoom }
       <button type="button" className={styles.backdrop} onClick={onClose} aria-label={t("save")} />
       <aside className={`${styles.panel} theme-panel`} role="dialog" aria-labelledby="room-settings-title">
         <h2 id="room-settings-title">{t("roomSettings")}</h2>
+
+        <label className={styles.stack}>
+          {t("guestName")}
+          <input
+            className={styles.input}
+            value={displayName}
+            maxLength={32}
+            autoComplete="nickname"
+            onChange={(event) => setDisplayName(event.target.value)}
+          />
+        </label>
 
         <label className={styles.stack}>
           {t("roomName")}

@@ -1,5 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
+import { useT } from "@/shared/i18n/useT";
+import { useSessionStore } from "@/shared/state/sessionStore";
 import { useThemeStore, type ThemeMode } from "@/shared/theme";
 import styles from "./GameSettingsPanel.module.css";
 
@@ -36,8 +38,16 @@ export function GameSettingsPanel({
   onClose,
   onLeave,
 }: GameSettingsPanelProps) {
+  const t = useT();
   const mode = useThemeStore((state) => state.mode);
   const setTheme = useThemeStore((state) => state.setTheme);
+  const sessionName = useSessionStore((state) => state.session?.displayName ?? "");
+  const rename = useSessionStore((state) => state.rename);
+  const [displayName, setDisplayName] = useState(sessionName);
+
+  useEffect(() => {
+    setDisplayName(sessionName);
+  }, [sessionName]);
 
   useEffect(() => {
     if (!open) {
@@ -73,6 +83,29 @@ export function GameSettingsPanel({
             <X size={18} />
           </button>
         </header>
+
+        <section>
+          <h3>{t("guestName")}</h3>
+          <form
+            className={styles.nameForm}
+            onSubmit={(event) => {
+              event.preventDefault();
+              const next = displayName.trim().slice(0, 32);
+              if (next) {
+                void rename(next);
+              }
+            }}
+          >
+            <input
+              value={displayName}
+              maxLength={32}
+              autoComplete="nickname"
+              aria-label={t("guestName")}
+              onChange={(event) => setDisplayName(event.target.value)}
+            />
+            <button type="submit">{t("save")}</button>
+          </form>
+        </section>
 
         <section>
           <h3>Appearance · Giao diện</h3>
