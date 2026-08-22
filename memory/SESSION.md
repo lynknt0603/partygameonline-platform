@@ -1,11 +1,14 @@
 # Session snapshot — 2026-08-22
 
-## Card Assets Normalization (Night of Bloodlines)
+## Direct Card Frame Reconstruction (Night of Bloodlines)
 
-- Mẫu tham chiếu: 2 ảnh chuẩn là **Hunter** (`NOB-HU-01`) và **Feral Killer** (`NOB-FK-01`) (khung chuẩn `left=15, right=1009, top=15, bottom=1514` trên canvas `1024x1536`).
-- Chuẩn hóa toàn bộ 33 thẻ bài (Blood Seer, Shapeshifter, Shadow Stalker, Hunter, Feral Killer, Special Cards):
-  - Đồng bộ tỉ lệ, viền gothic, lề trên/dưới/trái/phải (margins: 15px top/left/right, 22px bottom).
-  - Phục hồi và căn chỉnh banner tên thẻ bài và huy hiệu cấp độ (shield 1–6).
+- Phát hiện nguyên nhân gốc: Một số thẻ bài (`Blood Seer 3–6` và `Shapeshifter 4–6`) trong source gốc vốn được vẽ với khung vòm cao (tall arch) không có huy hiệu tròn ở đỉnh (top medallion) và khung viền khác biệt so với khung chuẩn (`Hunter`, `Shadow Stalker`, `Feral Killer`).
+- Sửa trực tiếp từng file ảnh:
+  - Ghép khung chuẩn (Master Role Card Template) hoàn chỉnh với huy hiệu tròn biểu tượng đỉnh (Eye cho Blood Seer, Masks cho Shapeshifter).
+  - Vòm gothic chuẩn uốn cong dưới huy hiệu đỉnh (arch peak tại `y ≈ 215`).
+  - Đặt tranh minh họa gốc vào đúng cửa sổ vòm chuẩn.
+  - Tích hợp banner tên đá ("BLOOD SEER", "SHAPESHIFTER") và huy hiệu khiên vàng cấp độ 1–6 tương ứng.
+- Đã kiểm tra qua contact sheet 33 lá và đối chiếu với ảnh chụp thực tế của user.
 - Commit & push lên nhánh `dev`.
 
 ## README & GitHub repository init & push
