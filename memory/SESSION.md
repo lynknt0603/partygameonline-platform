@@ -1,5 +1,11 @@
 # Session snapshot — 2026-08-22
 
+## Bloodline Faction Cards Updated & Standardized (PNG 1024x1536)
+
+- Toàn bộ ảnh thân phận vẽ mới (`vampire-01..05`, `werewolf-01..05`, `halfblood`) đã được chuyển đổi sang chuẩn `.png` độ phân giải `1024x1536` (tỉ lệ 2:3).
+- Đồng bộ hoàn toàn với code manifest (`nobAssetManifest.ts`), logic game và giao diện web.
+- Đã test `typecheck` và `build` thành công 100%, push lên nhánh `dev`.
+
 ## Game Over UI & Lobby Enhancements
 
 - Cải tiến giao diện kết thúc ván (`GameOver`): vinh danh người thắng (winner medal/crest), hiển thị danh sách người thắng, điểm số, nút chơi lại (`Play Again`) và rời phòng.
