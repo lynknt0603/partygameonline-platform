@@ -1,5 +1,11 @@
 # Session snapshot — 2026-08-22
 
+## Moon Mark Tokens Updated & Standardized (PNG 1024x1024)
+
+- Chuyển đổi toàn bộ ảnh Moon Mark Token vẽ mới (`moon-mark-2`, `3`, `4` và `moon-mark-back`) sang định dạng `.png` chuẩn tỉ lệ 1:1 (`1024x1024`).
+- Đồng bộ hoàn toàn với code manifest và game logic.
+- Commit & push lên nhánh `dev`.
+
 ## Bloodline Faction Cards Updated & Standardized (PNG 1024x1536)
 
 - Toàn bộ ảnh thân phận vẽ mới (`vampire-01..05`, `werewolf-01..05`, `halfblood`) đã được chuyển đổi sang chuẩn `.png` độ phân giải `1024x1536` (tỉ lệ 2:3).
