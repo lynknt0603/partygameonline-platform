@@ -444,7 +444,9 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
         : alreadyActed && (drafting || nightSubmit)
           ? t("waitingOtherPlayers")
           : canSubmitNight
-            ? t("playThisCard")
+            ? matchingNightCards.length >= 2
+              ? t("playBothHint")
+              : t("playThisCard")
             : t("waitingOthers");
   const inspectedText = inspected ? getNobCardText(inspected.cardCode, locale) : null;
   const inspectedPlayable = inspected ? cardEnabled(inspected) : false;
@@ -873,6 +875,18 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
                     </div>
                   );
                 })}
+                {nightPromptCards.length >= 2 ? (
+                  <div className={styles.playBoth}>
+                    <button
+                      type="button"
+                      className={styles.pass}
+                      disabled={frozen}
+                      onClick={() => send({ type: "NOB_PHASE_SUBMIT", option: "PLAY_BOTH" }, true)}
+                    >
+                      {t("playBothCards")}
+                    </button>
+                  </div>
+                ) : null}
                 <button
                   type="button"
                   className={styles.detailClose}
