@@ -16,7 +16,7 @@ export async function ensureCsrf(): Promise<CsrfBootstrap> {
     csrfPromise = fetch("/api/v1/csrf", { credentials: "include" })
       .then(async (response) => {
         if (!response.ok) {
-          throw new ApiError(response.status, "CSRF_BOOTSTRAP_FAILED", "Could not load CSRF token");
+          throw new ApiError(response.status, "CSRF_BOOTSTRAP_FAILED", "SERVER_UNREACHABLE");
         }
         const body = (await response.json()) as CsrfBootstrap;
         csrf = body;
@@ -34,6 +34,10 @@ export function clearCsrf(): void {
 }
 
 export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
+  return requestJson<T>(path, init, true);
+}
+
+async function requestJson<T>(path: string, init: RequestInit, retryCsrf: boolean): Promise<T> {
   const method = (init.method ?? "GET").toUpperCase();
   const headers = new Headers(init.headers);
   if (!headers.has("Accept")) {
@@ -46,15 +50,33 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
     const token = await ensureCsrf();
     headers.set(token.headerName, token.token);
   }
-  const response = await fetch(path, { ...init, method, headers, credentials: "include" });
+  let response: Response;
+  try {
+    response = await fetch(path, { ...init, method, headers, credentials: "include" });
+  } catch {
+    throw new ApiError(0, "SERVER_UNREACHABLE", "SERVER_UNREACHABLE");
+  }
   if (response.status === 204) {
     return undefined as T;
   }
   const text = await response.text();
-  const data = text ? (JSON.parse(text) as unknown) : null;
+  let data: unknown = null;
+  if (text) {
+    try {
+      data = JSON.parse(text) as unknown;
+    } catch {
+      data = null;
+    }
+  }
   if (!response.ok) {
     const body = (data ?? {}) as ApiErrorBody;
-    throw new ApiError(response.status, body.errorCode ?? "ERROR", body.message ?? response.statusText);
+    const code = body.errorCode ?? "ERROR";
+    const message = body.message ?? response.statusText;
+    if (retryCsrf && response.status === 403 && /csrf/i.test(`${code} ${message}`)) {
+      clearCsrf();
+      return requestJson<T>(path, init, false);
+    }
+    throw new ApiError(response.status, code, message);
   }
   return data as T;
 }

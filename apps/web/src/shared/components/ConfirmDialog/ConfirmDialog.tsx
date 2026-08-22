@@ -1,4 +1,6 @@
 import { useEffect } from "react";
+import { toUserFacingError } from "@/shared/api/userFacingError";
+import { useT } from "@/shared/i18n/useT";
 import styles from "./ConfirmDialog.module.css";
 
 interface ConfirmDialogProps {
@@ -8,7 +10,7 @@ interface ConfirmDialogProps {
   confirmLabel: string;
   cancelLabel: string;
   pending?: boolean;
-  error?: string | null;
+  error?: unknown;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -24,6 +26,8 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  const t = useT();
+  const errorText = toUserFacingError(error, t);
   useEffect(() => {
     if (!open) {
       return;
@@ -47,7 +51,7 @@ export function ConfirmDialog({
       <div className={`${styles.dialog} theme-panel`} role="dialog" aria-modal="true" aria-labelledby="confirm-title">
         <h2 id="confirm-title">{title}</h2>
         <p>{body}</p>
-        {error ? <p className={styles.error}>{error}</p> : null}
+        {errorText ? <p className={styles.error}>{errorText}</p> : null}
         <div className={styles.actions}>
           <button type="button" className={styles.cancel} onClick={onCancel} disabled={pending}>
             {cancelLabel}

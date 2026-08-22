@@ -1,20 +1,24 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Accessibility, LogOut, MessageCircle, Settings } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { CardTableCanvas } from "@/game/renderer/CardTableCanvas";
 import { cardFromId, type DemoCard } from "@/game/games/demo-card-game/demoCards";
+import { ConnectionStatusBadge } from "@/shared/components/ConnectionStatusBadge/ConnectionStatusBadge";
 import { ConfirmDialog } from "@/shared/components/ConfirmDialog/ConfirmDialog";
 import { ThemeQuickToggle } from "@/shared/components/ThemeQuickToggle/ThemeQuickToggle";
 import { useGame } from "@/shared/hooks/useGames";
 import { useLeaveRoom, useRoom } from "@/shared/hooks/useRooms";
+import { useRealtimeStatus } from "@/shared/hooks/useRealtimeStatus";
 import { useRoomRealtime } from "@/shared/hooks/useRoomRealtime";
 import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
 import { useThemeStore } from "@/shared/theme";
 import type { GameThemeManifest } from "@/game/core/GameThemeManifest";
+import { cacheSession } from "@/shared/api/session";
 import { realtime } from "@/shared/api/ws";
+import { useSessionStore } from "@/shared/state/sessionStore";
 import type { DemoView } from "@/shared/api/types";
 import { useT } from "@/shared/i18n/useT";
-import { NOB_CATALOGUE_ID, NobPlayPage, parseNobView, type NobView } from "@/games/nob";
+import { fetchNobSnapshot, NOB_CATALOGUE_ID, NobPlayPage, parseNobView, type NobView } from "@/games/nob";
 import { GameSettingsPanel } from "./GameSettingsPanel";
 import { HandDock } from "./HandDock";
 import styles from "./GamePage.module.css";
@@ -61,6 +65,37 @@ export function GamePage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [rejectCode, setRejectCode] = useState<string | null>(null);
   const [confirmLeave, setConfirmLeave] = useState(false);
+  const realtimeStatus = useRealtimeStatus();
+  const session = useSessionStore((state) => state.session);
+
+  useEffect(() => {
+    if (!session || !roomId) {
+      return;
+    }
+    cacheSession({ ...session, currentRoomId: roomId.toUpperCase() });
+  }, [session, roomId]);
+
+  useEffect(() => {
+    if (!roomId || (realtimeStatus !== "open" && realtimeStatus !== "connecting")) {
+      return;
+    }
+    let cancelled = false;
+    const pull = async () => {
+      try {
+        const snapshot = await fetchNobSnapshot(roomId);
+        if (!cancelled && snapshot) {
+          setNobView(snapshot);
+          setRejectCode(null);
+        }
+      } catch {
+        /* WRONG_GAME / GAME_NOT_RUNNING / not a member — WS snapshot still applies */
+      }
+    };
+    void pull();
+    return () => {
+      cancelled = true;
+    };
+  }, [roomId, realtimeStatus]);
 
   useRoomRealtime(roomId, {
     onView: (next) => {
@@ -130,11 +165,17 @@ export function GamePage() {
   };
 
   if (isNob && room) {
-    return <NobPlayPage room={room} view={nobView} notice={notice} rejectCode={rejectCode} />;
+    return (
+      <>
+        <ConnectionStatusBadge />
+        <NobPlayPage room={room} view={nobView} notice={notice} rejectCode={rejectCode} />
+      </>
+    );
   }
 
   return (
     <div className={`${styles.page} ${gameplay.highContrast ? styles.contrast : ""}`}>
+      <ConnectionStatusBadge />
       <header className={`${styles.hud} theme-header`}>
         <button type="button" className={styles.leave} onClick={askLeave}>
           <LogOut size={16} aria-hidden="true" />
@@ -243,9 +284,12 @@ export function GamePage() {
         confirmLabel={t("leaveConfirmYes")}
         cancelLabel={t("leaveConfirmNo")}
         pending={leaveRoom.isPending}
-        error={leaveRoom.error?.message ?? null}
+        error={leaveRoom.error}
         onConfirm={confirmAndLeave}
-        onCancel={() => setConfirmLeave(false)}
+        onCancel={() => {
+          leaveRoom.reset();
+          setConfirmLeave(false);
+        }}
       />
 
       <button

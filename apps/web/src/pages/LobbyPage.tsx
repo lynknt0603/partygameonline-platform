@@ -9,7 +9,8 @@ import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
 import { useLocale, useT } from "@/shared/i18n/useT";
 import { seatsForRoom } from "@/shared/lobby/roomView";
 import { useSessionStore } from "@/shared/state/sessionStore";
-import { CHAT_COUNT, LobbyChat } from "./LobbyChat";
+import { useLobbyChat } from "@/shared/hooks/useLobbyChat";
+import { LobbyChat } from "./LobbyChat";
 import { RoomSettingsPanel } from "./RoomSettingsPanel";
 import styles from "./LobbyPage.module.css";
 
@@ -33,6 +34,7 @@ export function LobbyPage() {
   const [copied, setCopied] = useState(false);
 
   useRoomRealtime(roomId);
+  const chat = useLobbyChat(roomId, youId);
   const joinAttempted = useRef(false);
 
   useEffect(() => {
@@ -105,9 +107,18 @@ export function LobbyPage() {
             <Link2 size={16} />
             <span className={styles.desktopOnly}>{t("invite")}</span>
           </button>
-          <button type="button" className={styles.icon} onClick={() => setChatOpen(true)}>
+          <button
+            type="button"
+            className={styles.icon}
+            aria-expanded={chatOpen}
+            onClick={() => {
+              const next = !chatOpen;
+              setChatOpen(next);
+              chat.setOpen(next);
+            }}
+          >
             <MessageCircle size={16} />
-            <span className={styles.badge}>{CHAT_COUNT}</span>
+            {chat.unread > 0 ? <span className={styles.badge}>{chat.unread}</span> : null}
           </button>
           <button type="button" className={styles.icon} onClick={() => setHostOpen(true)} aria-label={t("roomSettings")}>
             <Settings size={16} />
@@ -155,6 +166,18 @@ export function LobbyPage() {
       )}
 
       <section className={styles.footerBlock}>
+        {isMobile && chatOpen ? (
+          <LobbyChat
+            variant="sheet"
+            lines={chat.lines}
+            youId={youId}
+            onClose={() => {
+              setChatOpen(false);
+              chat.setOpen(false);
+            }}
+            onSend={chat.send}
+          />
+        ) : null}
         {isMobile ? null : (
           <div className={styles.codeBar}>
             <span>{t("roomCode")}</span>
@@ -199,7 +222,18 @@ export function LobbyPage() {
         </footer>
       </section>
 
-      {chatOpen ? <LobbyChat onClose={() => setChatOpen(false)} /> : null}
+      {!isMobile && chatOpen ? (
+        <LobbyChat
+          variant="drawer"
+          lines={chat.lines}
+          youId={youId}
+          onClose={() => {
+            setChatOpen(false);
+            chat.setOpen(false);
+          }}
+          onSend={chat.send}
+        />
+      ) : null}
       {hostOpen ? (
         <RoomSettingsPanel
           room={room}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import { getNobCardArt, getNobCardBack, getNobCardText } from "../assets/nobArt";
 import { useLocale } from "@/shared/i18n/useT";
 import styles from "./NobCard.module.css";
@@ -17,7 +17,7 @@ interface NobCardProps {
   onClick?: () => void;
 }
 
-export function NobCard({
+function NobCardComponent({
   cardCode,
   face = "up",
   artSrc = null,
@@ -57,7 +57,9 @@ export function NobCard({
       ) : (
         <img className={styles.art} src={art} alt="" draggable={false} />
       )}
-      {face === "up" && tooltip && !compact ? <span className={styles.caption}>{tooltip}</span> : null}
+      {face === "up" && tooltip && !compact ? <span className={styles.caption} aria-hidden="true">{tooltip}</span> : null}
     </button>
   );
 }
+
+export const NobCard = memo(NobCardComponent);

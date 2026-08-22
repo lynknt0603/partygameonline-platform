@@ -32,6 +32,10 @@ const COPY: Record<string, { vi: string; en: string }> = {
     vi: "{name} nhận 1 Moon Mark.",
     en: "{name} received 1 Moon Mark.",
   },
+  "nob.moonThief.alreadyRichest": {
+    vi: "Bạn đang là người có nhiều Moon Mark nhất.",
+    en: "You already have the most Moon Marks.",
+  },
 };
 
 function playerName(players: NobPlayerPublic[], id: string | null | undefined, fallback = ""): string {

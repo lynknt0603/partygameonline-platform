@@ -27,6 +27,12 @@ export function useRoomRealtime(roomId: string | undefined, options: Options = {
     staleResynced.current = null;
     realtime.connect();
     const requestSnapshot = () => realtime.send("ROOM_SNAPSHOT", normalized);
+    const unsubStatus = realtime.subscribeStatus((status) => {
+      if (status === "open") {
+        requestSnapshot();
+        void queryClient.invalidateQueries({ queryKey: ["room", normalized] });
+      }
+    });
     const unsubscribe = realtime.subscribe((message) => {
       if (message.roomId && message.roomId.toUpperCase() !== normalized) {
         return;
@@ -77,6 +83,9 @@ export function useRoomRealtime(roomId: string | undefined, options: Options = {
       }
     });
     requestSnapshot();
-    return unsubscribe;
+    return () => {
+      unsubStatus();
+      unsubscribe();
+    };
   }, [roomId, queryClient, navigate]);
 }
