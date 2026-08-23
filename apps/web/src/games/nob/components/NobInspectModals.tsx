@@ -56,8 +56,14 @@ export function NobInspectModals({ view, roleOpen, cardsOpen, onClose }: NobInsp
               <>
                 <h3>{bloodlineTitle(bloodline, locale)}</h3>
                 <p>
-                  {bloodline.type}
-                  {bloodline.rank != null && bloodline.type !== "HALFBLOOD" ? ` · Rank ${bloodline.rank}` : ""}
+                  {bloodline.type === "HALFBLOOD"
+                    ? (locale === "vi" ? "Con Lai" : "Halfblood")
+                    : bloodline.type === "VAMPIRE"
+                      ? (locale === "vi" ? "Ma Cà Rồng" : "Vampire")
+                      : (locale === "vi" ? "Ma Sói" : "Werewolf")}
+                  {bloodline.rank != null && bloodline.type !== "HALFBLOOD"
+                    ? ` · ${locale === "vi" ? "Bậc" : "Rank"} ${bloodline.rank}`
+                    : ""}
                 </p>
                 <p>{bloodlineFlavor(bloodline.type, locale)}</p>
               </>

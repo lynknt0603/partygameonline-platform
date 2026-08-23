@@ -41,10 +41,16 @@
   font-weight: 700;
 }
 
+.card:hover,
+.card:focus-visible {
+  z-index: 5;
+}
+
 .selected {
   transform: translateY(-10px);
   border-color: var(--brand);
   box-shadow: var(--shadow-md);
+  z-index: 6;
 }
 
 .ink {

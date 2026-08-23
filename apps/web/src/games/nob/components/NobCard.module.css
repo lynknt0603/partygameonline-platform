@@ -81,11 +81,17 @@
   }
 }
 
+.card:hover,
+.card:focus-visible {
+  z-index: 5;
+}
+
 .selected {
   z-index: 10;
   outline: 2px solid #c9a45c;
   outline-offset: 3px;
   transform: translateY(-8px);
+  z-index: 6;
 }
 
 .playable {
