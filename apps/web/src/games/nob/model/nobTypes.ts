@@ -36,7 +36,7 @@ export interface NobPendingDecision {
   sourceCardCode?: string | null;
   allowedTargetIds: string[];
   allowedOptions: string[];
-  optionValues?: number[];
+  optionValues?: Array<number | null>;
   sourceCardInstanceId?: string | null;
   startedAt?: string | null;
   expiresAt?: string | null;
@@ -119,6 +119,7 @@ export interface NobView {
   myObservations?: NobObservation[];
   inspectReveal?: NobInspectReveal | null;
   echoCards?: NobCardInstance[];
+  echoCardCount?: number;
   echoSourceCard?: NobCardInstance | null;
   publicLog?: NobPublicLog[];
   discardCount?: number;
@@ -178,7 +179,7 @@ function parsePending(value: unknown): NobPendingDecision | null {
     allowedTargetIds: asStringList(record.allowedTargetIds),
     allowedOptions: asStringList(record.allowedOptions),
     optionValues: Array.isArray(record.optionValues)
-      ? record.optionValues.filter((item): item is number => typeof item === "number")
+      ? record.optionValues.map((item) => (typeof item === "number" ? item : null))
       : undefined,
     sourceCardInstanceId: typeof record.sourceCardInstanceId === "string" ? record.sourceCardInstanceId : null,
     startedAt: asIso(record.startedAt),
@@ -313,6 +314,7 @@ export function parseNobView(value: unknown): NobView | null {
     myObservations: Array.isArray(value.myObservations) ? value.myObservations : [],
     inspectReveal: parseInspectReveal(value.inspectReveal),
     echoCards: Array.isArray(value.echoCards) ? value.echoCards : [],
+    echoCardCount: typeof value.echoCardCount === "number" ? value.echoCardCount : undefined,
     echoSourceCard: parseCard(value.echoSourceCard),
     publicLog: parsePublicLog(value.publicLog),
     submittedPlayerIds: asStringList(value.submittedPlayerIds),

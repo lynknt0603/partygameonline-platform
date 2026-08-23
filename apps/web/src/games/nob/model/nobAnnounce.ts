@@ -14,26 +14,26 @@ const COPY: Record<string, { vi: string; en: string }> = {
   "nob.elimination.success": { vi: "{actor} đã tiêu diệt {target}.", en: "{actor} eliminated {target}." },
   "nob.reaction.veilReversal": { vi: "{target} đã phản ngược đòn!", en: "{target} reflected the blow!" },
   "nob.reaction.gloriousSacrifice": {
-    vi: "{target} đã hy sinh trong vinh quang. +1 Moon Mark.",
+    vi: "{target} đã hy sinh trong vinh quang. +1 Xu Mặt Trăng.",
     en: "{target} made a Glorious Sacrifice. +1 Moon Mark.",
   },
-  "nob.lastHope.triggered": { vi: "LAST HOPE ĐÃ SỐNG SÓT", en: "LAST HOPE HAS SURVIVED" },
-  "nob.round.result": { vi: "Phe {bloodline} thắng vòng này.", en: "{bloodline} wins the round." },
+  "nob.lastHope.triggered": { vi: "HY VỌNG CUỐI CÙNG ĐÃ SỐNG SÓT", en: "LAST HOPE HAS SURVIVED" },
+  "nob.round.result": { vi: "Gia Tộc {bloodline} thắng vòng này.", en: "{bloodline} wins the round." },
   "nob.bloodline.revealed": {
-    vi: "Bloodline của {target} đã bị công khai: {bloodline}",
+    vi: "Gia Tộc của {target} đã bị công khai: {bloodline}",
     en: "{target}'s bloodline was revealed: {bloodline}",
   },
-  "nob.round.tie": { vi: "Vòng này hòa / Halfblood.", en: "The round is tied / Halfblood." },
+  "nob.round.tie": { vi: "Vòng này hòa / Con Lai.", en: "The round is tied / Halfblood." },
   "nob.timeout.autoAction": {
     vi: "{name} hết giờ — hệ thống đã hành động.",
     en: "{name} ran out of time — the server acted.",
   },
   "nob.moonMark.received": {
-    vi: "{name} nhận 1 Moon Mark.",
+    vi: "{name} nhận 1 Xu Mặt Trăng.",
     en: "{name} received 1 Moon Mark.",
   },
   "nob.moonThief.alreadyRichest": {
-    vi: "Bạn đang là người có nhiều Moon Mark nhất.",
+    vi: "Bạn đang là người có nhiều Xu Mặt Trăng nhất.",
     en: "You already have the most Moon Marks.",
   },
 };

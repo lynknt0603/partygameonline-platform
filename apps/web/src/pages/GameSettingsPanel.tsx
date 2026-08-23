@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
-import { useT } from "@/shared/i18n/useT";
+import { useLocale, useT } from "@/shared/i18n/useT";
 import { useSessionStore } from "@/shared/state/sessionStore";
 import { useThemeStore, type ThemeMode } from "@/shared/theme";
 import styles from "./GameSettingsPanel.module.css";
@@ -24,10 +24,10 @@ interface GameSettingsPanelProps {
   onLeave: () => void;
 }
 
-const APPEARANCE: Array<{ id: ThemeMode; name: string }> = [
-  { id: "system", name: "System" },
-  { id: "dark", name: "Midnight" },
-  { id: "light", name: "Daybreak" },
+const APPEARANCE: Array<{ id: ThemeMode; nameEn: string; nameVi: string }> = [
+  { id: "system", nameEn: "System", nameVi: "Theo hệ thống" },
+  { id: "dark", nameEn: "Midnight", nameVi: "Đêm tối" },
+  { id: "light", nameEn: "Daybreak", nameVi: "Ban ngày" },
 ];
 
 export function GameSettingsPanel({
@@ -39,6 +39,8 @@ export function GameSettingsPanel({
   onLeave,
 }: GameSettingsPanelProps) {
   const t = useT();
+  const locale = useLocale();
+  const vi = locale === "vi";
   const mode = useThemeStore((state) => state.mode);
   const setTheme = useThemeStore((state) => state.setTheme);
   const sessionName = useSessionStore((state) => state.session?.displayName ?? "");
@@ -70,7 +72,7 @@ export function GameSettingsPanel({
 
   return (
     <div className={styles.layer}>
-      <button type="button" className={styles.backdrop} aria-label="Close settings · Đóng" onClick={onClose} />
+      <button type="button" className={styles.backdrop} aria-label={vi ? "Đóng cài đặt" : "Close settings"} onClick={onClose} />
       <aside
         className={`${styles.panel} theme-panel ${sheet ? styles.sheet : styles.drawer}`}
         role="dialog"
@@ -78,8 +80,8 @@ export function GameSettingsPanel({
         aria-labelledby="game-settings-title"
       >
         <header className={styles.head}>
-          <h2 id="game-settings-title">Game settings</h2>
-          <button type="button" className={styles.icon} onClick={onClose} aria-label="Close · Đóng">
+          <h2 id="game-settings-title">{vi ? "Cài đặt ván chơi" : "Game settings"}</h2>
+          <button type="button" className={styles.icon} onClick={onClose} aria-label={vi ? "Đóng" : "Close"}>
             <X size={18} />
           </button>
         </header>
@@ -108,7 +110,7 @@ export function GameSettingsPanel({
         </section>
 
         <section>
-          <h3>Appearance · Giao diện</h3>
+          <h3>{vi ? "Giao diện" : "Appearance"}</h3>
           <div className={styles.radios} role="radiogroup" aria-label="Theme">
             {APPEARANCE.map((option) => (
               <label key={option.id} className={styles.radio}>
@@ -118,16 +120,16 @@ export function GameSettingsPanel({
                   checked={mode === option.id}
                   onChange={() => setTheme(option.id)}
                 />
-                {option.name}
+                {vi ? option.nameVi : option.nameEn}
               </label>
             ))}
           </div>
         </section>
 
         <section>
-          <h3>Sound · Âm thanh</h3>
+          <h3>{vi ? "Âm thanh" : "Sound"}</h3>
           <label className={styles.slider}>
-            <span>Music</span>
+            <span>{vi ? "Nhạc nền" : "Music"}</span>
             <input
               type="range"
               min={0}
@@ -137,7 +139,7 @@ export function GameSettingsPanel({
             />
           </label>
           <label className={styles.slider}>
-            <span>Effects</span>
+            <span>{vi ? "Hiệu ứng" : "Effects"}</span>
             <input
               type="range"
               min={0}
@@ -149,14 +151,14 @@ export function GameSettingsPanel({
         </section>
 
         <section>
-          <h3>Gameplay</h3>
+          <h3>{vi ? "Lối chơi" : "Gameplay"}</h3>
           <label className={styles.check}>
             <input
               type="checkbox"
               checked={gameplay.cardAnimations}
               onChange={() => patch({ cardAnimations: !gameplay.cardAnimations })}
             />
-            Card animations
+            {vi ? "Hoạt ảnh thẻ bài" : "Card animations"}
           </label>
           <label className={styles.check}>
             <input
@@ -164,7 +166,7 @@ export function GameSettingsPanel({
               checked={gameplay.haptics}
               onChange={() => patch({ haptics: !gameplay.haptics })}
             />
-            Haptic feedback
+            {vi ? "Rung phản hồi" : "Haptic feedback"}
           </label>
           <label className={styles.check}>
             <input
@@ -172,19 +174,19 @@ export function GameSettingsPanel({
               checked={gameplay.confirmActions}
               onChange={() => patch({ confirmActions: !gameplay.confirmActions })}
             />
-            Confirm actions
+            {vi ? "Xác nhận thao tác" : "Confirm actions"}
           </label>
         </section>
 
         <section>
-          <h3>Accessibility · Trợ năng</h3>
+          <h3>{vi ? "Trợ năng" : "Accessibility"}</h3>
           <label className={styles.check}>
             <input
               type="checkbox"
               checked={gameplay.reducedMotion}
               onChange={() => patch({ reducedMotion: !gameplay.reducedMotion })}
             />
-            Reduced motion
+            {vi ? "Giảm chuyển động" : "Reduced motion"}
           </label>
           <label className={styles.check}>
             <input
@@ -192,12 +194,12 @@ export function GameSettingsPanel({
               checked={gameplay.highContrast}
               onChange={() => patch({ highContrast: !gameplay.highContrast })}
             />
-            High contrast
+            {vi ? "Độ tương phản cao" : "High contrast"}
           </label>
         </section>
 
         <button type="button" className={styles.leave} onClick={onLeave}>
-          Leave game · Rời bàn
+          {vi ? "Rời bàn" : "Leave game"}
         </button>
       </aside>
     </div>
