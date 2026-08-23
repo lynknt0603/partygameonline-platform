@@ -284,6 +284,10 @@
   gap: 12px;
 }
 
+.centerStage[data-card-choice="true"] {
+  z-index: 3;
+}
+
 .history {
   width: min(240px, 28vw);
   flex-shrink: 0;

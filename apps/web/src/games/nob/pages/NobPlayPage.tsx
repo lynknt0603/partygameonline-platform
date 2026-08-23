@@ -877,7 +877,12 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
               );
             })}
           </div>
-          <div className={styles.centerStage}>
+          <div
+            className={styles.centerStage}
+            data-card-choice={
+              pickHiddenPending || echoPending || nightPromptCards.length > 0 ? "true" : "false"
+            }
+          >
             {lastHopeOn ? <p className={styles.lastHope}>{t("lastHopeTitle")}</p> : null}
             {lastHopeOn && view?.lastRoundResult ? (
               <p className={styles.hint}>
