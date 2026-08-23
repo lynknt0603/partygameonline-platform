@@ -82,6 +82,7 @@
 }
 
 .selected {
+  z-index: 10;
   outline: 2px solid #c9a45c;
   outline-offset: 3px;
   transform: translateY(-8px);
