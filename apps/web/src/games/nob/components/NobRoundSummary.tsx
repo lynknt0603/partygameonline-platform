@@ -1,6 +1,7 @@
 import { useLocale, useT } from "@/shared/i18n/useT";
-import { getNobBloodlineArt, getNobCardArt, getNobCardMeta } from "../assets/nobArt";
+import { getNobBloodlineArt, getNobCardArt } from "../assets/nobArt";
 import { bloodlineTitle, roundWinnerLine } from "../model/nobBloodlineCopy";
+import { nobCardName } from "../model/nobCardLabel";
 import type { NobView } from "../model/nobTypes";
 import { NobCountdown } from "./NobCountdown";
 import { NobMoonTokens } from "./NobMoonTokens";
@@ -150,7 +151,7 @@ export function NobRoundSummary({
                     <div className={styles.used}>
                       {player.revealedCards.map((card) => {
                         const src = getNobCardArt(card.cardCode);
-                        const label = getNobCardMeta(card.cardCode)?.displayName ?? card.cardCode;
+                        const label = nobCardName(card.cardCode, locale);
                         return src ? (
                           <img key={card.instanceId ?? card.cardCode} src={src} alt={label} title={label} />
                         ) : (
