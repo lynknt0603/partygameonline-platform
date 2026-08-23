@@ -16,6 +16,11 @@ export class ApiError extends Error {
   }
 }
 
+export interface AuthPayload {
+  username: string;
+  password: string;
+}
+
 export interface SessionDto {
   playerId: string;
   displayName: string;

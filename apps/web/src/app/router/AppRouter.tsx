@@ -5,6 +5,7 @@ import { GamePage } from "@/pages/GamePage";
 import { GamesPage } from "@/pages/GamesPage";
 import { HomePage } from "@/pages/HomePage";
 import { LobbyPage } from "@/pages/LobbyPage";
+import { LoginPage } from "@/pages/LoginPage";
 import { MatchHistoryPage } from "@/pages/MatchHistoryPage";
 import { ProfilePage } from "@/pages/ProfilePage";
 import { RoomsPage } from "@/pages/RoomsPage";
@@ -24,6 +25,8 @@ export function AppRouter() {
           <Route path="settings" element={<SettingsPage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="profile/history" element={<MatchHistoryPage />} />
+          <Route path="login" element={<LoginPage />} />
+          <Route path="register" element={<LoginPage defaultTab="register" />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
