@@ -4,6 +4,7 @@ import { PageHeading } from "@/shared/components/PageHeading/PageHeading";
 import { useT } from "@/shared/i18n/useT";
 import { useSessionStore } from "@/shared/state/sessionStore";
 import { ApiError } from "@/shared/api/types";
+import { safeReturnTo } from "@/shared/auth/memberAccess";
 import styles from "./LoginPage.module.css";
 
 interface LoginPageProps {
@@ -15,6 +16,8 @@ export function LoginPage({ defaultTab = "login" }: LoginPageProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialTab = searchParams.get("tab") === "register" ? "register" : defaultTab;
+  const requiresMember = searchParams.get("required") === "member";
+  const returnTo = safeReturnTo(searchParams.get("returnTo"));
   const [tab, setTab] = useState<"login" | "register">(initialTab);
 
   // Form states
@@ -59,7 +62,7 @@ export function LoginPage({ defaultTab = "login" }: LoginPageProps) {
       } else {
         await register({ username: trimmedUser, password });
       }
-      navigate("/");
+      navigate(returnTo, { replace: true });
     } catch (err) {
       if (err instanceof ApiError) {
         setErrorMessage(err.message || t("authFailed"));
@@ -234,15 +237,14 @@ export function LoginPage({ defaultTab = "login" }: LoginPageProps) {
           )}
         </div>
 
-        {/* Divider */}
-        <div className={styles.divider}>
+        {requiresMember ? null : <div className={styles.divider}>
           <span className={styles.dividerLine} />
           <span className={styles.dividerText}>HOẶC</span>
           <span className={styles.dividerLine} />
-        </div>
+        </div>}
 
         {/* Guest quick join section */}
-        <div className={styles.guestSection}>
+        {requiresMember ? null : <div className={styles.guestSection}>
           <div className={styles.guestHeading}>
             <span className={styles.guestTitle}>{t("guestQuickPlay")}</span>
           </div>
@@ -264,7 +266,7 @@ export function LoginPage({ defaultTab = "login" }: LoginPageProps) {
               {guestLoading ? t("saving") : t("guestPlayBtn")}
             </button>
           </form>
-        </div>
+        </div>}
       </div>
     </div>
   );

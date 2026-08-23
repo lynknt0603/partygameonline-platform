@@ -1,4 +1,5 @@
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
+import type { ReactNode } from "react";
 import { AppShell } from "@/app/shell/AppShell";
 import { FriendsPage } from "@/pages/FriendsPage";
 import { GamePage } from "@/pages/GamePage";
@@ -10,17 +11,34 @@ import { MatchHistoryPage } from "@/pages/MatchHistoryPage";
 import { ProfilePage } from "@/pages/ProfilePage";
 import { RoomsPage } from "@/pages/RoomsPage";
 import { SettingsPage } from "@/pages/SettingsPage";
+import { memberLoginPath } from "@/shared/auth/memberAccess";
+import { useSessionStore } from "@/shared/state/sessionStore";
+
+function MemberOnly({ children }: { children: ReactNode }) {
+  const session = useSessionStore((state) => state.session);
+  const location = useLocation();
+
+  if (session?.kind !== "MEMBER") {
+    return (
+      <Navigate
+        to={memberLoginPath(`${location.pathname}${location.search}${location.hash}`)}
+        replace
+      />
+    );
+  }
+  return children;
+}
 
 export function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/play/:roomId" element={<GamePage />} />
+        <Route path="/play/:roomId" element={<MemberOnly><GamePage /></MemberOnly>} />
         <Route element={<AppShell />}>
           <Route index element={<HomePage />} />
           <Route path="games" element={<GamesPage />} />
           <Route path="rooms" element={<RoomsPage />} />
-          <Route path="rooms/:roomId" element={<LobbyPage />} />
+          <Route path="rooms/:roomId" element={<MemberOnly><LobbyPage /></MemberOnly>} />
           <Route path="friends" element={<FriendsPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="profile" element={<ProfilePage />} />
