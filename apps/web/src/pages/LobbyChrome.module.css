@@ -119,9 +119,121 @@
   color: var(--danger);
 }
 
+.sheetLayer {
+  position: relative;
+  inset: auto;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.sheetLayer .panel,
+.sheet {
+  pointer-events: auto;
+}
+
+.chatPanel {
+  overflow: hidden;
+}
+
+.chatHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.iconClose {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface-secondary);
+}
+
+.transcript {
+  flex: 1;
+  min-height: 120px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 4px;
+}
+
+.chatEmpty,
+.systemLine {
+  margin: 0;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.systemLine {
+  letter-spacing: 0.02em;
+}
+
 .bubble {
   margin: 0;
-  color: var(--text-secondary);
+  max-width: 86%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  border-radius: 14px;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.bubble strong {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.bubbleOther {
+  align-self: flex-start;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border);
+}
+
+.bubbleMine {
+  align-self: flex-end;
+  background: var(--brand-soft);
+  border: 1px solid color-mix(in srgb, var(--brand) 40%, transparent);
+}
+
+.composer {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.composer .save {
+  flex: 0 0 auto;
+  padding: 0 14px;
+}
+
+@media (max-width: 720px) {
+  .sheet {
+    position: relative;
+    top: auto;
+    right: auto;
+    width: 100%;
+    height: auto;
+    max-height: min(42dvh, 340px);
+    border-left: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-4);
+  }
+
+  .sheet .transcript {
+    min-height: 96px;
+    max-height: 180px;
+  }
 }
 
 .timerBlock h3 {

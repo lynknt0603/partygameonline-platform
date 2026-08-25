@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { useLocale, useT } from "@/shared/i18n/useT";
-import { getNobBloodlineArt, getNobCardText } from "../assets/nobArt";
+import { getNobBloodlineArt, getNobBloodlineCardBack, getNobCardText } from "../assets/nobArt";
 import { bloodlineFlavor, bloodlineTitle } from "../model/nobBloodlineCopy";
 import type { NobCardInstance, NobView } from "../model/nobTypes";
 import { NobCard } from "./NobCard";
@@ -49,13 +49,21 @@ export function NobInspectModals({ view, roleOpen, cardsOpen, onClose }: NobInsp
           <div className={styles.role}>
             {known && art && !artBroken ? (
               <img src={art} alt={bloodlineTitle(bloodline, locale)} onError={() => setArtBroken(true)} />
-            ) : null}
+            ) : (
+              <img src={getNobBloodlineCardBack()} alt={t("identityCard")} />
+            )}
             {known && bloodline ? (
               <>
                 <h3>{bloodlineTitle(bloodline, locale)}</h3>
                 <p>
-                  {bloodline.type}
-                  {bloodline.rank != null && bloodline.type !== "HALFBLOOD" ? ` · Rank ${bloodline.rank}` : ""}
+                  {bloodline.type === "HALFBLOOD"
+                    ? (locale === "vi" ? "Con Lai" : "Halfblood")
+                    : bloodline.type === "VAMPIRE"
+                      ? (locale === "vi" ? "Ma Cà Rồng" : "Vampire")
+                      : (locale === "vi" ? "Ma Sói" : "Werewolf")}
+                  {bloodline.rank != null && bloodline.type !== "HALFBLOOD"
+                    ? ` · ${locale === "vi" ? "Bậc" : "Rank"} ${bloodline.rank}`
+                    : ""}
                 </p>
                 <p>{bloodlineFlavor(bloodline.type, locale)}</p>
               </>

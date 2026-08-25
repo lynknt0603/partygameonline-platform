@@ -20,4 +20,5 @@ export {
   type NobView,
 } from "./model/nobTypes";
 export { sendNobAction } from "./model/nobActions";
+export { fetchNobSnapshot } from "./model/nobSnapshot";
 export { NobPlayPage } from "./pages/NobPlayPage";

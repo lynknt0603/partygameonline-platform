@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import { getNobCardArt, getNobCardBack, getNobCardText } from "../assets/nobArt";
 import { useLocale } from "@/shared/i18n/useT";
 import styles from "./NobCard.module.css";
@@ -6,6 +6,8 @@ import styles from "./NobCard.module.css";
 interface NobCardProps {
   cardCode?: string | null;
   face?: "up" | "down";
+  artSrc?: string | null;
+  backSrc?: string | null;
   selected?: boolean;
   playable?: boolean;
   dimmed?: boolean;
@@ -15,9 +17,11 @@ interface NobCardProps {
   onClick?: () => void;
 }
 
-export function NobCard({
+function NobCardComponent({
   cardCode,
   face = "up",
+  artSrc = null,
+  backSrc = null,
   selected = false,
   playable = false,
   dimmed = false,
@@ -28,8 +32,8 @@ export function NobCard({
 }: NobCardProps) {
   const locale = useLocale();
   const [backBroken, setBackBroken] = useState(false);
-  const art = cardCode && face === "up" ? getNobCardArt(cardCode) : null;
-  const back = face === "down" && !backBroken ? getNobCardBack() : null;
+  const art = face === "up" ? (artSrc ?? (cardCode ? getNobCardArt(cardCode) : null)) : null;
+  const back = face === "down" && !backBroken ? (backSrc ?? getNobCardBack()) : null;
   const text = cardCode ? getNobCardText(cardCode, locale) : null;
   const label = text?.name ?? cardCode ?? "Hidden card";
   const tooltip = text?.tooltip ?? "";
@@ -53,7 +57,9 @@ export function NobCard({
       ) : (
         <img className={styles.art} src={art} alt="" draggable={false} />
       )}
-      {face === "up" && tooltip && !compact ? <span className={styles.caption}>{tooltip}</span> : null}
+      {face === "up" && tooltip && !compact ? <span className={styles.caption} aria-hidden="true">{tooltip}</span> : null}
     </button>
   );
 }
+
+export const NobCard = memo(NobCardComponent);

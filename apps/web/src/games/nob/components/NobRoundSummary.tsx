@@ -1,6 +1,7 @@
 import { useLocale, useT } from "@/shared/i18n/useT";
-import { getNobBloodlineArt, getNobCardArt, getNobCardMeta } from "../assets/nobArt";
+import { getNobBloodlineArt, getNobCardArt } from "../assets/nobArt";
 import { bloodlineTitle, roundWinnerLine } from "../model/nobBloodlineCopy";
+import { nobCardName } from "../model/nobCardLabel";
 import type { NobView } from "../model/nobTypes";
 import { NobCountdown } from "./NobCountdown";
 import { NobMoonTokens } from "./NobMoonTokens";
@@ -9,11 +10,16 @@ import styles from "./NobRoundSummary.module.css";
 interface NobRoundSummaryProps {
   view: NobView;
   remainingMs: number | null;
+  deadline?: string | null;
+  serverTime?: string | null;
   reducedMotion?: boolean;
   timedOut?: boolean;
   tokenOptions: string[];
   canPickToken: boolean;
   pickedOption: string | null;
+  pickedOptions?: string[];
+  remainingOptions?: string[];
+  revealedByOption?: Record<string, number>;
   revealedValue: number | null;
   spectatorPick: boolean;
   onPickToken: (option: string) => void;
@@ -24,11 +30,16 @@ interface NobRoundSummaryProps {
 export function NobRoundSummary({
   view,
   remainingMs,
+  deadline = null,
+  serverTime = null,
   reducedMotion = false,
   timedOut = false,
   tokenOptions,
   canPickToken,
   pickedOption,
+  pickedOptions = [],
+  remainingOptions,
+  revealedByOption = {},
   revealedValue,
   spectatorPick,
   onPickToken,
@@ -53,7 +64,12 @@ export function NobRoundSummary({
         </div>
         <div className={styles.timerBox}>
           <span>{t("nextRoundIn")}</span>
-          <NobCountdown remainingMs={remainingMs} reducedMotion={reducedMotion} />
+          <NobCountdown
+            remainingMs={remainingMs}
+            deadline={deadline}
+            serverTime={serverTime}
+            reducedMotion={reducedMotion}
+          />
         </div>
       </header>
 
@@ -75,15 +91,26 @@ export function NobRoundSummary({
               ))}
             </ul>
           )}
-          {canPickToken || pickedOption ? (
+          {canPickToken || pickedOption || tokenOptions.length > 0 ? (
             <div className={styles.tokens}>
-              <p>{timedOut ? t("timeUpWaiting") : t("pickMoonToken")}</p>
+              <p>
+                {pickedOptions.length > 0 && revealedValue != null
+                  ? canPickToken
+                    ? t("moonMarkDrawnMore").replace("{n}", String(revealedValue))
+                    : t("moonMarkDrawn").replace("{n}", String(revealedValue))
+                  : timedOut
+                    ? t("timeUpWaiting")
+                    : canPickToken && remainingOptions && remainingOptions.length < tokenOptions.length
+                      ? t("pickMoonTokenMore")
+                      : t("pickMoonToken")}
+              </p>
               <NobMoonTokens
                 options={tokenOptions}
+                remainingOptions={remainingOptions}
                 disabled={timedOut || !canPickToken}
                 reducedMotion={reducedMotion}
-                revealedValue={revealedValue}
-                pickedOption={pickedOption}
+                revealedByOption={revealedByOption}
+                pickedOptions={pickedOptions.length > 0 ? pickedOptions : pickedOption ? [pickedOption] : []}
                 onPick={onPickToken}
               />
             </div>
@@ -119,12 +146,17 @@ export function NobRoundSummary({
                   <span className={styles.badge} data-dead={player.alive ? "false" : "true"}>
                     {player.alive ? t("survived") : t("eliminated")}
                   </span>
+                  {typeof player.eloDelta === "number" ? (
+                    <span className={styles.eloDelta} data-positive={player.eloDelta >= 0 ? "true" : "false"}>
+                      {t("eloDelta")}: {player.eloDelta >= 0 ? "+" : ""}{player.eloDelta}
+                    </span>
+                  ) : null}
                   {rewarded.has(player.playerId) ? <span className={styles.award}>{t("awarded")}</span> : null}
                   {player.revealedCards?.length ? (
                     <div className={styles.used}>
                       {player.revealedCards.map((card) => {
                         const src = getNobCardArt(card.cardCode);
-                        const label = getNobCardMeta(card.cardCode)?.displayName ?? card.cardCode;
+                        const label = nobCardName(card.cardCode, locale);
                         return src ? (
                           <img key={card.instanceId ?? card.cardCode} src={src} alt={label} title={label} />
                         ) : (

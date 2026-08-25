@@ -1,0 +1,50 @@
+import { api } from "./http";
+
+export type RankingSort = "highestElo" | "wins" | "bloodlineWins";
+export type RankingBloodline = "VAMPIRE" | "WEREWOLF" | "HALFBLOOD" | null;
+
+export interface RankingEntryDto {
+  rank: number;
+  playerId: string;
+  username?: string | null;
+  displayName: string;
+  elo: number;
+  highestElo: number;
+  totalWins: number;
+  totalMatches: number;
+  favoriteBloodline?: string | null;
+  bloodlineWins: number;
+}
+
+export interface RankingDto {
+  gameId: string;
+  sort: RankingSort;
+  bloodline?: RankingBloodline;
+  podium: RankingEntryDto[];
+  entries: RankingEntryDto[];
+  me?: RankingEntryDto | null;
+  page: number;
+  size: number;
+  totalPlayers: number;
+  totalPages: number;
+}
+
+interface RankingQuery {
+  sort: RankingSort;
+  bloodline: RankingBloodline;
+  page?: number;
+  size?: number;
+}
+
+export async function fetchRanking({ sort, bloodline, page = 0, size = 7 }: RankingQuery): Promise<RankingDto> {
+  const params = new URLSearchParams({
+    gameId: "night-of-bloodlines",
+    sort,
+    page: String(page),
+    size: String(size),
+  });
+  if (bloodline) {
+    params.set("bloodline", bloodline);
+  }
+  return api<RankingDto>(`/api/v1/rankings?${params.toString()}`);
+}

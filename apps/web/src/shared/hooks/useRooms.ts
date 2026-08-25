@@ -5,6 +5,7 @@ import { closeRoom, createRoom, fetchRoom, fetchRooms, joinRoom, leaveRoom, setR
 import type { NobTiming } from "@/games/nob/model/nobTiming";
 import { toRoomView } from "@/shared/lobby/roomView";
 import { useSessionStore } from "@/shared/state/sessionStore";
+import { memberLoginPath } from "@/shared/auth/memberAccess";
 
 export function useRooms() {
   return useQuery({
@@ -32,6 +33,10 @@ export function usePlayGame() {
 
   return useMutation({
     mutationFn: async (gameId: string) => {
+      if (useSessionStore.getState().session?.kind !== "MEMBER") {
+        navigate(memberLoginPath());
+        throw new ApiError(401, "MEMBER_LOGIN_REQUIRED", "Login is required to create a room");
+      }
       try {
         return await createRoom({
           gameId,
@@ -54,6 +59,11 @@ export function usePlayGame() {
       void refresh();
       navigate(`/rooms/${room.id}`);
     },
+    onError: (error) => {
+      if (error instanceof ApiError && (error.errorCode === "MEMBER_LOGIN_REQUIRED" || error.errorCode === "UNAUTHENTICATED")) {
+        navigate(memberLoginPath());
+      }
+    },
   });
 }
 
@@ -63,12 +73,23 @@ export function useJoinRoom() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (roomId: string) => joinRoom(roomId.toUpperCase()),
+    mutationFn: (roomId: string) => {
+      if (useSessionStore.getState().session?.kind !== "MEMBER") {
+        navigate(memberLoginPath());
+        throw new ApiError(401, "MEMBER_LOGIN_REQUIRED", "Login is required to join a room");
+      }
+      return joinRoom(roomId.toUpperCase());
+    },
     onSuccess: (room) => {
       void queryClient.invalidateQueries({ queryKey: ["rooms"] });
       void queryClient.setQueryData(["room", room.id], room);
       void refresh();
       navigate(`/rooms/${room.id}`);
+    },
+    onError: (error) => {
+      if (error instanceof ApiError && (error.errorCode === "MEMBER_LOGIN_REQUIRED" || error.errorCode === "UNAUTHENTICATED")) {
+        navigate(memberLoginPath());
+      }
     },
   });
 }

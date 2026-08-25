@@ -59,7 +59,7 @@ export function AppearanceSettings() {
       <p className={styles.hint}>
         {locale === "vi"
           ? "Theme nền tảng. Canvas game có thể giữ palette riêng."
-          : "Platform theme. A game canvas may keep its own palette."}
+          : "Platform theme. A game board may keep its own palette."}
       </p>
 
       <div className={styles.grid} role="radiogroup" aria-label="Platform theme">

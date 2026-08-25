@@ -1,4 +1,11 @@
-import { NOB_BLOODLINE_ART, NOB_CARD_ART, NOB_CARD_BACK, NOB_MOON_MARK_ART, NOB_MOON_MARK_BACK } from "./nobAssetManifest";
+import {
+  NOB_BLOODLINE_ART,
+  NOB_BLOODLINE_CARD_BACK,
+  NOB_CARD_ART,
+  NOB_CARD_BACK,
+  NOB_MOON_MARK_ART,
+  NOB_MOON_MARK_BACK,
+} from "./nobAssetManifest";
 import { describeNobCard, NOB_CARD_META, type NobCardMeta, type NobCardText } from "./nobCardMeta";
 
 function warn(message: string): void {
@@ -54,4 +61,8 @@ export function getNobMoonMarkBack(): string {
 
 export function getNobCardBack(): string {
   return NOB_CARD_BACK;
+}
+
+export function getNobBloodlineCardBack(): string {
+  return NOB_BLOODLINE_CARD_BACK;
 }

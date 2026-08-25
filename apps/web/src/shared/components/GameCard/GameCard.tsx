@@ -3,6 +3,9 @@ import type { GameManifest } from "@/game/core/GameManifest";
 import { NOB_BRANDING, NOB_CATALOGUE_ID } from "@/games/nob";
 import { usePlayGame } from "@/shared/hooks/useRooms";
 import { useLocale, useT } from "@/shared/i18n/useT";
+import { memberLoginPath } from "@/shared/auth/memberAccess";
+import { useSessionStore } from "@/shared/state/sessionStore";
+import { useNavigate } from "react-router-dom";
 import styles from "./GameCard.module.css";
 
 interface GameCardProps {
@@ -11,6 +14,8 @@ interface GameCardProps {
 
 export function GameCard({ game }: GameCardProps) {
   const t = useT();
+  const navigate = useNavigate();
+  const session = useSessionStore((state) => state.session);
   const locale = useLocale();
   const play = usePlayGame();
   const artClass = styles[game.id.replace(/-/g, "")] ?? styles.artDefault;
@@ -42,7 +47,13 @@ export function GameCard({ game }: GameCardProps) {
             type="button"
             className={styles.play}
             disabled={!game.enabled || play.isPending}
-            onClick={() => play.mutate(game.id)}
+            onClick={() => {
+              if (session?.kind !== "MEMBER") {
+                navigate(memberLoginPath());
+                return;
+              }
+              play.mutate(game.id);
+            }}
             aria-label={`${t("play")} ${title}`}
           >
             <Play size={14} fill="currentColor" aria-hidden="true" />

@@ -16,6 +16,7 @@ export interface NobCardInstance {
 export interface NobPlayerPublic {
   playerId: string;
   displayName: string;
+  avatarUrl?: string | null;
   seat: number;
   alive: boolean;
   connected?: boolean;
@@ -25,6 +26,9 @@ export interface NobPlayerPublic {
   publiclyRevealedBloodline: NobBloodline | null;
   revealedCards?: NobCardInstance[];
   hiddenCardCount?: number;
+  elo?: number | null;
+  eloDelta?: number | null;
+  newElo?: number | null;
 }
 
 export interface NobPendingDecision {
@@ -36,6 +40,7 @@ export interface NobPendingDecision {
   sourceCardCode?: string | null;
   allowedTargetIds: string[];
   allowedOptions: string[];
+  optionValues?: Array<number | null>;
   sourceCardInstanceId?: string | null;
   startedAt?: string | null;
   expiresAt?: string | null;
@@ -54,6 +59,8 @@ export interface NobPublicLog {
   text?: string;
   actorPlayerId?: string | null;
   targetPlayerId?: string | null;
+  extraTargetPlayerId?: string | null;
+  cardCode?: string | null;
 }
 
 export interface NobInspectReveal {
@@ -116,6 +123,8 @@ export interface NobView {
   myObservations?: NobObservation[];
   inspectReveal?: NobInspectReveal | null;
   echoCards?: NobCardInstance[];
+  echoCardCount?: number;
+  echoSourceCard?: NobCardInstance | null;
   publicLog?: NobPublicLog[];
   discardCount?: number;
   undealtCount?: number;
@@ -173,6 +182,9 @@ function parsePending(value: unknown): NobPendingDecision | null {
     sourceCardCode: typeof record.sourceCardCode === "string" ? record.sourceCardCode : null,
     allowedTargetIds: asStringList(record.allowedTargetIds),
     allowedOptions: asStringList(record.allowedOptions),
+    optionValues: Array.isArray(record.optionValues)
+      ? record.optionValues.map((item) => (typeof item === "number" ? item : null))
+      : undefined,
     sourceCardInstanceId: typeof record.sourceCardInstanceId === "string" ? record.sourceCardInstanceId : null,
     startedAt: asIso(record.startedAt),
     expiresAt: asIso(record.expiresAt),
@@ -197,18 +209,51 @@ function parseAnnouncement(value: unknown): NobAnnouncement | null {
   };
 }
 
+function parseBloodline(value: unknown): NobBloodline | null {
+  const record = asRecord(value);
+  if (!record || typeof record.type !== "string") {
+    return null;
+  }
+  return {
+    type: record.type,
+    rank: typeof record.rank === "number" ? record.rank : null,
+  };
+}
+
+function parsePlayers(value: unknown): NobPlayerPublic[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  const players: NobPlayerPublic[] = [];
+  for (const item of value) {
+    const record = asRecord(item);
+    if (!record || typeof record.playerId !== "string") {
+      continue;
+    }
+    players.push({
+      ...(record as unknown as NobPlayerPublic),
+      playerId: record.playerId,
+      displayName: typeof record.displayName === "string" ? record.displayName : record.playerId,
+      avatarUrl: typeof record.avatarUrl === "string" ? record.avatarUrl : null,
+      seat: typeof record.seat === "number" ? record.seat : players.length,
+      alive: record.alive !== false,
+      publiclyRevealedBloodline: parseBloodline(record.publiclyRevealedBloodline),
+      elo: typeof record.elo === "number" ? record.elo : null,
+      eloDelta: typeof record.eloDelta === "number" ? record.eloDelta : null,
+      newElo: typeof record.newElo === "number" ? record.newElo : null,
+    });
+  }
+  return players;
+}
+
 function parseInspectReveal(value: unknown): NobInspectReveal | null {
   const record = asRecord(value);
   if (!record || typeof record.targetPlayerId !== "string") {
     return null;
   }
-  const bloodlineRecord = asRecord(record.bloodline);
   return {
     targetPlayerId: record.targetPlayerId,
-    bloodline:
-      bloodlineRecord && typeof bloodlineRecord.type === "string"
-        ? { type: bloodlineRecord.type, rank: typeof bloodlineRecord.rank === "number" ? bloodlineRecord.rank : null }
-        : null,
+    bloodline: parseBloodline(record.bloodline),
     cardCode: typeof record.cardCode === "string" ? record.cardCode : null,
     displayUntil: asIso(record.displayUntil),
   };
@@ -229,6 +274,8 @@ function parsePublicLog(value: unknown): NobPublicLog[] {
       text: typeof record.text === "string" ? record.text : undefined,
       actorPlayerId: typeof record.actorPlayerId === "string" ? record.actorPlayerId : null,
       targetPlayerId: typeof record.targetPlayerId === "string" ? record.targetPlayerId : null,
+      extraTargetPlayerId: typeof record.extraTargetPlayerId === "string" ? record.extraTargetPlayerId : null,
+      cardCode: typeof record.cardCode === "string" ? record.cardCode : null,
     });
   }
   return entries;
@@ -266,7 +313,7 @@ export function parseNobView(value: unknown): NobView | null {
     ...value,
     you: String(value.you ?? ""),
     phase: String(value.phase ?? "UNKNOWN"),
-    players: Array.isArray(value.players) ? value.players : [],
+    players: parsePlayers(value.players),
     myHand: Array.isArray(value.myHand) ? value.myHand : [],
     myDraftHand: Array.isArray(value.myDraftHand) ? value.myDraftHand : [],
     myBloodline: value.myBloodline ?? null,
@@ -275,6 +322,8 @@ export function parseNobView(value: unknown): NobView | null {
     myObservations: Array.isArray(value.myObservations) ? value.myObservations : [],
     inspectReveal: parseInspectReveal(value.inspectReveal),
     echoCards: Array.isArray(value.echoCards) ? value.echoCards : [],
+    echoCardCount: typeof value.echoCardCount === "number" ? value.echoCardCount : undefined,
+    echoSourceCard: parseCard(value.echoSourceCard),
     publicLog: parsePublicLog(value.publicLog),
     submittedPlayerIds: asStringList(value.submittedPlayerIds),
     serverTime: asIso(value.serverTime),

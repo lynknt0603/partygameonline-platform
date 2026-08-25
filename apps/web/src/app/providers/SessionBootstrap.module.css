@@ -1,0 +1,40 @@
+.wrap {
+  min-height: 100dvh;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 12px;
+  padding: 32px 24px;
+  text-align: center;
+  background: var(--bg, #0f1115);
+  color: var(--text-primary, #f4f1ea);
+}
+
+.title {
+  margin: 0;
+  max-width: 28rem;
+  font-size: 1.15rem;
+  font-weight: 650;
+}
+
+.hint {
+  margin: 0;
+  max-width: 28rem;
+  color: var(--text-muted, #b8b2a6);
+  line-height: 1.45;
+}
+
+.retry {
+  margin-top: 8px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  padding: 8px 18px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.retry:hover {
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}

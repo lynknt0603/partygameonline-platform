@@ -3,7 +3,7 @@
   bottom: 0;
   z-index: var(--z-nav);
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   min-height: calc(var(--bottom-nav-height) + var(--sab));
   padding: 6px var(--sal) calc(8px + var(--sab)) var(--sar);
   border-top: 1px solid var(--border-soft);

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-export function useNobClock(serverTime: string | null | undefined) {
+export function useNobClock(serverTime: string | null | undefined, intervalMs = 1000) {
   const offsetRef = useRef(0);
   const [now, setNow] = useState(() => Date.now());
 
@@ -15,9 +15,10 @@ export function useNobClock(serverTime: string | null | undefined) {
   }, [serverTime]);
 
   useEffect(() => {
-    const id = window.setInterval(() => setNow(Date.now()), 250);
+    const tick = Math.max(200, intervalMs);
+    const id = window.setInterval(() => setNow(Date.now()), tick);
     return () => window.clearInterval(id);
-  }, []);
+  }, [intervalMs]);
 
   const estimatedNow = now + offsetRef.current;
 

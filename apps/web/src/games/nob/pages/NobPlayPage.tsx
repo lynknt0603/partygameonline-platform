@@ -1,22 +1,34 @@
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
-import { LogOut, Sparkles, Volume2, VolumeX } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { ArrowRight, LogOut, Sparkles, Swords, Trophy, Volume2, VolumeX } from "lucide-react";
 import { ConfirmDialog } from "@/shared/components/ConfirmDialog/ConfirmDialog";
+import { PlayerAvatar } from "@/shared/components/PlayerAvatar/PlayerAvatar";
 import { useLeaveRoom } from "@/shared/hooks/useRooms";
 import type { MessageKey } from "@/shared/i18n/messages";
 import { useLocale, useT } from "@/shared/i18n/useT";
 import type { RoomView } from "@/shared/lobby/roomView";
-import { NOB_BRANDING } from "../assets/nobAssetManifest";
-import { getNobBloodlineArt, getNobCardMeta, getNobCardText, getNobMoonMarkArt } from "../assets/nobArt";
+import { NOB_BRANDING, NOB_UI } from "../assets/nobAssetManifest";
+import {
+  getNobBloodlineArt,
+  getNobBloodlineCardBack,
+  getNobCardMeta,
+  getNobCardText,
+  getNobMoonMarkArt,
+  getNobMoonMarkBack,
+} from "../assets/nobArt";
 import { NobCard } from "../components/NobCard";
 import { NobCountdown } from "../components/NobCountdown";
 import { NobInspectModals } from "../components/NobInspectModals";
 import { NobRoundSummary } from "../components/NobRoundSummary";
 import { NobSeatCards, NobSeatCardsZoom, type SeatCardBoard } from "../components/NobSeatCards";
-import { nobCardName, replaceNobCardCodes } from "../model/nobCardLabel";
-import { useMoonPickReveal } from "../components/NobMoonTokens";
+import { bloodlineTitle } from "../model/nobBloodlineCopy";
+import { formatNobHistory } from "../model/nobHistory";
+import { nobCardName } from "../model/nobCardLabel";
+import { NobMoonTokens, useMoonPickReveals } from "../components/NobMoonTokens";
 import { animationFromAnnouncement, announceText } from "../model/nobAnnounce";
 import { useNobClock } from "../model/nobClock";
 import { useNobPrefs } from "../model/nobPrefs";
+import { playNobSfx, unlockNobSfx } from "../model/nobSfx";
 import { NOB_DEFAULT_TIMING } from "../model/nobTiming";
 import {
   NOB_DRAFT_PHASES,
@@ -24,7 +36,7 @@ import {
   NOB_REACTION_OPTIONS,
   sendNobAction,
 } from "../model/nobActions";
-import type { NobCardInstance, NobView } from "../model/nobTypes";
+import type { NobCardInstance, NobPlayerPublic, NobView } from "../model/nobTypes";
 import styles from "./NobPlayPage.module.css";
 
 interface NobPlayPageProps {
@@ -38,7 +50,34 @@ function cardRole(card: NobCardInstance): string | null {
   return card.roleType ?? getNobCardMeta(card.cardCode)?.roleType ?? null;
 }
 
-function optionLabel(option: string, t: (key: MessageKey) => string): string {
+function formatNobPhase(phase: string, t: (key: MessageKey) => string): string {
+  switch (phase) {
+    case "DRAFT_HAND_1":
+      return t("phaseDraft1");
+    case "DRAFT_HAND_2":
+      return t("phaseDraft2");
+    case "SHADOW_STALKER":
+      return t("phaseShadowStalker");
+    case "BLOOD_SEER":
+      return t("phaseBloodSeer");
+    case "SHAPESHIFTER":
+      return t("phaseShapeshifter");
+    case "FERAL_KILLER":
+      return t("phaseFeralKiller");
+    case "HUNTER":
+      return t("phaseHunter");
+    case "ROUND_SUMMARY":
+      return t("phaseRoundSummary");
+    case "GAME_OVER":
+      return t("phaseGameOver");
+    case "Connecting":
+      return t("phaseConnecting");
+    default:
+      return phase;
+  }
+}
+
+function optionLabel(option: string, t: (key: MessageKey) => string, pendingType?: string | null): string {
   if (option === "SPARE") {
     return t("spare");
   }
@@ -57,6 +96,21 @@ function optionLabel(option: string, t: (key: MessageKey) => string): string {
   if (option === "KEEP_FOR_LATER") {
     return t("keepForLater");
   }
+  if (option === "INSPECT_BLOODLINE") {
+    return t("inspectBloodline");
+  }
+  if (option === "INSPECT_TOKEN") {
+    return t("inspectToken");
+  }
+  if (option === "SKIP") {
+    return t("skipCard");
+  }
+  if (option === "SWAP") {
+    return pendingType === "MOON_BROKER" ? t("swapMoonToken") : t("swapBloodlines");
+  }
+  if (option === "KEEP") {
+    return pendingType === "MOON_BROKER" ? t("keepMoonToken") : t("keepBloodlines");
+  }
   return option.replace(/_/g, " ");
 }
 
@@ -72,6 +126,7 @@ function canPlayEchoNow(card: NobCardInstance): boolean {
 export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps) {
   const t = useT();
   const locale = useLocale();
+  const navigate = useNavigate();
   const leave = useLeaveRoom();
   const sound = useNobPrefs((state) => state.sound);
   const animations = useNobPrefs((state) => state.animations);
@@ -86,6 +141,13 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
   const [selectedTargetId, setSelectedTargetId] = useState<string | null>(null);
   const [inspectMode, setInspectMode] = useState<"role" | "cards" | null>(null);
   const [pickedToken, setPickedToken] = useState<string | null>(null);
+  const [pickedTokens, setPickedTokens] = useState<string[]>([]);
+  const [tokenSnapshot, setTokenSnapshot] = useState<string[]>([]);
+  const [moonStealReveal, setMoonStealReveal] = useState<{
+    optionId: string;
+    decisionId: string | null;
+    initialRejectCode: string | null;
+  } | null>(null);
   const [seatCards, setSeatCards] = useState<SeatCardBoard | null>(null);
   const [inspectShrunk, setInspectShrunk] = useState(false);
   const [hunterChoicesReady, setHunterChoicesReady] = useState(false);
@@ -109,8 +171,16 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
   const draftHand = view?.myDraftHand ?? [];
   const hand = view?.myHand ?? [];
   const echoCards = view?.echoCards ?? [];
+  const echoSourceCard = view?.echoSourceCard ?? null;
   const echoPending = pending?.type === "ECHO_CHOOSE";
   const pickHiddenPending = pending?.type === "CHOOSE_HIDDEN_CARD";
+  const pickMoonPending = pending?.type === "CHOOSE_MOON_TOKEN";
+  const moonStealPending = Boolean(pickMoonPending && pending?.optionValues !== undefined);
+  const moonBrokerPending = pending?.type === "MOON_BROKER";
+  const moonSwapStep = Boolean(moonBrokerPending && pending?.allowedOptions.includes("KEEP"));
+  const lastMoonPeek = [...(view?.myObservations ?? [])].reverse().find((obs) => obs.kind === "MOON");
+  const lastMoonArt =
+    lastMoonPeek?.moonMarkValue != null ? getNobMoonMarkArt(lastMoonPeek.moonMarkValue) : null;
   const echoKey = echoCards.map((card) => card.instanceId).join(",");
   const selectedEchoCard = echoCards.find((card) => card.instanceId === selectedEchoId) ?? echoCards[0] ?? null;
   const visibleHand = drafting && draftHand.length > 0 ? draftHand : hand;
@@ -125,19 +195,29 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
   const canDraft = drafting && alive && draftHand.length > 0 && !alreadyActed && !timedOut;
   const isSummary = phase === "ROUND_SUMMARY";
   const moonPick = pending?.type === "MOON_MARK_PICK";
-  const tokenOptions = moonPick && pending ? pending.allowedOptions : [];
+  const liveTokenOptions = moonPick && pending ? pending.allowedOptions : [];
+  const tokenOptionKey = liveTokenOptions.join("|");
+  const tokenOptions = tokenSnapshot.length > 0 ? tokenSnapshot : liveTokenOptions;
   const canPickToken = Boolean(isSummary && moonPick && !timedOut && !busy);
   const spectatorPick = Boolean(isSummary && view?.currentDecisionType === "MOON_MARK_PICK" && !moonPick);
-  const revealedToken = useMoonPickReveal(view?.myMoonMarkValues, pickedToken);
-  const frozen = busy || (finished && !isSummary) || timedOut;
+  const revealedByOption = useMoonPickReveals(view?.myMoonMarkValues, pickedTokens);
+  const lastPickedToken = pickedTokens[pickedTokens.length - 1] ?? pickedToken;
+  const revealedToken = lastPickedToken ? (revealedByOption[lastPickedToken] ?? null) : null;
+  const moonStealPickedOptions = moonStealReveal ? [moonStealReveal.optionId] : [];
+  const revealedMoonStealByOption = useMoonPickReveals(view?.myMoonMarkValues, moonStealPickedOptions);
+  const revealedMoonStealValue = moonStealReveal
+    ? (revealedMoonStealByOption[moonStealReveal.optionId] ?? null)
+    : null;
+  const frozen = busy || (finished && !isSummary);
 
-  const seats = useMemo(() => {
+  const seats = useMemo<NobPlayerPublic[]>(() => {
     if (view?.players?.length) {
       return [...view.players].sort((left, right) => left.seat - right.seat);
     }
     return room.players.map((player, index) => ({
       playerId: player.playerId,
       displayName: player.displayName,
+      avatarUrl: player.avatarUrl,
       seat: index,
       alive: true,
       you: false,
@@ -168,16 +248,40 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
     : null;
   const hunterArt = hunterBloodline ? getNobBloodlineArt(hunterBloodline.type, hunterBloodline.rank) : null;
   const revealArt = reveal?.bloodline ? getNobBloodlineArt(reveal.bloodline.type, reveal.bloodline.rank) : null;
+  const publicRevealId =
+    view?.announcement?.type === "BLOODLINE_PUBLICLY_REVEALED" ? (view.announcement.targetPlayerId ?? null) : null;
+  const publicRevealLine = publicRevealId
+    ? (seats.find((seat) => seat.playerId === publicRevealId)?.publiclyRevealedBloodline ??
+        view?.myObservations?.find((obs) => obs.kind === "BLOODLINE" && obs.targetPlayerId === publicRevealId)
+          ?.bloodline ??
+        null)
+    : null;
+  const publicRevealArt = publicRevealLine ? getNobBloodlineArt(publicRevealLine.type, publicRevealLine.rank) : null;
   const unmaskPending = pending?.type === "UNMASK_REVEAL";
+  const swapPending = pending?.type === "SHAPE_SWAP";
+  const swapTargetIds = swapPending ? pending.allowedTargetIds : [];
+  const swapLines = swapTargetIds.map((id) => ({
+    id,
+    bloodline:
+      view?.myObservations?.find((obs) => obs.kind === "BLOODLINE" && obs.targetPlayerId === id)?.bloodline ?? null,
+  }));
+  const inspectDecision =
+    pending?.type === "UNMASK_REVEAL" ||
+    pending?.type === "SHAPE_SWAP" ||
+    pending?.type === "HUNTER_DECISION" ||
+    pending?.type === "CHOOSE_HIDDEN_CARD";
   const showSeerFlash = Boolean(
     !hunterPending &&
+      !swapPending &&
       !canSubmitNight &&
       reveal &&
-      (revealArt || reveal.cardCode),
+      (revealArt || reveal.cardCode) &&
+      (inspectDecision || !pending),
   );
 
   const winners = view?.winnerPlayerIds ?? [];
   const youWon = Boolean(view && winners.includes(view.you));
+  const winnerSeats = seats.filter((seat) => winners.includes(seat.playerId));
   const bloodlineSrc = view?.myBloodline
     ? getNobBloodlineArt(view.myBloodline.type, view.myBloodline.rank)
     : null;
@@ -185,17 +289,52 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
     view?.lastRoundResult?.lastHopeTriggered === true || view?.announcement?.type === "LAST_HOPE_TRIGGERED";
   const resolvingFallback =
     view?.resolving?.[0] ?? (view?.resolvingCardCode ? { cardCode: view.resolvingCardCode, instanceId: "resolving" } : null);
+  const specialRevealCode =
+    view?.announcement?.type === "VEIL_REVERSAL" ||
+    view?.announcement?.type === "GLORIOUS_SACRIFICE" ||
+    view?.announcement?.type === "LAST_HOPE_TRIGGERED"
+      ? (view.announcement.cardCode ?? view.announcement.reactionCardCode ?? null)
+      : null;
   const centerCard: NobCardInstance | null = lastHopeOn
     ? { instanceId: "last-hope", cardCode: "NOB-SP-LAST-HOPE" }
-    : (view?.currentResolvingCard ?? resolvingFallback);
+    : specialRevealCode
+      ? { instanceId: "special-reveal", cardCode: specialRevealCode }
+      : (view?.currentResolvingCard ?? resolvingFallback);
+  const echoPair = (() => {
+    const cards: NobCardInstance[] = [];
+    const push = (card: NobCardInstance | null | undefined) => {
+      if (!card?.cardCode) {
+        return;
+      }
+      const id = card.instanceId ?? card.cardCode;
+      if (cards.some((item) => (item.instanceId ?? item.cardCode) === id)) {
+        return;
+      }
+      cards.push(card);
+    };
+    push(echoSourceCard);
+    if (echoPending || echoSourceCard) {
+      echoCards.forEach(push);
+    }
+    return cards;
+  })();
+  const showEchoPair = echoPair.length > 0;
   const actorId = view?.currentActorPlayerId ?? view?.announcement?.actorPlayerId ?? null;
   const publicTargetId = view?.announcement?.targetPlayerId ?? null;
   const showRevealed = view?.phaseState !== "WAITING_FOR_PHASE_SUBMISSIONS";
   const announceUntil = remainingMs(view?.announcement?.displayUntil);
   const showAnnounce = Boolean(view?.announcement) && (announceUntil == null || announceUntil > 0);
+  const hideSubmitterName = Boolean(nightSubmit && !pending);
   const announceLine = showAnnounce
-    ? announceText(view?.announcement, seats, locale, view?.lastRoundResult)
+    ? announceText(
+        view?.announcement,
+        seats,
+        locale,
+        view?.lastRoundResult,
+        hideSubmitterName ? t("anonymousPlayer") : null,
+      )
     : null;
+  const showPublicBloodline = Boolean(showAnnounce && publicRevealId && (publicRevealArt || publicRevealLine));
   const fx = animationFromAnnouncement(view?.announcement?.type);
   const resolveMs = timing.resolutionCardDisplayMs;
   const announceMs = timing.announcementDisplayMs;
@@ -233,10 +372,43 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
   }, [pending?.type, pending?.decisionId]);
 
   useEffect(() => {
+    if (!tokenOptionKey) {
+      return;
+    }
+    const next = tokenOptionKey.split("|");
+    setTokenSnapshot((current) => (current.length === 0 ? next : current));
+  }, [tokenOptionKey]);
+
+  useEffect(() => {
     if (phase !== "ROUND_SUMMARY" && pending?.type !== "MOON_MARK_PICK") {
       setPickedToken(null);
+      setPickedTokens([]);
+      setTokenSnapshot([]);
     }
   }, [phase, pending?.type, pending?.decisionId]);
+
+  useEffect(() => {
+    if (!moonStealReveal) {
+      return;
+    }
+    const timer = window.setTimeout(
+      () => setMoonStealReveal(null),
+      revealedMoonStealValue == null ? 5000 : reducedMotion ? 1800 : 3200,
+    );
+    return () => window.clearTimeout(timer);
+  }, [moonStealReveal, revealedMoonStealValue, reducedMotion]);
+
+  useEffect(() => {
+    if (
+      !moonStealReveal ||
+      !rejectCode ||
+      rejectCode === moonStealReveal.initialRejectCode ||
+      pending?.decisionId !== moonStealReveal.decisionId
+    ) {
+      return;
+    }
+    setMoonStealReveal(null);
+  }, [moonStealReveal, pending?.decisionId, rejectCode]);
 
   useEffect(() => {
     if (!inspected) {
@@ -251,10 +423,31 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
     return () => window.removeEventListener("keydown", onKey);
   }, [inspected]);
 
+  const inspectCue = hunterPending
+    ? `hunter:${hunterTargetId ?? ""}`
+    : unmaskPending || showSeerFlash
+      ? `seer:${reveal?.targetPlayerId ?? ""}:${reveal?.cardCode ?? ""}`
+      : pickHiddenPending
+        ? `hidden:${pending?.targetPlayerId ?? ""}`
+        : "";
+
+  useEffect(() => {
+    const unlock = () => unlockNobSfx();
+    window.addEventListener("pointerdown", unlock, { once: true });
+    return () => window.removeEventListener("pointerdown", unlock);
+  }, []);
+
+  useEffect(() => {
+    if (!inspectCue) {
+      return;
+    }
+    playNobSfx("inspect");
+  }, [inspectCue]);
+
   useEffect(() => {
     if (hunterPending) {
       setInspectShrunk(false);
-      const timer = window.setTimeout(() => setHunterChoicesReady(true), reducedMotion ? 0 : 700);
+      const timer = window.setTimeout(() => setHunterChoicesReady(true), reducedMotion ? 0 : 280);
       return () => window.clearTimeout(timer);
     }
     setHunterChoicesReady(false);
@@ -412,9 +605,10 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
   };
 
   const youAreActor = Boolean(pending);
+  const actorIsYou = Boolean(actorId && (actorId === view?.you || seats.some((seat) => seat.playerId === actorId && seat.you)));
   const spectatorHint =
-    !youAreActor && actorId
-      ? `${seats.find((seat) => seat.playerId === actorId)?.displayName ?? ""} ${
+    !youAreActor && actorId && !actorIsYou
+      ? `${hideSubmitterName ? t("anonymousPlayer") : (seats.find((seat) => seat.playerId === actorId)?.displayName ?? t("anonymousPlayer"))} ${
           view?.currentDecisionType === "CHOOSE_TARGET" ? t("actorSelecting") : t("actorDeciding")
         }`
       : null;
@@ -424,16 +618,25 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
       ? t("chooseEchoCard")
       : pickHiddenPending
         ? t("chooseHiddenCard")
+      : pickMoonPending
+        ? t("chooseMoonToken")
+      : moonBrokerPending
+        ? t("chooseOption")
       : pending
       ? pending.type === "CHOOSE_TARGET"
-        ? t("chooseTarget")
+        ? view?.currentResolvingCard?.effectCode === "BLOODLINE_EXCHANGE" ||
+          view?.currentResolvingCard?.cardCode === "NOB-SH-01"
+          ? t("chooseTwoTargets")
+          : t("chooseTarget")
         : t("chooseOption")
       : drafting && !alreadyActed
         ? t("chooseOneCard")
         : alreadyActed && (drafting || nightSubmit)
           ? t("waitingOtherPlayers")
           : canSubmitNight
-            ? t("playThisCard")
+            ? matchingNightCards.length >= 2
+              ? t("playBothHint")
+              : t("playThisCard")
             : t("waitingOthers");
   const inspectedText = inspected ? getNobCardText(inspected.cardCode, locale) : null;
   const inspectedPlayable = inspected ? cardEnabled(inspected) : false;
@@ -447,27 +650,16 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
     text?: string;
     actorPlayerId?: string | null;
     targetPlayerId?: string | null;
+    extraTargetPlayerId?: string | null;
+    cardCode?: string | null;
   }) => {
-    const actor = nameOf(entry.actorPlayerId);
-    const target = nameOf(entry.targetPlayerId);
-    const code = entry.text?.match(/NOB-[A-Z0-9-]+/)?.[0];
-    const card = nobCardName(code, locale);
-    if ((entry.type === "NOB_ROLE_REVEALED" || /revealed/i.test(entry.text ?? "")) && (actor || entry.text) && card) {
-      const who = actor || entry.text?.replace(/\s+revealed.*$/i, "").trim() || "";
-      return t("historyRevealed").replace("{actor}", who).replace("{card}", card);
-    }
-    if (entry.type === "NOB_INSPECTED" && actor && target) {
-      return t("historyInspect").replace("{actor}", actor).replace("{target}", target);
-    }
-    if (entry.type === "NOB_PLAYER_ELIMINATED" && target) {
-      return actor
-        ? t("historyKilled").replace("{actor}", actor).replace("{target}", target)
-        : t("historyDied").replace("{target}", target);
-    }
-    if (entry.type === "NOB_PLAYER_SPARED" && actor && target) {
-      return t("historySpared").replace("{actor}", actor).replace("{target}", target);
-    }
-    return replaceNobCardCodes(entry.text ?? entry.type ?? "", locale);
+    const line =
+      seats.find((seat) => seat.playerId === entry.targetPlayerId)?.publiclyRevealedBloodline ??
+      view?.myObservations?.find(
+        (obs) => obs.kind === "BLOODLINE" && obs.targetPlayerId === entry.targetPlayerId && obs.bloodline,
+      )?.bloodline ??
+      null;
+    return formatNobHistory(entry, nameOf, t, locale, bloodlineTitle(line, locale));
   };
 
   const seatCardBoard = (seat: (typeof seats)[number]): SeatCardBoard => {
@@ -482,25 +674,29 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
         cardCode: obs.cardCode as string,
       }));
     const ownUnused = isYou ? (drafting ? draftHand : hand) : [];
-    let hiddenCount = ownUnused.length;
-    if (!isYou) {
-      if (typeof seat.hiddenCardCount === "number") {
-        hiddenCount = seat.hiddenCardCount;
-      } else if (phase === "DRAFT_PICK_1") {
-        hiddenCount = 3;
-      } else if (phase === "DRAFT_PICK_2") {
-        hiddenCount = 2;
-      } else {
-        hiddenCount = Math.max(0, 2 - revealed.length);
-      }
-    }
+    const peekedRoles = isYou ? [] : peeked;
+    const hiddenCount = Math.max(0, 2 - revealed.length - peekedRoles.length);
+    const publicLine = seat.publiclyRevealedBloodline;
+    const peekedLine = view?.myObservations?.find(
+      (obs) => obs.kind === "BLOODLINE" && obs.targetPlayerId === seat.playerId && obs.bloodline,
+    )?.bloodline;
+    const ownLine = isYou ? (view?.myBloodline ?? null) : null;
+    const identityLine = publicLine ?? peekedLine ?? ownLine ?? null;
+    const identityFace: "up" | "down" = identityLine ? "up" : "down";
     return {
       playerId: seat.playerId,
       displayName: seat.displayName,
+      identity: {
+        face: identityFace,
+        artSrc: identityLine ? getNobBloodlineArt(identityLine.type, identityLine.rank) : null,
+        peeked: Boolean(!publicLine && peekedLine && identityLine === peekedLine),
+      },
       revealed,
-      peeked: isYou ? [] : peeked,
+      peeked: peekedRoles,
       hiddenCount,
       ownUnused,
+      moonMarkCount: seat.moonMarkCount ?? 0,
+      moonMarkValues: isYou ? (view?.myMoonMarkValues ?? []) : [],
     };
   };
 
@@ -522,9 +718,10 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
         <p>{t("historyEmpty")}</p>
       ) : (
         <ul>
-          {publicLog.map((entry, index) => (
-            <li key={`${entry.type ?? "log"}-${index}`}>{historyLine(entry)}</li>
-          ))}
+          {publicLog.map((entry, index) => {
+            const line = historyLine(entry);
+            return line ? <li key={`${entry.type ?? "log"}-${index}`}>{line}</li> : null;
+          })}
         </ul>
       )}
     </aside>
@@ -547,11 +744,16 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
         <div>
           <h1>Night of Bloodlines</h1>
           <p>
-            {room.name} · {phase}
+            {room.name} · {formatNobPhase(phase, t)}
             {view?.roundNumber != null ? ` · R${view.roundNumber}` : ""}
           </p>
         </div>
-        <NobCountdown remainingMs={remain} reducedMotion={reducedMotion} />
+        <NobCountdown
+          deadline={deadline}
+          serverTime={view?.serverTime}
+          remainingMs={remain}
+          reducedMotion={reducedMotion}
+        />
         <div className={styles.hudTools}>
           <button
             type="button"
@@ -590,18 +792,24 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
           <NobRoundSummary
             view={view}
             remainingMs={remain}
+            deadline={deadline}
+            serverTime={view?.serverTime}
             reducedMotion={reducedMotion}
             timedOut={timedOut}
             tokenOptions={tokenOptions}
             canPickToken={canPickToken}
             pickedOption={pickedToken}
+            pickedOptions={pickedTokens}
+            remainingOptions={liveTokenOptions}
+            revealedByOption={revealedByOption}
             revealedValue={revealedToken}
             spectatorPick={spectatorPick}
             onPickToken={(option) => {
-              if (!canPickToken) {
+              if (!canPickToken || pickedTokens.includes(option)) {
                 return;
               }
               setPickedToken(option);
+              setPickedTokens((current) => [...current, option]);
               send({ type: "NOB_CHOOSE_OPTION", option, decisionId: pending?.decisionId });
             }}
             onViewRole={() => setInspectMode("role")}
@@ -617,9 +825,12 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
           {bloodlineSrc ? (
             <img src={bloodlineSrc} alt="Your Bloodline" />
           ) : (
-            <p>
-              {view?.myBloodlineKnowledge === "UNKNOWN_AFTER_SWAP" ? t("bloodlineUnknown") : t("hiddenBloodline")}
-            </p>
+            <>
+              <img src={getNobBloodlineCardBack()} alt={t("identityCard")} />
+              <p>
+                {view?.myBloodlineKnowledge === "UNKNOWN_AFTER_SWAP" ? t("bloodlineUnknown") : t("hiddenBloodline")}
+              </p>
+            </>
           )}
           {view?.myMoonMarkValues?.length ? (
             <div className={styles.marks}>
@@ -648,7 +859,7 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
         </aside>
 
         <section className={styles.table}>
-          <div className={styles.seats}>
+          <div className={styles.seats} data-target-mode={pending?.type === "CHOOSE_TARGET" ? "true" : "false"}>
             {tableSeats.map((seat, index) => {
               const targetable = Boolean(
                 youAreActor &&
@@ -656,49 +867,62 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
                   pending.allowedTargetIds.includes(seat.playerId) &&
                   !frozen,
               );
-              const submitted = Boolean(view?.submittedPlayerIds?.includes(seat.playerId));
+              const submitted = Boolean(
+                !hideSubmitterName && view?.submittedPlayerIds?.includes(seat.playerId),
+              );
               const publicLine = seat.publiclyRevealedBloodline;
               const peekedLine = view?.myObservations?.find(
                 (obs) => obs.kind === "BLOODLINE" && obs.targetPlayerId === seat.playerId && obs.bloodline,
               )?.bloodline;
               const line = publicLine ?? peekedLine ?? null;
-              const lineArt = line ? getNobBloodlineArt(line.type, line.rank) : null;
               const board = seatCardBoard(seat);
+              const isYouSeat = Boolean(seat.you || seat.playerId === view?.you);
+              const blocked = Boolean(
+                pending?.type === "CHOOSE_TARGET" && seat.alive !== false && !targetable && !isYouSeat,
+              );
               return (
                 <div
                   key={seat.playerId}
                   className={styles.seat}
                   style={seatStyle(index, tableSeats.length)}
-                  data-you={seat.you || seat.playerId === view?.you ? "true" : "false"}
+                  data-you={isYouSeat ? "true" : "false"}
                   data-dead={seat.alive === false ? "true" : "false"}
+                  data-blocked={blocked ? "true" : "false"}
                   data-target={targetable ? "true" : "false"}
-                  data-actor={actorId === seat.playerId ? "true" : "false"}
+                  data-actor={!hideSubmitterName && actorId === seat.playerId ? "true" : "false"}
                   data-submitted={submitted ? "true" : "false"}
                   data-selected={
-                    selectedTargetId === seat.playerId || publicTargetId === seat.playerId ? "true" : "false"
+                    selectedTargetId === seat.playerId ||
+                    publicTargetId === seat.playerId ||
+                    swapTargetIds.includes(seat.playerId)
+                      ? "true"
+                      : "false"
                   }
-                >
+                  >
                   <button
                     type="button"
                     className={styles.seatHit}
                     disabled={pending?.type === "CHOOSE_TARGET" && !targetable}
-                    onClick={() => onTarget(seat.playerId)}
+                    onClick={() => {
+                      if (!blocked) {
+                        onTarget(seat.playerId);
+                      }
+                    }}
                   >
-                    {lineArt ? (
-                      <img
-                        className={styles.seatArt}
-                        data-peeked={!publicLine && peekedLine ? "true" : "false"}
-                        src={lineArt}
-                        alt=""
-                      />
-                    ) : null}
-                    <strong>{seat.displayName}</strong>
+                    <strong>{seat.displayName}{isYouSeat ? <span className={styles.youBadge}>{t("you")}</span> : null}</strong>
                     <span>
-                      {line ? `${line.type}${line.rank != null ? ` ${line.rank}` : ""} · ` : ""}
-                      {seat.alive === false ? "—" : `M${seat.moonMarkCount ?? 0}`}
-                      {submitted ? ` · ✓` : ""}
-                      {showRevealed && seat.score != null ? ` · ${seat.score}` : ""}
+                      {line ? bloodlineTitle(line, locale) : ""}
+                      {submitted ? `${line ? " · " : ""}✓` : ""}
+                      {showRevealed && seat.score != null ? `${line || submitted ? " · " : ""}${seat.score}` : ""}
                     </span>
+                    {seat.alive !== false && (seat.moonMarkCount ?? 0) > 0 ? (
+                      <span className={styles.tokenCoins} aria-label={`${seat.moonMarkCount} ${t("moonMarkCountLabel")}`}>
+                        {Array.from({ length: Math.min(seat.moonMarkCount ?? 0, 6) }, (_, coin) => (
+                          <img key={`${seat.playerId}-token-${coin}`} src={getNobMoonMarkBack()} alt="" />
+                        ))}
+                        {(seat.moonMarkCount ?? 0) > 6 ? <em>+{(seat.moonMarkCount ?? 0) - 6}</em> : null}
+                      </span>
+                    ) : null}
                   </button>
                   <NobSeatCards
                     board={board}
@@ -716,7 +940,12 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
               );
             })}
           </div>
-          <div className={styles.centerStage}>
+          <div
+            className={styles.centerStage}
+            data-card-choice={
+              pickHiddenPending || echoPending || nightPromptCards.length > 0 ? "true" : "false"
+            }
+          >
             {lastHopeOn ? <p className={styles.lastHope}>{t("lastHopeTitle")}</p> : null}
             {lastHopeOn && view?.lastRoundResult ? (
               <p className={styles.hint}>
@@ -727,41 +956,126 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
                     : "The round is tied / Halfblood."}
               </p>
             ) : null}
-            {echoPending ? (
-              <div className={styles.echoPick} aria-label={t("chooseEchoCard")}>
-                <p className={styles.hint}>{t("chooseEchoCard")}</p>
+            {showEchoPair ? (
+              <div className={styles.echoPick} aria-label={echoPending ? t("chooseEchoCard") : t("playerCards")}>
+                {echoPending ? <p className={styles.hint}>{t("chooseEchoCard")}</p> : null}
                 <div className={styles.echoRow}>
-                  {echoCards.map((card) => (
-                    <NobCard
-                      key={card.instanceId}
-                      cardCode={card.cardCode}
-                      selected={selectedEchoCard?.instanceId === card.instanceId}
-                      playable
-                      revealed
-                      onClick={() => setSelectedEchoId(card.instanceId)}
-                    />
-                  ))}
+                  {echoPair.map((card) => {
+                    const fromPool = echoCards.some((item) => item.instanceId === card.instanceId);
+                    return (
+                      <NobCard
+                        key={card.instanceId ?? card.cardCode}
+                        cardCode={card.cardCode}
+                        selected={echoPending && fromPool && selectedEchoCard?.instanceId === card.instanceId}
+                        playable={echoPending && fromPool}
+                        revealed
+                        onClick={() => {
+                          if (echoPending && fromPool) {
+                            setSelectedEchoId(card.instanceId);
+                            return;
+                          }
+                          inspectCard(card);
+                        }}
+                      />
+                    );
+                  })}
                 </div>
-                {selectedEchoCard && !canPlayEchoNow(selectedEchoCard) ? (
+                {echoPending && selectedEchoCard && !canPlayEchoNow(selectedEchoCard) ? (
                   <p className={styles.hint}>{t("echoCannotPlayNow")}</p>
                 ) : null}
+                {echoPending ? (
+                  <div className={styles.options}>
+                    <button
+                      type="button"
+                      className={styles.pass}
+                      disabled={frozen || !selectedEchoCard || !canPlayEchoNow(selectedEchoCard)}
+                      onClick={() => onOption("PLAY_NOW", selectedEchoCard?.instanceId)}
+                    >
+                      {t("playNow")}
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.pass}
+                      disabled={frozen || !selectedEchoCard}
+                      onClick={() => onOption("KEEP_FOR_LATER", selectedEchoCard?.instanceId)}
+                    >
+                      {t("keepForLater")}
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+            {echoPending ? null : pickMoonPending ? (
+              <div className={styles.echoPick} aria-label={pending?.optionValues?.length ? t("chooseMoonTokenSteal") : t("chooseMoonToken")}>
+                <p className={styles.hint}>
+                  {pending?.optionValues?.length ? t("chooseMoonTokenSteal") : t("chooseMoonToken")}
+                </p>
+                <div className={styles.echoRow}>
+                  {(pending?.allowedOptions ?? []).map((tokenId, index) => {
+                    const value = pending?.optionValues?.[index];
+                    return (
+                      <button
+                        key={tokenId}
+                        type="button"
+                        className={value != null ? styles.moonPickValue : styles.moonPick}
+                        disabled={frozen}
+                        onClick={() => {
+                          if (moonStealPending) {
+                            setMoonStealReveal({
+                              optionId: tokenId,
+                              decisionId: pending?.decisionId ?? null,
+                              initialRejectCode: rejectCode ?? null,
+                            });
+                          }
+                          onOption(tokenId, tokenId);
+                        }}
+                      >
+                        {value != null ? (
+                          <span>{value}</span>
+                        ) : (
+                          <img src={getNobMoonMarkBack()} alt={t("moonTokenBack")} />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : moonStealReveal ? (
+              <div className={styles.echoPick} aria-live="polite">
+                <p className={styles.hint}>
+                  {revealedMoonStealValue != null
+                    ? t("moonMarkStolen").replace("{n}", String(revealedMoonStealValue))
+                    : t("chooseMoonTokenSteal")}
+                </p>
+                <NobMoonTokens
+                  options={[moonStealReveal.optionId]}
+                  pickedOptions={[moonStealReveal.optionId]}
+                  revealedByOption={revealedMoonStealValue == null ? {} : revealedMoonStealByOption}
+                  disabled
+                  reducedMotion={reducedMotion}
+                  onPick={() => undefined}
+                />
+              </div>
+            ) : moonBrokerPending ? (
+              <div className={styles.hunterReveal} aria-label={t("chooseOption")}>
+                {moonSwapStep && lastMoonArt ? (
+                  <img className={styles.peekRole} src={lastMoonArt} alt={t("inspectToken")} />
+                ) : null}
                 <div className={styles.options}>
-                  <button
-                    type="button"
-                    className={styles.pass}
-                    disabled={frozen || !selectedEchoCard || !canPlayEchoNow(selectedEchoCard)}
-                    onClick={() => onOption("PLAY_NOW", selectedEchoCard?.instanceId)}
-                  >
-                    {t("playNow")}
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.pass}
-                    disabled={frozen || !selectedEchoCard}
-                    onClick={() => onOption("KEEP_FOR_LATER", selectedEchoCard?.instanceId)}
-                  >
-                    {t("keepForLater")}
-                  </button>
+                  {(moonSwapStep ? ["SWAP", "KEEP"] : ["INSPECT_BLOODLINE", "INSPECT_TOKEN", "SKIP"]).map((option) => {
+                    const allowed = pending?.allowedOptions.includes(option) ?? false;
+                    return (
+                      <button
+                        key={option}
+                        type="button"
+                        className={styles.pass}
+                        disabled={frozen || !allowed}
+                        onClick={() => onOption(option)}
+                      >
+                        {optionLabel(option, t, pending?.type)}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             ) : pickHiddenPending ? (
@@ -780,8 +1094,50 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
                   ))}
                 </div>
               </div>
+            ) : swapPending ? (
+              <div className={styles.hunterReveal} aria-label={t("chooseOption")}>
+                <div className={styles.echoRow}>
+                  {swapLines.map((entry) => {
+                    const art = entry.bloodline
+                      ? getNobBloodlineArt(entry.bloodline.type, entry.bloodline.rank)
+                      : null;
+                    return (
+                      <div key={entry.id} className={styles.phasePromptCard}>
+                        {art ? (
+                          <img className={styles.peekRole} src={art} alt={nameOf(entry.id)} />
+                        ) : (
+                          <p>{nameOf(entry.id)}</p>
+                        )}
+                        <p className={styles.hint}>
+                          {nameOf(entry.id)}
+                          {entry.bloodline ? ` · ${bloodlineTitle(entry.bloodline, locale)}` : ""}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+                {pending?.allowedOptions.length ? (
+                  <div className={styles.options}>
+                    {pending.allowedOptions.map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        className={styles.pass}
+                        disabled={frozen}
+                        onClick={() => onOption(option)}
+                      >
+                        {optionLabel(option, t, pending?.type)}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
             ) : hunterPending ? (
-              <div className={styles.hunterReveal} aria-label={t("hunterSeeRole")}>
+              <div
+                key={`hunter-${hunterTargetId ?? "none"}`}
+                className={styles.hunterReveal}
+                aria-label={t("hunterSeeRole")}
+              >
                 {hunterArt ? (
                   <img src={hunterArt} alt={t("hunterSeeRole")} />
                 ) : (
@@ -797,14 +1153,30 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
                         disabled={frozen}
                         onClick={() => onOption(option)}
                       >
-                        {optionLabel(option, t)}
+                        {optionLabel(option, t, pending?.type)}
                       </button>
                     ))}
                   </div>
                 ) : null}
               </div>
+            ) : showPublicBloodline ? (
+              <div
+                key={`public-${publicRevealId ?? "none"}`}
+                className={styles.inspectFlash}
+                aria-label={nameOf(publicRevealId)}
+              >
+                {publicRevealArt ? (
+                  <img src={publicRevealArt} alt={bloodlineTitle(publicRevealLine, locale)} />
+                ) : null}
+                <p className={styles.hint}>{nameOf(publicRevealId)}</p>
+                <p className={styles.hint}>{bloodlineTitle(publicRevealLine, locale)}</p>
+              </div>
             ) : unmaskPending || (showSeerFlash && pending) ? (
-              <div className={styles.inspectFlash} aria-label={nameOf(reveal?.targetPlayerId ?? pending?.targetPlayerId)}>
+              <div
+                key={`inspect-${reveal?.targetPlayerId ?? pending?.targetPlayerId ?? "none"}-${reveal?.cardCode ?? ""}`}
+                className={styles.inspectFlash}
+                aria-label={nameOf(reveal?.targetPlayerId ?? pending?.targetPlayerId)}
+              >
                 {revealArt ? <img src={revealArt} alt={nameOf(reveal?.targetPlayerId)} /> : null}
                 {reveal?.cardCode ? <NobCard cardCode={reveal.cardCode} revealed /> : null}
                 {pending?.allowedOptions.length ? (
@@ -817,7 +1189,7 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
                         disabled={frozen || (pending.type === "ECHO_CHOOSE" && !selectedEchoId)}
                         onClick={() => onOption(option)}
                       >
-                        {optionLabel(option, t)}
+                        {optionLabel(option, t, pending?.type)}
                       </button>
                     ))}
                   </div>
@@ -825,92 +1197,49 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
               </div>
             ) : nightPromptCards.length > 0 ? (
               <div className={styles.phasePrompt} aria-label={t("yourPhaseCard")}>
-                {nightPromptCards.map((card) => {
-                  const text = getNobCardText(card.cardCode, locale);
-                  return (
-                    <div key={card.instanceId ?? card.cardCode} className={styles.phasePromptCard}>
-                      <NobCard cardCode={card.cardCode} playable revealed onClick={() => playCard(card)} />
-                      <p>{text?.name ?? nobCardName(card.cardCode, locale)}</p>
-                      <button
-                        type="button"
-                        className={styles.pass}
-                        disabled={frozen}
-                        onClick={() => playCard(card)}
-                      >
-                        {t("playThisCard")}
-                      </button>
-                    </div>
-                  );
-                })}
-                <button
-                  type="button"
-                  className={styles.detailClose}
-                  disabled={frozen}
-                  onClick={() => send({ type: "NOB_PHASE_SUBMIT", option: "PASS" }, true)}
-                >
-                  {t("skipCard")}
-                </button>
-              </div>
-            ) : inspected && inspectedText ? (
-              <article className={styles.detail} aria-label={t("cardDetailTitle")}>
-                <NobCard
-                  cardCode={inspected.cardCode}
-                  selected
-                  revealed
-                  playable={inspectedPlayable}
-                  onClick={() => setInspected(null)}
-                />
-                <div className={styles.detailCopy}>
-                  <h2>{inspectedText.name}</h2>
-                  <p className={styles.detailTip}>{inspectedText.tooltip}</p>
-                  <p>{inspectedText.description}</p>
-                  <div className={styles.detailActions}>
-                    {echoPending && echoCards.some((card) => card.instanceId === inspected.instanceId) ? (
-                      <>
-                        <button
-                          type="button"
-                          className={styles.pass}
-                          disabled={frozen || !canPlayEchoNow(inspected)}
-                          onClick={() => {
-                            onOption("PLAY_NOW", inspected.instanceId);
-                            setInspected(null);
-                          }}
-                        >
-                          {t("playNow")}
-                        </button>
+                <div className={styles.promptCardsRow}>
+                  {nightPromptCards.map((card) => {
+                    const text = getNobCardText(card.cardCode, locale);
+                    return (
+                      <div key={card.instanceId ?? card.cardCode} className={styles.phasePromptCard}>
+                        <NobCard cardCode={card.cardCode} playable revealed onClick={() => playCard(card)} />
+                        <p>{text?.name ?? nobCardName(card.cardCode, locale)}</p>
                         <button
                           type="button"
                           className={styles.pass}
                           disabled={frozen}
-                          onClick={() => {
-                            onOption("KEEP_FOR_LATER", inspected.instanceId);
-                            setInspected(null);
-                          }}
+                          onClick={() => playCard(card)}
                         >
-                          {t("keepForLater")}
+                          {t("playThisCard")}
                         </button>
-                      </>
-                    ) : inspectedPlayable ? (
-                      <button
-                        type="button"
-                        className={styles.pass}
-                        disabled={frozen}
-                        onClick={() => {
-                          playCard(inspected);
-                          setInspected(null);
-                        }}
-                      >
-                        {canDraft ? t("pickThisCard") : t("playThisCard")}
-                      </button>
-                    ) : null}
-                    <button type="button" className={styles.detailClose} onClick={() => setInspected(null)}>
-                      {t("closeCardDetail")}
-                    </button>
-                  </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              </article>
+                <div className={styles.promptActionsRow}>
+                  {nightPromptCards.length >= 2 ? (
+                    <button
+                      type="button"
+                      className={styles.pass}
+                      disabled={frozen}
+                      onClick={() => send({ type: "NOB_PHASE_SUBMIT", option: "PLAY_BOTH" }, true)}
+                    >
+                      {t("playBothCards")}
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    className={styles.skipBtn}
+                    disabled={frozen}
+                    onClick={() => send({ type: "NOB_PHASE_SUBMIT", option: "PASS" }, true)}
+                  >
+                    {t("skipCard")}
+                  </button>
+                </div>
+              </div>
             ) : showSeerFlash ? (
               <div
+                key={`seer-${reveal?.targetPlayerId ?? "none"}-${reveal?.cardCode ?? ""}`}
                 className={styles.inspectFlash}
                 data-shrunk={inspectShrunk ? "true" : "false"}
                 aria-label={nameOf(reveal?.targetPlayerId)}
@@ -918,12 +1247,12 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
                 {revealArt ? <img src={revealArt} alt={nameOf(reveal?.targetPlayerId)} /> : null}
                 {reveal?.cardCode ? <NobCard cardCode={reveal.cardCode} revealed /> : null}
               </div>
-            ) : centerCard ? (
+            ) : centerCard && !showEchoPair ? (
               <div className={`${styles.centerCard} ${fx ? styles[`fx_${fx}`] : ""}`}>
                 <NobCard cardCode={centerCard.cardCode} revealed onClick={() => inspectCard(centerCard)} />
               </div>
             ) : (
-              <p className={styles.phase}>{drafting ? t("chooseOneCard") : phase}</p>
+              <p className={styles.phase}>{drafting ? t("chooseOneCard") : formatNobPhase(phase, t)}</p>
             )}
             <p className={styles.hint}>{spectatorHint || prompt}</p>
             {pending?.allowedOptions.length &&
@@ -931,6 +1260,9 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
             pending.type !== "UNMASK_REVEAL" &&
             pending.type !== "ECHO_CHOOSE" &&
             pending.type !== "CHOOSE_HIDDEN_CARD" &&
+            pending.type !== "SHAPE_SWAP" &&
+            pending.type !== "MOON_BROKER" &&
+            pending.type !== "CHOOSE_MOON_TOKEN" &&
             nightPromptCards.length === 0 ? (
               <div className={styles.options}>
                 {pending.allowedOptions.map((option) => (
@@ -941,7 +1273,7 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
                     disabled={frozen || (pending.type === "ECHO_CHOOSE" && !selectedEchoId)}
                     onClick={() => onOption(option)}
                   >
-                    {optionLabel(option, t)}
+                    {optionLabel(option, t, pending.type)}
                   </button>
                 ))}
               </div>
@@ -951,7 +1283,7 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
         {historyAside}
       </div>
 
-      {echoCards.length > 0 && !echoPending ? (
+      {echoCards.length > 0 && !echoPending && !echoSourceCard ? (
         <section className={styles.hand} aria-label="Echo cards">
           {echoCards.map((card) => (
             <NobCard
@@ -987,6 +1319,74 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
 
       {notice ? <p className={styles.notice}>{notice}</p> : null}
 
+      {inspected && inspectedText ? (
+        <div className={styles.detailLayer}>
+          <button
+            type="button"
+            className={styles.detailBackdrop}
+            aria-label={t("closeCardDetail")}
+            onClick={() => setInspected(null)}
+          />
+          <article className={styles.detail} aria-label={t("cardDetailTitle")}>
+            <NobCard
+              cardCode={inspected.cardCode}
+              selected
+              revealed
+              playable={inspectedPlayable}
+              onClick={() => setInspected(null)}
+            />
+            <div className={styles.detailCopy}>
+              <h2>{inspectedText.name}</h2>
+              <p className={styles.detailTip}>{inspectedText.tooltip}</p>
+              <p>{inspectedText.description}</p>
+              <div className={styles.detailActions}>
+                {echoPending && echoCards.some((card) => card.instanceId === inspected.instanceId) ? (
+                  <>
+                    <button
+                      type="button"
+                      className={styles.pass}
+                      disabled={frozen || !canPlayEchoNow(inspected)}
+                      onClick={() => {
+                        onOption("PLAY_NOW", inspected.instanceId);
+                        setInspected(null);
+                      }}
+                    >
+                      {t("playNow")}
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.pass}
+                      disabled={frozen}
+                      onClick={() => {
+                        onOption("KEEP_FOR_LATER", inspected.instanceId);
+                        setInspected(null);
+                      }}
+                    >
+                      {t("keepForLater")}
+                    </button>
+                  </>
+                ) : inspectedPlayable ? (
+                  <button
+                    type="button"
+                    className={styles.pass}
+                    disabled={frozen}
+                    onClick={() => {
+                      playCard(inspected);
+                      setInspected(null);
+                    }}
+                  >
+                    {canDraft ? t("pickThisCard") : t("playThisCard")}
+                  </button>
+                ) : null}
+                <button type="button" className={styles.detailClose} onClick={() => setInspected(null)}>
+                  {t("closeCardDetail")}
+                </button>
+              </div>
+            </div>
+          </article>
+        </div>
+      ) : null}
+
       <NobInspectModals
         view={view}
         roleOpen={inspectMode === "role"}
@@ -996,22 +1396,62 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
       <NobSeatCardsZoom board={seatCards} onClose={() => setSeatCards(null)} />
 
       {phase === "GAME_OVER" || (finished && !isSummary) ? (
-        <div className={styles.overLayer}>
-          <div className={`${styles.over} theme-panel`}>
-            <h2>{t("gameOver")}</h2>
-            <p>{youWon ? t("youWin") : winners.length > 1 ? t("sharedWin") : t("youLose")}</p>
-            <ul>
-              {seats
-                .filter((seat) => winners.includes(seat.playerId))
-                .map((seat) => (
-                  <li key={seat.playerId}>
-                    {seat.displayName}
-                    {seat.score != null ? ` · ${seat.score}` : ""}
-                  </li>
-                ))}
-            </ul>
-            <button type="button" className={styles.leave} onClick={() => setConfirmLeave(true)}>
-              <LogOut size={16} />
+        <div className={styles.overLayer} data-win={youWon ? "true" : "false"}>
+          <div className={styles.over} data-win={youWon ? "true" : "false"} role="dialog" aria-labelledby="nob-game-over-title">
+            <img
+              className={styles.overCrest}
+              src={youWon ? NOB_UI.overCrestWin : NOB_UI.overCrestLose}
+              alt=""
+            />
+            <h2 id="nob-game-over-title">{t("gameOver")}</h2>
+            <span className={styles.overRule} aria-hidden="true" />
+            <p className={styles.overResult}>{youWon ? t("youWin") : t("youLose")}</p>
+            {you ? (
+              <div className={styles.overPlayer}>
+                <PlayerAvatar
+                  playerId={you.playerId}
+                  displayName={you.displayName}
+                  avatarUrl={you.avatarUrl}
+                  size={56}
+                  decorative
+                />
+                <span>{you.displayName}</span>
+              </div>
+            ) : null}
+            <section className={styles.overWinners} aria-label={t("winnerSection")}>
+              <h3>
+                <Trophy size={18} aria-hidden="true" />
+                {t("winnerSection")}
+              </h3>
+              {winnerSeats.map((seat) => (
+                <div key={seat.playerId} className={styles.overWinner}>
+                  <PlayerAvatar
+                    playerId={seat.playerId}
+                    displayName={seat.displayName}
+                    avatarUrl={seat.avatarUrl}
+                    size={44}
+                    className={styles.overAvatar}
+                    decorative
+                  />
+                  <span>
+                    {t("winnerLine")
+                      .replace("{name}", seat.displayName)
+                      .replace("{score}", String(seat.score ?? seat.moonMarkCount ?? 0))}
+                    {typeof seat.eloDelta === "number" ? (
+                      <small className={styles.overElo}>
+                        {t("eloDelta")}: {seat.eloDelta >= 0 ? "+" : ""}{seat.eloDelta}
+                      </small>
+                    ) : null}
+                  </span>
+                </div>
+              ))}
+            </section>
+            <button type="button" className={styles.overPlay} onClick={() => navigate(`/rooms/${room.id}`)}>
+              <Swords size={18} aria-hidden="true" />
+              {t("playAgain")}
+            </button>
+            <button type="button" className={styles.overLeave} onClick={() => setConfirmLeave(true)}>
+              <ArrowRight size={18} aria-hidden="true" />
               {t("leaveRoom")}
             </button>
           </div>
@@ -1025,9 +1465,12 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
         confirmLabel={t("leaveConfirmYes")}
         cancelLabel={t("leaveConfirmNo")}
         pending={leave.isPending}
-        error={leave.error?.message ?? null}
+        error={leave.error}
         onConfirm={() => leave.mutate(room.id)}
-        onCancel={() => setConfirmLeave(false)}
+        onCancel={() => {
+          leave.reset();
+          setConfirmLeave(false);
+        }}
       />
     </div>
   );

@@ -79,24 +79,113 @@
 .actions {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-3);
   margin-left: auto;
+}
+
+.userProfile {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 4px 8px 4px 4px;
+  border-radius: var(--radius-full);
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-soft);
 }
 
 .avatar {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: var(--touch-min);
-  height: var(--touch-min);
+  width: 36px;
+  height: 36px;
   border-radius: var(--radius-full);
-  border: 1px solid var(--border);
+  border: 1.5px solid var(--brand);
   background: var(--brand-soft);
   color: var(--brand);
   font-size: 12px;
   font-weight: 800;
+  flex-shrink: 0;
+  text-decoration: none;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+  overflow: hidden;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.avatar:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 10px var(--brand-soft);
 }
 
 .avatarActive {
-  border-color: var(--brand);
+  border-color: var(--brand-hover);
+}
+
+.userDetails {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.15;
+  min-width: 0;
+  max-width: 120px;
+}
+
+.userName {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.userName:hover {
+  color: var(--brand);
+}
+
+.logoutBtn {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 150ms ease;
+}
+
+.logoutBtn:hover {
+  color: var(--danger);
+}
+
+.loginBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 16px;
+  border-radius: var(--radius-sm);
+  background: var(--brand);
+  color: var(--on-brand);
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background-color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+  white-space: nowrap;
+}
+
+.loginBtn:hover {
+  background: var(--brand-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--brand-soft);
 }

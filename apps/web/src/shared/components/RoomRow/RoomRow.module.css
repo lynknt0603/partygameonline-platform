@@ -56,6 +56,34 @@
   gap: var(--space-3);
 }
 
+.participants {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  padding-left: 8px;
+}
+
+.participants > * {
+  margin-left: -7px;
+  box-shadow: 0 0 0 2px var(--surface);
+}
+
+.participants > *:first-child {
+  margin-left: 0;
+}
+
+.morePlayers {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--surface-secondary);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 800;
+}
+
 .join,
 .spectate {
   display: inline-flex;
