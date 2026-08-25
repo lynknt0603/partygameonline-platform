@@ -1,15 +1,15 @@
 .pageContainer {
   width: 100%;
-  max-width: 1400px;
+  max-width: 1480px;
   margin: 0 auto;
-  padding: var(--space-2) 0 var(--space-6);
+  padding: var(--space-1) 0 var(--space-6);
 }
 
 /* Full Width Ornate Gothic Board */
 .board {
   display: grid;
-  grid-template-columns: 240px minmax(0, 1fr);
-  min-height: 780px;
+  grid-template-columns: 250px minmax(0, 1fr);
+  min-height: 800px;
   width: 100%;
   border-radius: var(--radius-md);
   border: 2px solid #3d281a;
@@ -44,7 +44,7 @@
 .brandLockup strong {
   color: #d4af37;
   font-family: var(--font-display, serif);
-  font-size: 1.85rem;
+  font-size: 1.95rem;
   letter-spacing: 0.12em;
   font-weight: 700;
   text-shadow: 0 0 16px rgba(212, 175, 55, 0.25);
@@ -178,12 +178,40 @@
 .headerTitle {
   margin: 0;
   font-family: var(--font-display, serif);
-  font-size: 1.45rem;
+  font-size: 1.55rem;
   font-weight: 700;
   letter-spacing: 0.12em;
   color: #d4af37;
   text-transform: uppercase;
   text-shadow: 0 0 12px rgba(212, 175, 55, 0.2);
+}
+
+/* Empty Notice */
+.emptyNotice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 380px;
+  padding: var(--space-8);
+  border: 1px dashed rgba(212, 175, 55, 0.25);
+  border-radius: var(--radius-md);
+  background: rgba(14, 10, 12, 0.4);
+  text-align: center;
+}
+
+.emptyNotice p {
+  margin: 0;
+  font-family: var(--font-display, serif);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #e5dfd8;
+}
+
+.emptyNotice span {
+  font-size: 0.85rem;
+  color: #9c9187;
 }
 
 /* Top 3 Podium */
@@ -203,14 +231,14 @@
   justify-content: center;
   padding: var(--space-4) var(--space-3);
   border-radius: var(--radius-sm);
-  min-height: 190px;
+  min-height: 195px;
   text-align: center;
   box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.6);
 }
 
 /* Rank 1 (Center) */
 .podium1 {
-  min-height: 215px;
+  min-height: 220px;
   border: 1.5px solid #b88628;
   background:
     radial-gradient(circle at 50% 30%, rgba(139, 28, 28, 0.35) 0%, transparent 70%),
@@ -237,7 +265,7 @@
 }
 
 .podiumPlaceholder {
-  min-height: 190px;
+  min-height: 195px;
   border: 1px dashed #2e1d14;
   border-radius: var(--radius-sm);
 }
@@ -349,7 +377,7 @@
   display: grid;
   grid-template-columns: 80px 2fr 1.2fr 1.2fr 2fr;
   align-items: center;
-  min-height: 40px;
+  min-height: 42px;
   padding: 0 var(--space-4);
   border-bottom: 1px solid #2e1d14;
   color: #9c8e82;
@@ -368,7 +396,7 @@
   display: grid;
   grid-template-columns: 80px 2fr 1.2fr 1.2fr 2fr;
   align-items: center;
-  min-height: 52px;
+  min-height: 54px;
   padding: 4px var(--space-4);
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   transition: background 0.15s ease;
@@ -537,7 +565,7 @@
 /* Responsive */
 @media (max-width: 1024px) {
   .board {
-    grid-template-columns: 200px minmax(0, 1fr);
+    grid-template-columns: 210px minmax(0, 1fr);
   }
   .tableHeader, .tableRow {
     grid-template-columns: 60px 1.8fr 1fr 1fr 1.6fr;

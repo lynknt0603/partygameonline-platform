@@ -130,7 +130,6 @@ function RankingTableRow({ entry }: { entry: RankingEntryDto }) {
 }
 
 export function RankingPage() {
-  const currentPlayerId = useSessionStore((state) => state.session?.playerId);
   const currentDisplayName = useSessionStore((state) => state.session?.displayName) || "You";
 
   const [sort, setSort] = useState<RankingSort>("highestElo");
@@ -144,17 +143,8 @@ export function RankingPage() {
 
   const podium = ranking.data?.podium ?? [];
   const entries = ranking.data?.entries ?? [];
-  const me = ranking.data?.me ?? {
-    rank: 15,
-    playerId: currentPlayerId || "me",
-    displayName: currentDisplayName,
-    elo: 4205,
-    highestElo: 4205,
-    totalWins: 58,
-    totalMatches: 92,
-    favoriteBloodline: "WEREWOLF",
-    bloodlineWins: 21,
-  };
+  const me = ranking.data?.me ?? null;
+  const isEmpty = !ranking.isLoading && podium.length === 0 && entries.length === 0;
 
   const selectSort = (nextSort: RankingSort) => {
     setSort(nextSort);
@@ -224,82 +214,101 @@ export function RankingPage() {
             <h2 className={styles.headerTitle}>BẢNG XẾP HẠNG</h2>
           </header>
 
-          {/* Top 3 Podium Cards (Order: 2, 1, 3) */}
-          <section className={styles.podium} aria-label="Top 3 players">
-            {top2 ? <PodiumCard entry={top2} position={2} /> : <div className={styles.podiumPlaceholder} />}
-            {top1 ? <PodiumCard entry={top1} position={1} /> : <div className={styles.podiumPlaceholder} />}
-            {top3 ? <PodiumCard entry={top3} position={3} /> : <div className={styles.podiumPlaceholder} />}
-          </section>
-
-          {/* Leaderboard Table (Ranks 4-10) */}
-          <section className={styles.tableCard} aria-label="Leaderboard table">
-            <div className={styles.tableHeader}>
-              <span>HẠNG</span>
-              <span>NGƯỜI CHƠI</span>
-              <span>ELO CAO NHẤT</span>
-              <span>SỐ TRẬN THẮNG</span>
-              <span>ROLE NHIỀU ROUND THẮNG</span>
+          {ranking.isLoading ? (
+            <div className={styles.emptyNotice}>
+              <p>Đang tải dữ liệu xếp hạng…</p>
             </div>
-
-            <div className={styles.tableBody}>
-              {entries.map((entry) => (
-                <RankingTableRow key={entry.playerId} entry={entry} />
-              ))}
+          ) : isEmpty ? (
+            <div className={styles.emptyNotice}>
+              <p>Chưa có người chơi hoàn tất trận NOB nào.</p>
+              <span>Hãy vào phòng và chơi ván đầu tiên để bắt đầu ghi danh lên bảng xếp hạng!</span>
             </div>
-          </section>
+          ) : (
+            <>
+              {/* Top 3 Podium Cards (Order: 2, 1, 3) */}
+              {podium.length > 0 ? (
+                <section className={styles.podium} aria-label="Top 3 players">
+                  {top2 ? <PodiumCard entry={top2} position={2} /> : <div className={styles.podiumPlaceholder} />}
+                  {top1 ? <PodiumCard entry={top1} position={1} /> : <div className={styles.podiumPlaceholder} />}
+                  {top3 ? <PodiumCard entry={top3} position={3} /> : <div className={styles.podiumPlaceholder} />}
+                </section>
+              ) : null}
 
-          {/* User's Rank Bottom Bar (HẠNG CỦA BẠN) */}
-          <section className={styles.meCard} aria-label="Your rank">
-            <div className={styles.meRankCol}>
-              <div className={styles.meLabel}>
-                <span>HẠNG</span>
-                <span>CỦA BẠN</span>
-              </div>
-              <span className={styles.meRankNumber}>{me.rank}</span>
-            </div>
+              {/* Leaderboard Table (Ranks 4-10) */}
+              {entries.length > 0 ? (
+                <section className={styles.tableCard} aria-label="Leaderboard table">
+                  <div className={styles.tableHeader}>
+                    <span>HẠNG</span>
+                    <span>NGƯỜI CHƠI</span>
+                    <span>ELO CAO NHẤT</span>
+                    <span>SỐ TRẬN THẮNG</span>
+                    <span>ROLE NHIỀU ROUND THẮNG</span>
+                  </div>
 
-            <div className={styles.meNameCol}>
-              <PlayerAvatar playerId={me.playerId} displayName={me.displayName} size={38} />
-              <span className={styles.meNameText}>You</span>
-            </div>
+                  <div className={styles.tableBody}>
+                    {entries.map((entry) => (
+                      <RankingTableRow key={entry.playerId} entry={entry} />
+                    ))}
+                  </div>
+                </section>
+              ) : null}
 
-            <div className={styles.meEloCol}>{formatNumber(me.highestElo)}</div>
-            <div className={styles.meWinsCol}>{formatNumber(me.totalWins)}</div>
+              {/* User's Rank Bottom Bar (HẠNG CỦA BẠN) */}
+              {me ? (
+                <section className={styles.meCard} aria-label="Your rank">
+                  <div className={styles.meRankCol}>
+                    <div className={styles.meLabel}>
+                      <span>HẠNG</span>
+                      <span>CỦA BẠN</span>
+                    </div>
+                    <span className={styles.meRankNumber}>{me.rank}</span>
+                  </div>
 
-            <div className={styles.meBloodlineCol}>
-              <img
-                src={bloodlineImage(me.favoriteBloodline)}
-                alt=""
-                className={styles.bloodlineThumb}
-                aria-hidden="true"
-              />
-              <span className={styles.bloodlineName}>{bloodlineLabel(me.favoriteBloodline)}</span>
-              <strong className={styles.bloodlineScore}>{me.bloodlineWins}</strong>
-            </div>
-          </section>
+                  <div className={styles.meNameCol}>
+                    <PlayerAvatar playerId={me.playerId} displayName={me.displayName || currentDisplayName} size={38} />
+                    <span className={styles.meNameText}>{me.displayName || "You"}</span>
+                  </div>
 
-          {/* Pagination if multiple pages */}
-          {ranking.data && ranking.data.totalPages > 1 ? (
-            <div className={styles.pagination}>
-              <button
-                type="button"
-                disabled={page === 0}
-                onClick={() => setPage((current) => Math.max(0, current - 1))}
-              >
-                Trước
-              </button>
-              <span>
-                {page + 1} / {ranking.data.totalPages}
-              </span>
-              <button
-                type="button"
-                disabled={page + 1 >= ranking.data.totalPages}
-                onClick={() => setPage((current) => current + 1)}
-              >
-                Sau
-              </button>
-            </div>
-          ) : null}
+                  <div className={styles.meEloCol}>{formatNumber(me.highestElo)}</div>
+                  <div className={styles.meWinsCol}>{formatNumber(me.totalWins)}</div>
+
+                  <div className={styles.meBloodlineCol}>
+                    <img
+                      src={bloodlineImage(me.favoriteBloodline)}
+                      alt=""
+                      className={styles.bloodlineThumb}
+                      aria-hidden="true"
+                    />
+                    <span className={styles.bloodlineName}>{bloodlineLabel(me.favoriteBloodline)}</span>
+                    <strong className={styles.bloodlineScore}>{me.bloodlineWins}</strong>
+                  </div>
+                </section>
+              ) : null}
+
+              {/* Pagination if multiple pages */}
+              {ranking.data && ranking.data.totalPages > 1 ? (
+                <div className={styles.pagination}>
+                  <button
+                    type="button"
+                    disabled={page === 0}
+                    onClick={() => setPage((current) => Math.max(0, current - 1))}
+                  >
+                    Trước
+                  </button>
+                  <span>
+                    {page + 1} / {ranking.data.totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={page + 1 >= ranking.data.totalPages}
+                    onClick={() => setPage((current) => current + 1)}
+                  >
+                    Sau
+                  </button>
+                </div>
+              ) : null}
+            </>
+          )}
         </main>
       </div>
     </div>
