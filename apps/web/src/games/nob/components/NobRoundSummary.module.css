@@ -64,6 +64,12 @@
   background: rgba(14, 8, 12, 0.78);
 }
 
+.playerAvatar {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 4px;
+}
+
 .winner {
   display: flex;
   flex-direction: column;
@@ -161,6 +167,20 @@
 .badge {
   background: rgba(79, 174, 131, 0.2);
   color: #4fae83;
+}
+
+.eloDelta {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.eloDelta[data-positive="true"] {
+  color: #4ade80;
+}
+
+.eloDelta[data-positive="false"] {
+  color: #fb7185;
 }
 
 .badge[data-dead="true"] {

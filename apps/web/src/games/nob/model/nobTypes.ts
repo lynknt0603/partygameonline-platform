@@ -16,6 +16,7 @@ export interface NobCardInstance {
 export interface NobPlayerPublic {
   playerId: string;
   displayName: string;
+  avatarUrl?: string | null;
   seat: number;
   alive: boolean;
   connected?: boolean;
@@ -25,6 +26,9 @@ export interface NobPlayerPublic {
   publiclyRevealedBloodline: NobBloodline | null;
   revealedCards?: NobCardInstance[];
   hiddenCardCount?: number;
+  elo?: number | null;
+  eloDelta?: number | null;
+  newElo?: number | null;
 }
 
 export interface NobPendingDecision {
@@ -230,9 +234,13 @@ function parsePlayers(value: unknown): NobPlayerPublic[] {
       ...(record as unknown as NobPlayerPublic),
       playerId: record.playerId,
       displayName: typeof record.displayName === "string" ? record.displayName : record.playerId,
+      avatarUrl: typeof record.avatarUrl === "string" ? record.avatarUrl : null,
       seat: typeof record.seat === "number" ? record.seat : players.length,
       alive: record.alive !== false,
       publiclyRevealedBloodline: parseBloodline(record.publiclyRevealedBloodline),
+      elo: typeof record.elo === "number" ? record.elo : null,
+      eloDelta: typeof record.eloDelta === "number" ? record.eloDelta : null,
+      newElo: typeof record.newElo === "number" ? record.newElo : null,
     });
   }
   return players;

@@ -25,6 +25,7 @@ export interface SessionDto {
   playerId: string;
   displayName: string;
   kind: string;
+  avatarUrl?: string | null;
   currentRoomId?: string | null;
 }
 
@@ -40,6 +41,7 @@ export interface RoomPlayerDto {
   playerId: string;
   displayName: string;
   state: "CONNECTED" | "READY" | "DISCONNECTED";
+  avatarUrl?: string | null;
 }
 
 export interface RoomDto {
@@ -54,21 +56,6 @@ export interface RoomDto {
   createdAt: string;
   players: RoomPlayerDto[];
   settings?: Record<string, unknown> | null;
-}
-
-export interface DemoView {
-  you: string;
-  currentPlayerId: string;
-  turnNumber: number;
-  yourTurn: boolean;
-  hasDrawn: boolean;
-  hasPlayed: boolean;
-  hand: string[];
-  deckSize: number;
-  opponentHandSize: number;
-  discard: string[];
-  finished: boolean;
-  winnerPlayerId: string | null;
 }
 
 export interface WsEnvelope {

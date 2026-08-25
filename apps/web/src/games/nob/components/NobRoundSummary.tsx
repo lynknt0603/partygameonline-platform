@@ -1,4 +1,5 @@
 import { useLocale, useT } from "@/shared/i18n/useT";
+import { PlayerAvatar } from "@/shared/components/PlayerAvatar/PlayerAvatar";
 import { getNobBloodlineArt, getNobCardArt } from "../assets/nobArt";
 import { bloodlineTitle, roundWinnerLine } from "../model/nobBloodlineCopy";
 import { nobCardName } from "../model/nobCardLabel";
@@ -140,12 +141,24 @@ export function NobRoundSummary({
                   data-rewarded={rewarded.has(player.playerId) ? "true" : "false"}
                   data-you={player.you || player.playerId === view.you ? "true" : "false"}
                 >
+                  <PlayerAvatar
+                    playerId={player.playerId}
+                    displayName={player.displayName}
+                    avatarUrl={player.avatarUrl}
+                    size={64}
+                    className={styles.playerAvatar}
+                  />
                   {art ? <img className={styles.portrait} src={art} alt="" /> : <div className={styles.portrait} />}
                   <strong>{player.displayName}</strong>
                   <span>{bloodlineTitle(line, locale)}</span>
                   <span className={styles.badge} data-dead={player.alive ? "false" : "true"}>
                     {player.alive ? t("survived") : t("eliminated")}
                   </span>
+                  {typeof player.eloDelta === "number" ? (
+                    <span className={styles.eloDelta} data-positive={player.eloDelta >= 0 ? "true" : "false"}>
+                      {t("eloDelta")}: {player.eloDelta >= 0 ? "+" : ""}{player.eloDelta}
+                    </span>
+                  ) : null}
                   {rewarded.has(player.playerId) ? <span className={styles.award}>{t("awarded")}</span> : null}
                   {player.revealedCards?.length ? (
                     <div className={styles.used}>

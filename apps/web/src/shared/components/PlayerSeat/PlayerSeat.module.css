@@ -41,6 +41,16 @@
   border: 2px solid var(--border);
 }
 
+.avatarImage {
+  width: 56px;
+  height: 56px;
+  border-color: var(--border);
+}
+
+.avatarYou {
+  border-color: var(--brand);
+}
+
 .avatar[data-you="true"] {
   border-color: var(--brand);
 }
@@ -52,6 +62,10 @@
 }
 
 .seat[data-state="disconnected"] .avatar {
+  opacity: 0.45;
+}
+
+.seat[data-state="disconnected"] .avatarImage {
   opacity: 0.45;
 }
 

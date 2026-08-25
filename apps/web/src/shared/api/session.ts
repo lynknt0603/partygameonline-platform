@@ -3,10 +3,37 @@ import type { AuthPayload, SessionDto } from "./types";
 
 const NAME_KEY = "pgo.displayName";
 const SESSION_KEY = "pgo.session";
+const AVATAR_KEY_PREFIX = "pgo.avatarUrl.";
+
+function avatarKey(playerId: string): string {
+  return `${AVATAR_KEY_PREFIX}${playerId}`;
+}
+
+export function storedAvatarUrl(playerId: string): string | null {
+  try {
+    const value = localStorage.getItem(avatarKey(playerId))?.trim();
+    return value && value.length > 0 ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+export function storeAvatarUrl(playerId: string, avatarUrl: string): void {
+  try {
+    localStorage.setItem(avatarKey(playerId), avatarUrl);
+  } catch {
+    /* ignore quota */
+  }
+}
 
 export function cacheSession(session: SessionDto): void {
   try {
-    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    const avatarUrl = session.avatarUrl ?? storedAvatarUrl(session.playerId);
+    const nextSession = avatarUrl ? { ...session, avatarUrl } : session;
+    localStorage.setItem(SESSION_KEY, JSON.stringify(nextSession));
+    if (avatarUrl) {
+      storeAvatarUrl(session.playerId, avatarUrl);
+    }
     storeDisplayName(session.displayName);
   } catch {
     /* ignore quota */
@@ -27,6 +54,8 @@ export function cachedSession(): SessionDto | null {
       playerId: parsed.playerId,
       displayName: parsed.displayName,
       kind: typeof parsed.kind === "string" ? parsed.kind : "GUEST",
+      avatarUrl:
+        typeof parsed.avatarUrl === "string" ? parsed.avatarUrl : storedAvatarUrl(parsed.playerId),
       currentRoomId: typeof parsed.currentRoomId === "string" ? parsed.currentRoomId : null,
     };
   } catch {

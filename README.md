@@ -2,12 +2,12 @@
 
 Web frontend for Party Game Online, a real-time multiplayer tabletop and party game platform.
 
-Built with React 19, TypeScript, PixiJS 8, and Vite. Connects to `partygameonline-server` over REST and WebSockets.
+Built with React 19, TypeScript, and Vite. Connects to `partygameonline-server` over REST and WebSockets.
 
 ## Architecture & Tech Stack
 
 - **UI Shell & State:** React 19, TypeScript, Zustand, TanStack Query v5, React Router v7.
-- **Game Table Rendering:** PixiJS 8 canvas renderer with responsive card dock, animations, and touch-first layout.
+- **Game UI:** Night of Bloodlines board, card, Moon Mark, and decision components.
 - **Styling:** CSS Modules, Design Tokens (Daybreak & Midnight themes).
 - **Networking:** WebSocket client for real-time game actions and projected state events; REST client for sessions and rooms.
 
@@ -19,7 +19,7 @@ apps/web/
 └── src/
     ├── app/               # Providers, shell layout, routing
     ├── features/          # Platform features (auth, rooms, chat)
-    ├── game/              # PixiJS canvas bridge and table renderer
+    ├── game/              # Shared game contracts
     ├── games/nob/         # Night of Bloodlines components, models, assets
     ├── pages/             # Route pages (Home, Rooms, Lobby, GamePage)
     └── shared/            # UI components, hooks, i18n, state stores

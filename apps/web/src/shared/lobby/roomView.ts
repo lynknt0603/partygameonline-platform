@@ -6,6 +6,7 @@ export interface LobbySeat {
   id: string;
   name: string;
   initials: string;
+  avatarUrl?: string | null;
   isYou: boolean;
   isHost: boolean;
   state: SeatState;
@@ -51,6 +52,7 @@ export function seatsForRoom(room: RoomView, youId: string | undefined): LobbySe
     id: player.playerId,
     name: player.displayName,
     initials: initials(player.displayName),
+    avatarUrl: player.avatarUrl,
     isYou: player.playerId === youId,
     isHost: player.playerId === room.hostPlayerId,
     state: player.playerId === room.hostPlayerId ? "ready" : toSeatState(player.state),
@@ -61,6 +63,7 @@ export function seatsForRoom(room: RoomView, youId: string | undefined): LobbySe
       id: `empty-${seats.length}`,
       name: "",
       initials: "+",
+      avatarUrl: null,
       isYou: false,
       isHost: false,
       state: "empty",

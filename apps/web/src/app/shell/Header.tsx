@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { ThemeQuickToggle } from "@/shared/components/ThemeQuickToggle/ThemeQuickToggle";
+import { PlayerAvatar } from "@/shared/components/PlayerAvatar/PlayerAvatar";
 import { useT } from "@/shared/i18n/useT";
 import { useSessionStore } from "@/shared/state/sessionStore";
 import styles from "./Header.module.css";
@@ -12,12 +13,6 @@ export function Header() {
   const isMember = session?.kind === "MEMBER";
 
   const name = session?.displayName ?? "Player";
-  const initials = name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
 
   const links = [
     { to: "/games", label: t("navGames") },
@@ -62,7 +57,13 @@ export function Header() {
                 }
                 aria-label={t("navProfile")}
               >
-                {initials}
+                <PlayerAvatar
+                  playerId={session?.playerId}
+                  displayName={name}
+                  avatarUrl={session?.avatarUrl}
+                  size={36}
+                  decorative
+                />
               </NavLink>
               <div className={styles.userDetails}>
                 <NavLink to="/profile" className={styles.userName} title={name}>

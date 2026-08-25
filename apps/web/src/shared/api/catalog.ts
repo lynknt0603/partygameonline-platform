@@ -14,17 +14,6 @@ interface Presentation {
 }
 
 const PRESENTATION: Record<string, Presentation> = {
-  "demo-card-game": {
-    displayName: "Table Demo",
-    displayNameVi: "Bàn bài thử",
-    genre: "Card table",
-    genreVi: "Bàn bài",
-    summary: "Draw, play, and empty your hand.",
-    summaryVi: "Rút bài, đánh bài, hết bài trên tay thì thắng.",
-    durationMin: 5,
-    durationMax: 15,
-    theme: { id: "demo-felt", name: "Felt Table", prefersDarkCanvas: false, hudVariant: "platform" },
-  },
   "night-of-bloodlines": {
     displayName: "Night of Bloodlines",
     displayNameVi: "Đêm huyết thống",
@@ -47,7 +36,7 @@ const FALLBACK: Presentation = {
   summaryVi: "",
   durationMin: 10,
   durationMax: 20,
-  theme: { id: "demo-felt", name: "Felt Table", prefersDarkCanvas: false, hudVariant: "platform" },
+  theme: { id: "platform-default", name: "Platform", prefersDarkCanvas: false, hudVariant: "platform" },
 };
 
 export function toGameManifest(game: GameDto): GameManifest {

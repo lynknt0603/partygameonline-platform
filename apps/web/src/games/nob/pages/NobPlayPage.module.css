@@ -168,6 +168,13 @@
   color: inherit;
 }
 
+.tableAvatar {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 2px;
+  border-color: rgba(226, 196, 122, 0.62);
+}
+
 .tokenCoins {
   display: flex;
   flex-wrap: wrap;
@@ -796,6 +803,23 @@
   text-shadow: 0 0 18px rgba(220, 170, 40, 0.4);
 }
 
+.overPlayer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #f4f0e6;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.overPlayer img,
+.overPlayer span:first-child {
+  width: 56px;
+  height: 56px;
+}
+
 .over[data-win="false"] .overResult {
   color: #d24a52;
   text-shadow: 0 0 18px rgba(180, 30, 40, 0.45);
@@ -860,10 +884,21 @@
   border-radius: 999px;
 }
 
+.overAvatar {
+  object-fit: cover !important;
+}
+
 .overWinner span {
   font-family: var(--font-display);
   font-size: 1.2rem;
   color: #f4f0e6;
+}
+
+.overElo {
+  display: block;
+  color: #4ade80;
+  font-size: 0.75rem;
+  font-weight: 800;
 }
 
 .overPlay,

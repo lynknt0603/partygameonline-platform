@@ -1,0 +1,20 @@
+.avatar {
+  display: block;
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  border: 2px solid rgba(201, 164, 92, 0.62);
+  border-radius: 999px;
+  background: var(--brand-soft, #2b1b24);
+  color: var(--brand, #c9a45c);
+  object-fit: cover;
+  overflow: hidden;
+}
+
+.fallback {
+  display: grid;
+  place-items: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}

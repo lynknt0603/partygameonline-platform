@@ -18,12 +18,13 @@ interface SessionState {
   bootstrap: () => Promise<void>;
   refresh: () => Promise<void>;
   rename: (displayName: string) => Promise<void>;
+  setAvatar: (avatarUrl: string) => void;
   login: (payload: AuthPayload) => Promise<SessionDto>;
   register: (payload: AuthPayload) => Promise<SessionDto>;
   logout: () => Promise<void>;
 }
 
-export const useSessionStore = create<SessionState>((set) => ({
+export const useSessionStore = create<SessionState>((set, get) => ({
   session: cachedSession(),
   ready: false,
   error: null,
@@ -47,6 +48,15 @@ export const useSessionStore = create<SessionState>((set) => ({
   },
   rename: async (displayName: string) => {
     const session = await createGuest(displayName);
+    cacheSession(session);
+    set({ session });
+  },
+  setAvatar: (avatarUrl: string) => {
+    const current = get().session;
+    if (!current) {
+      return;
+    }
+    const session = { ...current, avatarUrl };
     cacheSession(session);
     set({ session });
   },

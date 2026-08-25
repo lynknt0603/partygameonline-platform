@@ -1,6 +1,7 @@
-import { Crown, Plus, Unplug } from "lucide-react";
+import { Crown, Plus } from "lucide-react";
 import type { LobbySeat } from "@/shared/lobby/roomView";
 import { useT } from "@/shared/i18n/useT";
+import { PlayerAvatar } from "@/shared/components/PlayerAvatar/PlayerAvatar";
 import styles from "./PlayerSeat.module.css";
 
 export type SeatPosition = "top" | "left" | "right" | "bottom";
@@ -37,9 +38,19 @@ export function PlayerSeat({ player, position = "bottom", compact = false, onKic
             <Crown size={14} />
           </span>
         ) : null}
-        <div className={styles.avatar} data-empty={empty} data-you={player.isYou}>
-          {empty ? <Plus size={18} /> : player.state === "disconnected" ? <Unplug size={16} /> : player.initials}
-        </div>
+        {empty ? (
+          <div className={styles.avatar} data-empty={empty} data-you={player.isYou}>
+            <Plus size={18} />
+          </div>
+        ) : (
+          <PlayerAvatar
+            playerId={player.id}
+            displayName={player.name}
+            avatarUrl={player.avatarUrl}
+            size={56}
+            className={`${styles.avatarImage} ${player.isYou ? styles.avatarYou : ""}`}
+          />
+        )}
       </div>
       <div className={styles.meta}>
         <p className={styles.name}>{label}</p>

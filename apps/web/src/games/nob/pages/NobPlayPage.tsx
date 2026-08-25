@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "r
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, LogOut, Sparkles, Swords, Trophy, Volume2, VolumeX } from "lucide-react";
 import { ConfirmDialog } from "@/shared/components/ConfirmDialog/ConfirmDialog";
+import { PlayerAvatar } from "@/shared/components/PlayerAvatar/PlayerAvatar";
 import { useLeaveRoom } from "@/shared/hooks/useRooms";
 import type { MessageKey } from "@/shared/i18n/messages";
 import { useLocale, useT } from "@/shared/i18n/useT";
@@ -35,7 +36,7 @@ import {
   NOB_REACTION_OPTIONS,
   sendNobAction,
 } from "../model/nobActions";
-import type { NobCardInstance, NobView } from "../model/nobTypes";
+import type { NobCardInstance, NobPlayerPublic, NobView } from "../model/nobTypes";
 import styles from "./NobPlayPage.module.css";
 
 interface NobPlayPageProps {
@@ -209,13 +210,14 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
     : null;
   const frozen = busy || (finished && !isSummary);
 
-  const seats = useMemo(() => {
+  const seats = useMemo<NobPlayerPublic[]>(() => {
     if (view?.players?.length) {
       return [...view.players].sort((left, right) => left.seat - right.seat);
     }
     return room.players.map((player, index) => ({
       playerId: player.playerId,
       displayName: player.displayName,
+      avatarUrl: player.avatarUrl,
       seat: index,
       alive: true,
       you: false,
@@ -896,7 +898,7 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
                       ? "true"
                       : "false"
                   }
-                >
+                  >
                   <button
                     type="button"
                     className={styles.seatHit}
@@ -907,6 +909,16 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
                       }
                     }}
                   >
+                    {view ? (
+                      <PlayerAvatar
+                        playerId={seat.playerId}
+                        displayName={seat.displayName}
+                        avatarUrl={seat.avatarUrl}
+                        size={48}
+                        className={styles.tableAvatar}
+                        decorative
+                      />
+                    ) : null}
                     <strong>{hideSubmitterName && !seat.you && seat.playerId !== view?.you ? t("anonymousPlayer") : seat.displayName}{isYouSeat ? <span className={styles.youBadge}>{t("you")}</span> : null}</strong>
                     <span>
                       {line ? bloodlineTitle(line, locale) : ""}
@@ -1404,6 +1416,18 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
             <h2 id="nob-game-over-title">{t("gameOver")}</h2>
             <span className={styles.overRule} aria-hidden="true" />
             <p className={styles.overResult}>{youWon ? t("youWin") : t("youLose")}</p>
+            {you ? (
+              <div className={styles.overPlayer}>
+                <PlayerAvatar
+                  playerId={you.playerId}
+                  displayName={you.displayName}
+                  avatarUrl={you.avatarUrl}
+                  size={56}
+                  decorative
+                />
+                <span>{you.displayName}</span>
+              </div>
+            ) : null}
             <section className={styles.overWinners} aria-label={t("winnerSection")}>
               <h3>
                 <Trophy size={18} aria-hidden="true" />
@@ -1411,11 +1435,24 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
               </h3>
               {winnerSeats.map((seat) => (
                 <div key={seat.playerId} className={styles.overWinner}>
+                  <PlayerAvatar
+                    playerId={seat.playerId}
+                    displayName={seat.displayName}
+                    avatarUrl={seat.avatarUrl}
+                    size={44}
+                    className={styles.overAvatar}
+                    decorative
+                  />
                   <img src={youWon ? NOB_UI.winnerMedalWin : NOB_UI.winnerMedal} alt="" />
                   <span>
                     {t("winnerLine")
                       .replace("{name}", seat.displayName)
                       .replace("{score}", String(seat.score ?? seat.moonMarkCount ?? 0))}
+                    {typeof seat.eloDelta === "number" ? (
+                      <small className={styles.overElo}>
+                        {t("eloDelta")}: {seat.eloDelta >= 0 ? "+" : ""}{seat.eloDelta}
+                      </small>
+                    ) : null}
                   </span>
                 </div>
               ))}

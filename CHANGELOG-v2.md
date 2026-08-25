@@ -7,12 +7,12 @@ Compared with the uploaded prompt set, v2:
 3. Moves `GameThemeManifest` out of platform theme types and into the game-core domain.
 4. Makes ThemeQuickToggle behavior deterministic.
 5. Keeps real URL routing; no state-based page routing.
-6. Replaces the PixiJS 8x8 tactical-board demo with a reusable card-table foundation.
+6. Replaces the obsolete canvas prototype with the current game board foundation.
 7. Adds touch-first mobile layout rules, ResizeObserver layout, and capped device-pixel-ratio guidance.
 8. Corrects Daybreak contrast rules: teal/gold on white are not valid normal-text AA combinations.
 9. Changes repository shape to `apps/web` + `apps/server` from the beginning.
 10. Adds frontend feature/domain architecture.
 11. Adds Spring Boot modular-monolith prompts.
-12. Adds REST contracts, TanStack Query, room/lobby, WebSocket, GameEngine, demo multiplayer, reconnect, persistence, testing, and the first real game-module skeleton.
+12. Adds REST contracts, TanStack Query, room/lobby, WebSocket, GameEngine, multiplayer gameplay, reconnect, persistence, testing, and the first real game-module skeleton.
 13. Adds `GEMINI.md` so coding agents preserve boundaries across sessions.
 14. Adds a build/test gate to every implementation phase.

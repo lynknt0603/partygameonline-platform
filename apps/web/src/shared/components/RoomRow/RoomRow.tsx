@@ -1,6 +1,7 @@
 import { Lock, LockOpen, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { StatusBadge } from "@/shared/components/StatusBadge/StatusBadge";
+import { PlayerAvatar } from "@/shared/components/PlayerAvatar/PlayerAvatar";
 import { useGame } from "@/shared/hooks/useGames";
 import { useJoinRoom } from "@/shared/hooks/useRooms";
 import { useLocale, useT } from "@/shared/i18n/useT";
@@ -48,6 +49,19 @@ export function RoomRow({ room }: RoomRowProps) {
             <Users size={12} /> {room.occupied} / {room.capacity}
           </span>
         </p>
+      </div>
+      <div className={styles.participants} aria-label={t("players")}>
+        {room.players.slice(0, 5).map((player) => (
+          <PlayerAvatar
+            key={player.playerId}
+            playerId={player.playerId}
+            displayName={player.displayName}
+            avatarUrl={player.avatarUrl}
+            size={32}
+            decorative
+          />
+        ))}
+        {room.players.length > 5 ? <span className={styles.morePlayers}>+{room.players.length - 5}</span> : null}
       </div>
       <div className={styles.aside}>
         <StatusBadge status={room.status === "in_game" ? "in_game" : "waiting"} />

@@ -5,7 +5,6 @@ This prompt pack intentionally targets stable major lines rather than copying ol
 Baseline:
 - React 19.2
 - Vite 8.x
-- PixiJS 8.x
 - React Router v7.x for this project
 - Zustand current stable compatible with React 19
 - TanStack Query current stable
@@ -29,7 +28,6 @@ For dependencies not explicitly pinned:
 Official references:
 - https://react.dev/versions
 - https://vite.dev/releases
-- https://pixijs.com/8.x/guides/components/application
 - https://reactrouter.com/
 - https://zustand.docs.pmnd.rs/
 - https://tanstack.com/query/latest/docs/framework/react

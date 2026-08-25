@@ -33,8 +33,7 @@
   transform: rotate(-14deg);
 }
 
-.artDefault,
-.democardgame {
+.artDefault {
   background:
     radial-gradient(ellipse 70% 80% at 70% 20%, rgba(201, 164, 92, 0.22), transparent 55%),
     linear-gradient(160deg, var(--felt-mid), var(--felt-deep));

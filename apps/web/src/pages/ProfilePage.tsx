@@ -7,12 +7,15 @@ import {
   Crosshair,
   Edit3,
   Globe,
+  Gauge,
   Info,
   Moon,
   Swords,
   Trophy,
 } from "lucide-react";
 import { PageHeading } from "@/shared/components/PageHeading/PageHeading";
+import { PlayerAvatar } from "@/shared/components/PlayerAvatar/PlayerAvatar";
+import { AVATAR_ASSETS, avatarUrlForPlayer } from "@/shared/avatar/avatar";
 import { fetchPlayerStats } from "@/shared/api/stats";
 import { useT } from "@/shared/i18n/useT";
 import { useSessionStore } from "@/shared/state/sessionStore";
@@ -22,9 +25,12 @@ export function ProfilePage() {
   const t = useT();
   const session = useSessionStore((state) => state.session);
   const rename = useSessionStore((state) => state.rename);
+  const setAvatar = useSessionStore((state) => state.setAvatar);
 
   const [copied, setCopied] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [avatarEditing, setAvatarEditing] = useState(false);
+  const [selectedAvatarUrl, setSelectedAvatarUrl] = useState<string | null>(null);
   const [nameInput, setNameInput] = useState(session?.displayName ?? "BloodMoon");
   const [isSaving, setIsSaving] = useState(false);
 
@@ -38,6 +44,7 @@ export function ProfilePage() {
   const joinedDate = stats?.player.joinedAt || "12/02/2025";
   const platformName = stats?.player.platform || "Web";
   const memberRole = stats?.player.role || t("memberBadge");
+  const currentAvatarUrl = avatarUrlForPlayer(playerId, session?.avatarUrl ?? stats?.player.avatarUrl);
 
   const nob = stats?.nobStats ?? {
     totalMatches: 256,
@@ -46,6 +53,8 @@ export function ProfilePage() {
     vampire: { matchesPlayed: 112, matchesWon: 72, winRate: 64.3 },
     werewolf: { matchesPlayed: 98, matchesWon: 59, winRate: 60.2 },
     halfblood: { matchesPlayed: 46, matchesWon: 33, winRate: 71.7 },
+    elo: 5000,
+    highestElo: 5000,
   };
 
   const copyId = async () => {
@@ -70,19 +79,40 @@ export function ProfilePage() {
     }
   };
 
+  const openAvatarEditor = () => {
+    setSelectedAvatarUrl(currentAvatarUrl);
+    setAvatarEditing(true);
+  };
+
+  const handleSaveAvatar = () => {
+    if (!selectedAvatarUrl) {
+      return;
+    }
+    setAvatar(selectedAvatarUrl);
+    setAvatarEditing(false);
+  };
+
   return (
     <div className={styles.page}>
       <PageHeading title={t("profileTitle")} subtitle={t("profileSub")} />
 
       {/* Top User Info Card */}
       <section className={`${styles.profileCard} theme-card`}>
-        <div className={styles.avatarWrapper}>
-          <img
-            src="/assets/avatar-default.png"
-            alt={displayName}
-            className={styles.avatarImg}
-          />
-          <span className={styles.onlineBadge} title="Online" />
+        <div className={styles.avatarColumn}>
+          <div className={styles.avatarWrapper}>
+            <PlayerAvatar
+              playerId={playerId}
+              displayName={displayName}
+              avatarUrl={currentAvatarUrl}
+              size={102}
+              className={styles.avatarImg}
+            />
+            <span className={styles.onlineBadge} title="Online" />
+          </div>
+          <button type="button" className={styles.changeAvatarBtn} onClick={openAvatarEditor}>
+            <Edit3 size={14} aria-hidden="true" />
+            <span>{t("changeAvatar")}</span>
+          </button>
         </div>
 
         <div className={styles.profileDetails}>
@@ -155,13 +185,54 @@ export function ProfilePage() {
                   className={styles.cancelBtn}
                   onClick={() => setEditing(false)}
                 >
-                  {t("cancelReady")}
+                  {t("cancel")}
                 </button>
                 <button type="submit" className={styles.saveBtn} disabled={isSaving}>
                   {isSaving ? t("saving") : t("save")}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      ) : null}
+
+      {avatarEditing ? (
+        <div className={styles.modalBackdrop} onClick={() => setAvatarEditing(false)}>
+          <div
+            className={`${styles.editModal} ${styles.avatarPickerModal} theme-panel`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3>{t("chooseAvatar")}</h3>
+            <div className={styles.avatarGrid} role="radiogroup" aria-label={t("chooseAvatar")}>
+              {AVATAR_ASSETS.map((avatar) => {
+                const selected = selectedAvatarUrl === avatar.src;
+                return (
+                  <button
+                    key={avatar.id}
+                    type="button"
+                    className={`${styles.avatarOption} ${selected ? styles.avatarOptionSelected : ""}`}
+                    aria-pressed={selected}
+                    onClick={() => setSelectedAvatarUrl(avatar.src)}
+                  >
+                    <PlayerAvatar
+                      displayName={avatar.id}
+                      avatarUrl={avatar.src}
+                      size={72}
+                      decorative
+                    />
+                    <span>{avatar.id.replace(/-/g, " ")}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <div className={styles.editModalActions}>
+              <button type="button" className={styles.cancelBtn} onClick={() => setAvatarEditing(false)}>
+                {t("cancel")}
+              </button>
+              <button type="button" className={styles.saveBtn} onClick={handleSaveAvatar} disabled={!selectedAvatarUrl}>
+                {t("saveAvatar")}
+              </button>
+            </div>
           </div>
         </div>
       ) : null}
@@ -182,6 +253,19 @@ export function ProfilePage() {
             <div className={styles.kpiInfo}>
               <span className={styles.kpiLabel}>{t("totalMatches")}</span>
               <span className={styles.kpiValue}>{nob.totalMatches}</span>
+            </div>
+          </div>
+
+          <div className={`${styles.kpiCard} theme-card`}>
+            <div className={styles.kpiIconWrapper}>
+              <Gauge size={22} className={styles.kpiIconGold} />
+            </div>
+            <div className={styles.kpiInfo}>
+              <span className={styles.kpiLabel}>{t("eloRating")}</span>
+              <span className={styles.kpiValue}>{nob.elo ?? 5000}</span>
+              <small className={styles.kpiHint}>
+                {t("highestElo")}: {nob.highestElo ?? nob.elo ?? 5000}
+              </small>
             </div>
           </div>
 

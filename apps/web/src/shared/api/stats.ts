@@ -22,6 +22,8 @@ export interface PlayerStatsDto {
     vampire: FactionStats;
     werewolf: FactionStats;
     halfblood: FactionStats;
+    elo?: number;
+    highestElo?: number;
   };
 }
 
@@ -53,6 +55,8 @@ export const DEFAULT_PLAYER_STATS: PlayerStatsDto = {
       matchesWon: 33,
       winRate: 71.7,
     },
+    elo: 5000,
+    highestElo: 5000,
   },
 };
 
