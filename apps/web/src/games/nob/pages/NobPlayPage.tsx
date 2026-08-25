@@ -19,12 +19,13 @@ import {
 import { NobCard } from "../components/NobCard";
 import { NobCountdown } from "../components/NobCountdown";
 import { NobInspectModals } from "../components/NobInspectModals";
+import { NobMoonTokens, useMoonPickReveals } from "../components/NobMoonTokens";
 import { NobRoundSummary } from "../components/NobRoundSummary";
 import { NobSeatCards, NobSeatCardsZoom, type SeatCardBoard } from "../components/NobSeatCards";
 import { bloodlineTitle } from "../model/nobBloodlineCopy";
 import { formatNobHistory } from "../model/nobHistory";
 import { nobCardName } from "../model/nobCardLabel";
-import { NobMoonTokens, useMoonPickReveals } from "../components/NobMoonTokens";
+import { formatCurrentElo } from "../model/nobElo";
 import { animationFromAnnouncement, announceText } from "../model/nobAnnounce";
 import { useNobClock } from "../model/nobClock";
 import { useNobPrefs } from "../model/nobPrefs";
@@ -281,7 +282,23 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
 
   const winners = view?.winnerPlayerIds ?? [];
   const youWon = Boolean(view && winners.includes(view.you));
-  const winnerSeats = seats.filter((seat) => winners.includes(seat.playerId));
+  const finalStandings = useMemo(() => {
+    const sorted = [...seats].sort((left, right) => {
+      const scoreDifference = (right.score ?? right.moonMarkCount ?? 0) - (left.score ?? left.moonMarkCount ?? 0);
+      return scoreDifference !== 0 ? scoreDifference : left.seat - right.seat;
+    });
+    let previousScore: number | null = null;
+    let rank = 0;
+    return sorted.map((seat, index) => {
+      const score = seat.score ?? seat.moonMarkCount ?? 0;
+      if (previousScore == null || score !== previousScore) {
+        rank = index + 1;
+        previousScore = score;
+      }
+      return { seat, score, rank };
+    });
+  }, [seats]);
+  const yourEloDisplay = you ? formatCurrentElo(you) : null;
   const bloodlineSrc = view?.myBloodline
     ? getNobBloodlineArt(view.myBloodline.type, view.myBloodline.rank)
     : null;
@@ -1415,36 +1432,67 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
                   size={56}
                   decorative
                 />
-                <span>{you.displayName}</span>
-              </div>
-            ) : null}
-            <section className={styles.overWinners} aria-label={t("winnerSection")}>
-              <h3>
-                <Trophy size={18} aria-hidden="true" />
-                {t("winnerSection")}
-              </h3>
-              {winnerSeats.map((seat) => (
-                <div key={seat.playerId} className={styles.overWinner}>
-                  <PlayerAvatar
-                    playerId={seat.playerId}
-                    displayName={seat.displayName}
-                    avatarUrl={seat.avatarUrl}
-                    size={44}
-                    className={styles.overAvatar}
-                    decorative
-                  />
-                  <span>
-                    {t("winnerLine")
-                      .replace("{name}", seat.displayName)
-                      .replace("{score}", String(seat.score ?? seat.moonMarkCount ?? 0))}
-                    {typeof seat.eloDelta === "number" ? (
-                      <small className={styles.overElo}>
-                        {t("eloDelta")}: {seat.eloDelta >= 0 ? "+" : ""}{seat.eloDelta}
+                <span className={styles.overPlayerDetails}>
+                  <strong>
+                    {you.displayName}
+                    {!youWon && you.score != null ? (
+                      <small className={styles.overMoonScore}>
+                        {t("moonMarkScore").replace("{count}", String(you.score))}
                       </small>
                     ) : null}
-                  </span>
-                </div>
-              ))}
+                  </strong>
+                  {!youWon && yourEloDisplay ? (
+                    <small
+                      className={styles.overElo}
+                      data-positive={you.eloDelta! > 0 ? "true" : you.eloDelta! < 0 ? "false" : "neutral"}
+                    >
+                      {t("eloRating")}: {yourEloDisplay}
+                    </small>
+                  ) : null}
+                </span>
+              </div>
+            ) : null}
+            <section className={styles.overWinners} aria-label={t("finalStandings")}>
+              <h3>
+                <Trophy size={18} aria-hidden="true" />
+                {t("finalStandings")}
+              </h3>
+              {finalStandings.map(({ seat, score, rank }) => {
+                const eloDisplay = formatCurrentElo(seat);
+                return (
+                  <div
+                    key={seat.playerId}
+                    className={styles.overWinner}
+                    data-winner={winners.includes(seat.playerId) ? "true" : "false"}
+                  >
+                    <span className={styles.overRank}>#{rank}</span>
+                    <PlayerAvatar
+                      playerId={seat.playerId}
+                      displayName={seat.displayName}
+                      avatarUrl={seat.avatarUrl}
+                      size={44}
+                      className={styles.overAvatar}
+                      decorative
+                    />
+                    <span className={styles.overPlayerDetails}>
+                      <strong>
+                        {seat.displayName}
+                        <small className={styles.overMoonScore}>
+                          {t("moonMarkScore").replace("{count}", String(score))}
+                        </small>
+                      </strong>
+                      {eloDisplay ? (
+                        <small
+                          className={styles.overElo}
+                          data-positive={seat.eloDelta! > 0 ? "true" : seat.eloDelta! < 0 ? "false" : "neutral"}
+                        >
+                          {t("eloRating")}: {eloDisplay}
+                        </small>
+                      ) : null}
+                    </span>
+                  </div>
+                );
+              })}
             </section>
             <button type="button" className={styles.overPlay} onClick={() => navigate(`/rooms/${room.id}`)}>
               <Swords size={18} aria-hidden="true" />
