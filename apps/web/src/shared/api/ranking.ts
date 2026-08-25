@@ -6,6 +6,7 @@ export type RankingBloodline = "VAMPIRE" | "WEREWOLF" | "HALFBLOOD" | null;
 export interface RankingEntryDto {
   rank: number;
   playerId: string;
+  username?: string | null;
   displayName: string;
   elo: number;
   highestElo: number;

@@ -168,13 +168,6 @@
   color: inherit;
 }
 
-.tableAvatar {
-  width: 48px;
-  height: 48px;
-  margin-bottom: 2px;
-  border-color: rgba(226, 196, 122, 0.62);
-}
-
 .tokenCoins {
   display: flex;
   flex-wrap: wrap;
@@ -885,6 +878,8 @@
 }
 
 .overAvatar {
+  width: 44px !important;
+  height: 44px !important;
   object-fit: cover !important;
 }
 

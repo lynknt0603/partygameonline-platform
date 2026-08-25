@@ -685,7 +685,7 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
     const identityFace: "up" | "down" = identityLine ? "up" : "down";
     return {
       playerId: seat.playerId,
-      displayName: hideSubmitterName && !isYou ? t("anonymousPlayer") : seat.displayName,
+      displayName: seat.displayName,
       identity: {
         face: identityFace,
         artSrc: identityLine ? getNobBloodlineArt(identityLine.type, identityLine.rank) : null,
@@ -909,17 +909,7 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
                       }
                     }}
                   >
-                    {view ? (
-                      <PlayerAvatar
-                        playerId={seat.playerId}
-                        displayName={seat.displayName}
-                        avatarUrl={seat.avatarUrl}
-                        size={48}
-                        className={styles.tableAvatar}
-                        decorative
-                      />
-                    ) : null}
-                    <strong>{hideSubmitterName && !seat.you && seat.playerId !== view?.you ? t("anonymousPlayer") : seat.displayName}{isYouSeat ? <span className={styles.youBadge}>{t("you")}</span> : null}</strong>
+                    <strong>{seat.displayName}{isYouSeat ? <span className={styles.youBadge}>{t("you")}</span> : null}</strong>
                     <span>
                       {line ? bloodlineTitle(line, locale) : ""}
                       {submitted ? `${line ? " · " : ""}✓` : ""}
@@ -1443,14 +1433,13 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
                     className={styles.overAvatar}
                     decorative
                   />
-                  <img src={youWon ? NOB_UI.winnerMedalWin : NOB_UI.winnerMedal} alt="" />
                   <span>
                     {t("winnerLine")
                       .replace("{name}", seat.displayName)
                       .replace("{score}", String(seat.score ?? seat.moonMarkCount ?? 0))}
                     {typeof seat.eloDelta === "number" ? (
                       <small className={styles.overElo}>
-                        {t("eloDelta")}: {seat.eloDelta >= 0 ? "+" : ""}{seat.eloDelta}
+                        {t("eloDelta")}: {seat.eloDelta >= 0 ? "+" : ""}{seat.eloDelta / 10}
                       </small>
                     ) : null}
                   </span>

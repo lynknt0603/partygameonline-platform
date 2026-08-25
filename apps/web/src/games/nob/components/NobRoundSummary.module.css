@@ -64,12 +64,6 @@
   background: rgba(14, 8, 12, 0.78);
 }
 
-.playerAvatar {
-  width: 64px;
-  height: 64px;
-  margin: 0 auto 4px;
-}
-
 .winner {
   display: flex;
   flex-direction: column;

@@ -329,6 +329,15 @@
   letter-spacing: 0.04em;
 }
 
+.podiumNameLink {
+  color: inherit;
+  text-decoration: none;
+}
+
+.podiumNameLink:hover .podiumName {
+  color: #ffd97d;
+}
+
 .podium1 .podiumName {
   font-size: 1.18rem;
   color: #fff;
@@ -422,6 +431,21 @@
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.playerProfileLink,
+.meNameLink {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.playerProfileLink:hover .playerName,
+.meNameLink:hover .meNameText {
+  color: #ffd97d;
 }
 
 .playerName {

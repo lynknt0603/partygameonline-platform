@@ -16,12 +16,13 @@ import {
 import { PageHeading } from "@/shared/components/PageHeading/PageHeading";
 import { PlayerAvatar } from "@/shared/components/PlayerAvatar/PlayerAvatar";
 import { AVATAR_ASSETS, avatarUrlForPlayer } from "@/shared/avatar/avatar";
-import { fetchPlayerStats } from "@/shared/api/stats";
+import { fetchPlayerStats, fetchPublicPlayerStats } from "@/shared/api/stats";
 import { useT } from "@/shared/i18n/useT";
 import { useSessionStore } from "@/shared/state/sessionStore";
+import { Link } from "react-router-dom";
 import styles from "./ProfilePage.module.css";
 
-export function ProfilePage() {
+export function ProfilePage({ profileUsername }: { profileUsername?: string } = {}) {
   const t = useT();
   const session = useSessionStore((state) => state.session);
   const rename = useSessionStore((state) => state.rename);
@@ -33,26 +34,39 @@ export function ProfilePage() {
   const [selectedAvatarUrl, setSelectedAvatarUrl] = useState<string | null>(null);
   const [nameInput, setNameInput] = useState(session?.displayName ?? "BloodMoon");
   const [isSaving, setIsSaving] = useState(false);
+  const isPublicProfile = Boolean(profileUsername);
 
-  const { data: stats } = useQuery({
-    queryKey: ["player-stats", session?.playerId],
-    queryFn: fetchPlayerStats,
+  const { data: stats, isError } = useQuery({
+    queryKey: ["player-stats", profileUsername ?? session?.playerId],
+    queryFn: () => profileUsername ? fetchPublicPlayerStats(profileUsername) : fetchPlayerStats(),
   });
 
-  const displayName = session?.displayName || stats?.player.displayName || "BloodMoon";
-  const playerId = session?.playerId || stats?.player.playerId || "NB-7X9X2M";
+  if (isPublicProfile && isError) {
+    return (
+      <div className={styles.page}>
+        <PageHeading title="Không tìm thấy hồ sơ" subtitle={`@${profileUsername}`} />
+        <section className={`${styles.statsSection} theme-panel`}>
+          <p>Người chơi này không tồn tại hoặc hồ sơ chưa sẵn sàng.</p>
+          <Link to="/ranking">Quay lại bảng xếp hạng</Link>
+        </section>
+      </div>
+    );
+  }
+
+  const displayName = (isPublicProfile ? stats?.player.displayName : session?.displayName || stats?.player.displayName) || profileUsername || "BloodMoon";
+  const playerId = (isPublicProfile ? stats?.player.playerId : session?.playerId || stats?.player.playerId) || "NB-7X9X2M";
   const joinedDate = stats?.player.joinedAt || "12/02/2025";
   const platformName = stats?.player.platform || "Web";
-  const memberRole = stats?.player.role || t("memberBadge");
-  const currentAvatarUrl = avatarUrlForPlayer(playerId, session?.avatarUrl ?? stats?.player.avatarUrl);
+  const memberRole = stats?.player.role || (isPublicProfile ? "Member" : t("memberBadge"));
+  const currentAvatarUrl = avatarUrlForPlayer(playerId, isPublicProfile ? stats?.player.avatarUrl : session?.avatarUrl ?? stats?.player.avatarUrl);
 
   const nob = stats?.nobStats ?? {
-    totalMatches: 256,
-    matchesWon: 164,
-    winRate: 64.1,
-    vampire: { matchesPlayed: 112, matchesWon: 72, winRate: 64.3 },
-    werewolf: { matchesPlayed: 98, matchesWon: 59, winRate: 60.2 },
-    halfblood: { matchesPlayed: 46, matchesWon: 33, winRate: 71.7 },
+    totalMatches: isPublicProfile ? 0 : 256,
+    matchesWon: isPublicProfile ? 0 : 164,
+    winRate: isPublicProfile ? 0 : 64.1,
+    vampire: { matchesPlayed: isPublicProfile ? 0 : 112, matchesWon: isPublicProfile ? 0 : 72, winRate: isPublicProfile ? 0 : 64.3 },
+    werewolf: { matchesPlayed: isPublicProfile ? 0 : 98, matchesWon: isPublicProfile ? 0 : 59, winRate: isPublicProfile ? 0 : 60.2 },
+    halfblood: { matchesPlayed: isPublicProfile ? 0 : 46, matchesWon: isPublicProfile ? 0 : 33, winRate: isPublicProfile ? 0 : 71.7 },
     elo: 5000,
     highestElo: 5000,
   };
@@ -94,7 +108,10 @@ export function ProfilePage() {
 
   return (
     <div className={styles.page}>
-      <PageHeading title={t("profileTitle")} subtitle={t("profileSub")} />
+      <PageHeading
+        title={isPublicProfile ? displayName : t("profileTitle")}
+        subtitle={isPublicProfile ? `@${profileUsername}` : t("profileSub")}
+      />
 
       {/* Top User Info Card */}
       <section className={`${styles.profileCard} theme-card`}>
@@ -109,10 +126,12 @@ export function ProfilePage() {
             />
             <span className={styles.onlineBadge} title="Online" />
           </div>
-          <button type="button" className={styles.changeAvatarBtn} onClick={openAvatarEditor}>
-            <Edit3 size={14} aria-hidden="true" />
-            <span>{t("changeAvatar")}</span>
-          </button>
+          {!isPublicProfile ? (
+            <button type="button" className={styles.changeAvatarBtn} onClick={openAvatarEditor}>
+              <Edit3 size={14} aria-hidden="true" />
+              <span>{t("changeAvatar")}</span>
+            </button>
+          ) : null}
         </div>
 
         <div className={styles.profileDetails}>
@@ -149,17 +168,19 @@ export function ProfilePage() {
             </div>
           </div>
 
-          <button
-            type="button"
-            className={styles.editProfileBtn}
-            onClick={() => {
-              setNameInput(displayName);
-              setEditing(true);
-            }}
-          >
-            <Edit3 size={15} aria-hidden="true" />
-            <span>{t("editProfile")}</span>
-          </button>
+          {!isPublicProfile ? (
+            <button
+              type="button"
+              className={styles.editProfileBtn}
+              onClick={() => {
+                setNameInput(displayName);
+                setEditing(true);
+              }}
+            >
+              <Edit3 size={15} aria-hidden="true" />
+              <span>{t("editProfile")}</span>
+            </button>
+          ) : null}
         </div>
       </section>
 

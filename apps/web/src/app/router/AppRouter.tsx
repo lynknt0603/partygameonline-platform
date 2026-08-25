@@ -9,6 +9,7 @@ import { LobbyPage } from "@/pages/LobbyPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { MatchHistoryPage } from "@/pages/MatchHistoryPage";
 import { ProfilePage } from "@/pages/ProfilePage";
+import { PublicProfilePage } from "@/pages/PublicProfilePage";
 import { RankingPage } from "@/pages/RankingPage";
 import { RoomsPage } from "@/pages/RoomsPage";
 import { SettingsPage } from "@/pages/SettingsPage";
@@ -44,6 +45,7 @@ export function AppRouter() {
           <Route path="ranking" element={<RankingPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="profile" element={<ProfilePage />} />
+          <Route path="profile/:username" element={<PublicProfilePage />} />
           <Route path="profile/history" element={<MatchHistoryPage />} />
           <Route path="login" element={<LoginPage />} />
           <Route path="register" element={<LoginPage defaultTab="register" />} />

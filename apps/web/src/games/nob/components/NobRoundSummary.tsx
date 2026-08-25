@@ -1,5 +1,4 @@
 import { useLocale, useT } from "@/shared/i18n/useT";
-import { PlayerAvatar } from "@/shared/components/PlayerAvatar/PlayerAvatar";
 import { getNobBloodlineArt, getNobCardArt } from "../assets/nobArt";
 import { bloodlineTitle, roundWinnerLine } from "../model/nobBloodlineCopy";
 import { nobCardName } from "../model/nobCardLabel";
@@ -141,13 +140,6 @@ export function NobRoundSummary({
                   data-rewarded={rewarded.has(player.playerId) ? "true" : "false"}
                   data-you={player.you || player.playerId === view.you ? "true" : "false"}
                 >
-                  <PlayerAvatar
-                    playerId={player.playerId}
-                    displayName={player.displayName}
-                    avatarUrl={player.avatarUrl}
-                    size={64}
-                    className={styles.playerAvatar}
-                  />
                   {art ? <img className={styles.portrait} src={art} alt="" /> : <div className={styles.portrait} />}
                   <strong>{player.displayName}</strong>
                   <span>{bloodlineTitle(line, locale)}</span>

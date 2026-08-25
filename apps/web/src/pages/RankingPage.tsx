@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronRight, Crown, Shield, Swords, Trophy } from "lucide-react";
+import { Link } from "react-router-dom";
 import { fetchRanking, type RankingBloodline, type RankingEntryDto, type RankingSort } from "@/shared/api/ranking";
 import { PlayerAvatar } from "@/shared/components/PlayerAvatar/PlayerAvatar";
 import { useSessionStore } from "@/shared/state/sessionStore";
@@ -40,6 +41,10 @@ const SORT_OPTIONS: Array<{ id: RankingSort; label: string; icon: typeof Crown }
 
 function formatNumber(value: number): string {
   return value.toLocaleString("en-US");
+}
+
+function profilePath(entry: RankingEntryDto): string {
+  return `/profile/${encodeURIComponent(entry.username || entry.playerId)}`;
 }
 
 function bloodlineLabel(value?: string | null): string {
@@ -109,7 +114,9 @@ function PodiumCard({
 
       {/* Name & Title */}
       <div className={styles.podiumInfo}>
-        <strong className={styles.podiumName}>{entry.displayName}</strong>
+        <Link className={styles.podiumNameLink} to={profilePath(entry)}>
+          <strong className={styles.podiumName}>{entry.displayName}</strong>
+        </Link>
         <span className={styles.podiumSubtitle}>{subtitle}</span>
       </div>
 
@@ -140,8 +147,10 @@ function RankingTableRow({ entry, sort }: { entry: RankingEntryDto; sort: Rankin
         <span>{entry.rank}</span>
       </div>
       <div className={styles.nameCell}>
-        <PlayerAvatar playerId={entry.playerId} displayName={entry.displayName} size={36} />
-        <span className={styles.playerName}>{entry.displayName}</span>
+        <Link className={styles.playerProfileLink} to={profilePath(entry)}>
+          <PlayerAvatar playerId={entry.playerId} displayName={entry.displayName} size={36} />
+          <span className={styles.playerName}>{entry.displayName}</span>
+        </Link>
       </div>
       <div className={`${styles.numberCell} ${sort === "highestElo" ? styles.activeCell : ""}`}>
         {formatNumber(entry.highestElo)}
@@ -294,8 +303,10 @@ export function RankingPage() {
                   </div>
 
                   <div className={styles.meNameCol}>
-                    <PlayerAvatar playerId={me.playerId} displayName={me.displayName || currentDisplayName} size={38} />
-                    <span className={styles.meNameText}>{me.displayName || "You"}</span>
+                    <Link className={styles.meNameLink} to={profilePath(me)}>
+                      <PlayerAvatar playerId={me.playerId} displayName={me.displayName || currentDisplayName} size={38} />
+                      <span className={styles.meNameText}>{me.displayName || "You"}</span>
+                    </Link>
                   </div>
 
                   <div className={`${styles.meEloCol} ${sort === "highestElo" ? styles.activeMeNumber : ""}`}>
