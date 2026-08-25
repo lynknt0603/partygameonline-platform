@@ -3,6 +3,7 @@ import type { Locale } from "./locale";
 export const messages = {
   vi: {
     navGames: "Trò chơi",
+    navRanking: "Xếp hạng",
     navRooms: "Phòng",
     navFriends: "Bạn bè",
     navSettings: "Cài đặt",
@@ -278,6 +279,7 @@ export const messages = {
   },
   en: {
     navGames: "Games",
+    navRanking: "Ranking",
     navRooms: "Rooms",
     navFriends: "Friends",
     navSettings: "Settings",

@@ -9,6 +9,7 @@ import { LobbyPage } from "@/pages/LobbyPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { MatchHistoryPage } from "@/pages/MatchHistoryPage";
 import { ProfilePage } from "@/pages/ProfilePage";
+import { RankingPage } from "@/pages/RankingPage";
 import { RoomsPage } from "@/pages/RoomsPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { memberLoginPath } from "@/shared/auth/memberAccess";
@@ -40,6 +41,7 @@ export function AppRouter() {
           <Route path="rooms" element={<RoomsPage />} />
           <Route path="rooms/:roomId" element={<MemberOnly><LobbyPage /></MemberOnly>} />
           <Route path="friends" element={<FriendsPage />} />
+          <Route path="ranking" element={<RankingPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="profile/history" element={<MatchHistoryPage />} />

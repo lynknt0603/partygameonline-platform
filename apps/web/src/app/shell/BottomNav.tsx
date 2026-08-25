@@ -1,4 +1,4 @@
-import { DoorOpen, LayoutGrid, Settings, Users } from "lucide-react";
+import { DoorOpen, LayoutGrid, Settings, Trophy, Users } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useT } from "@/shared/i18n/useT";
 import styles from "./BottomNav.module.css";
@@ -7,6 +7,7 @@ export function BottomNav() {
   const t = useT();
   const items = [
     { to: "/games", label: t("navGames"), Icon: LayoutGrid },
+    { to: "/ranking", label: t("navRanking"), Icon: Trophy },
     { to: "/rooms", label: t("navRooms"), Icon: DoorOpen },
     { to: "/friends", label: t("navFriends"), Icon: Users },
     { to: "/settings", label: t("navSettings"), Icon: Settings },
