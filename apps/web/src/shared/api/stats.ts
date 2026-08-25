@@ -68,3 +68,7 @@ export async function fetchPlayerStats(): Promise<PlayerStatsDto> {
   }
 }
 
+export async function fetchPublicPlayerStats(username: string): Promise<PlayerStatsDto> {
+  return api<PlayerStatsDto>(`/api/v1/profile/${encodeURIComponent(username)}`);
+}
+

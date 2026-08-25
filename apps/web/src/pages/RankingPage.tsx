@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronRight, Crown, Shield, Trophy } from "lucide-react";
+import { ChevronRight, Crown, Shield, Swords, Trophy } from "lucide-react";
 import { fetchRanking, type RankingBloodline, type RankingEntryDto, type RankingSort } from "@/shared/api/ranking";
 import { PlayerAvatar } from "@/shared/components/PlayerAvatar/PlayerAvatar";
 import { useSessionStore } from "@/shared/state/sessionStore";
@@ -68,9 +68,30 @@ function bloodlineImage(value?: string | null): string {
   }
 }
 
-function PodiumCard({ entry, position }: { entry: RankingEntryDto; position: 1 | 2 | 3 }) {
+function PodiumCard({
+  entry,
+  position,
+  sort,
+  bloodline,
+}: {
+  entry: RankingEntryDto;
+  position: 1 | 2 | 3;
+  sort: RankingSort;
+  bloodline: RankingBloodline;
+}) {
   const isFirst = position === 1;
   const isSecond = position === 2;
+
+  let subtitle = "ELO CAO NHẤT";
+  let scoreValue = entry.highestElo;
+
+  if (sort === "wins") {
+    subtitle = "SỐ TRẬN THẮNG";
+    scoreValue = entry.totalWins;
+  } else if (sort === "bloodlineWins") {
+    subtitle = bloodline ? `ROUND THẮNG ${bloodline}` : "ROLE NHIỀU ROUND THẮNG";
+    scoreValue = entry.bloodlineWins;
+  }
 
   return (
     <article className={`${styles.podiumCard} ${styles[`podium${position}`]}`}>
@@ -89,25 +110,29 @@ function PodiumCard({ entry, position }: { entry: RankingEntryDto; position: 1 |
       {/* Name & Title */}
       <div className={styles.podiumInfo}>
         <strong className={styles.podiumName}>{entry.displayName}</strong>
-        <span className={styles.podiumSubtitle}>ELO CAO NHẤT</span>
+        <span className={styles.podiumSubtitle}>{subtitle}</span>
       </div>
 
       {/* Score with Icon */}
       <div className={styles.podiumScoreRow}>
-        {isFirst ? (
+        {sort === "wins" ? (
+          <Trophy size={16} className={isFirst ? styles.goldCup : isSecond ? styles.silverIcon : styles.bronzeCup} aria-hidden="true" />
+        ) : sort === "bloodlineWins" ? (
+          <Swords size={16} className={isFirst ? styles.goldCup : isSecond ? styles.silverIcon : styles.bronzeCup} aria-hidden="true" />
+        ) : isFirst ? (
           <Trophy size={16} className={styles.goldCup} aria-hidden="true" />
         ) : isSecond ? (
           <Shield size={16} className={styles.silverIcon} aria-hidden="true" />
         ) : (
           <Trophy size={16} className={styles.bronzeCup} aria-hidden="true" />
         )}
-        <strong className={styles.podiumScore}>{formatNumber(entry.highestElo)}</strong>
+        <strong className={styles.podiumScore}>{formatNumber(scoreValue)}</strong>
       </div>
     </article>
   );
 }
 
-function RankingTableRow({ entry }: { entry: RankingEntryDto }) {
+function RankingTableRow({ entry, sort }: { entry: RankingEntryDto; sort: RankingSort }) {
   const image = bloodlineImage(entry.favoriteBloodline);
   return (
     <div className={styles.tableRow}>
@@ -118,9 +143,13 @@ function RankingTableRow({ entry }: { entry: RankingEntryDto }) {
         <PlayerAvatar playerId={entry.playerId} displayName={entry.displayName} size={36} />
         <span className={styles.playerName}>{entry.displayName}</span>
       </div>
-      <div className={styles.numberCell}>{formatNumber(entry.highestElo)}</div>
-      <div className={styles.numberCell}>{formatNumber(entry.totalWins)}</div>
-      <div className={styles.bloodlineCell}>
+      <div className={`${styles.numberCell} ${sort === "highestElo" ? styles.activeCell : ""}`}>
+        {formatNumber(entry.highestElo)}
+      </div>
+      <div className={`${styles.numberCell} ${sort === "wins" ? styles.activeCell : ""}`}>
+        {formatNumber(entry.totalWins)}
+      </div>
+      <div className={`${styles.bloodlineCell} ${sort === "bloodlineWins" ? styles.activeCell : ""}`}>
         <img src={image} alt="" className={styles.bloodlineThumb} aria-hidden="true" />
         <span className={styles.bloodlineName}>{bloodlineLabel(entry.favoriteBloodline)}</span>
         <strong className={styles.bloodlineScore}>{entry.bloodlineWins}</strong>
@@ -228,9 +257,9 @@ export function RankingPage() {
               {/* Top 3 Podium Cards (Order: 2, 1, 3) */}
               {podium.length > 0 ? (
                 <section className={styles.podium} aria-label="Top 3 players">
-                  {top2 ? <PodiumCard entry={top2} position={2} /> : <div className={styles.podiumPlaceholder} />}
-                  {top1 ? <PodiumCard entry={top1} position={1} /> : <div className={styles.podiumPlaceholder} />}
-                  {top3 ? <PodiumCard entry={top3} position={3} /> : <div className={styles.podiumPlaceholder} />}
+                  {top2 ? <PodiumCard entry={top2} position={2} sort={sort} bloodline={bloodline} /> : <div className={styles.podiumPlaceholder} />}
+                  {top1 ? <PodiumCard entry={top1} position={1} sort={sort} bloodline={bloodline} /> : <div className={styles.podiumPlaceholder} />}
+                  {top3 ? <PodiumCard entry={top3} position={3} sort={sort} bloodline={bloodline} /> : <div className={styles.podiumPlaceholder} />}
                 </section>
               ) : null}
 
@@ -240,14 +269,14 @@ export function RankingPage() {
                   <div className={styles.tableHeader}>
                     <span>HẠNG</span>
                     <span>NGƯỜI CHƠI</span>
-                    <span>ELO CAO NHẤT</span>
-                    <span>SỐ TRẬN THẮNG</span>
-                    <span>ROLE NHIỀU ROUND THẮNG</span>
+                    <span className={sort === "highestElo" ? styles.activeHeader : ""}>ELO CAO NHẤT</span>
+                    <span className={sort === "wins" ? styles.activeHeader : ""}>SỐ TRẬN THẮNG</span>
+                    <span className={sort === "bloodlineWins" ? styles.activeHeader : ""}>ROLE NHIỀU ROUND THẮNG</span>
                   </div>
 
                   <div className={styles.tableBody}>
                     {entries.map((entry) => (
-                      <RankingTableRow key={entry.playerId} entry={entry} />
+                      <RankingTableRow key={entry.playerId} entry={entry} sort={sort} />
                     ))}
                   </div>
                 </section>
@@ -269,10 +298,14 @@ export function RankingPage() {
                     <span className={styles.meNameText}>{me.displayName || "You"}</span>
                   </div>
 
-                  <div className={styles.meEloCol}>{formatNumber(me.highestElo)}</div>
-                  <div className={styles.meWinsCol}>{formatNumber(me.totalWins)}</div>
+                  <div className={`${styles.meEloCol} ${sort === "highestElo" ? styles.activeMeNumber : ""}`}>
+                    {formatNumber(me.highestElo)}
+                  </div>
+                  <div className={`${styles.meWinsCol} ${sort === "wins" ? styles.activeMeNumber : ""}`}>
+                    {formatNumber(me.totalWins)}
+                  </div>
 
-                  <div className={styles.meBloodlineCol}>
+                  <div className={`${styles.meBloodlineCol} ${sort === "bloodlineWins" ? styles.activeMeNumber : ""}`}>
                     <img
                       src={bloodlineImage(me.favoriteBloodline)}
                       alt=""

@@ -437,6 +437,21 @@
   color: #d4af37;
 }
 
+.activeHeader {
+  color: #ffd97d !important;
+  text-shadow: 0 0 8px rgba(255, 217, 125, 0.3);
+}
+
+.activeCell {
+  color: #ffe6a3 !important;
+  font-weight: 800 !important;
+}
+
+.activeMeNumber {
+  color: #fff2c4 !important;
+  text-shadow: 0 0 10px rgba(255, 217, 125, 0.4);
+}
+
 .bloodlineCell {
   display: flex;
   align-items: center;
