@@ -6,7 +6,7 @@ import "./index.css";
 const root = document.getElementById("root");
 
 if (!root) {
-  throw new Error("BoardVerse root element #root was not found.");
+  throw new Error("Party Game Online root element #root was not found.");
 }
 
 createRoot(root).render(

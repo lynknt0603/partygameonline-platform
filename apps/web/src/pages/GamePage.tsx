@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Navigate, useParams } from "react-router-dom";
 import { fetchNobSnapshot, NOB_CATALOGUE_ID, NobPlayPage, parseNobView, type NobView } from "@/games/nob";
 import { ConnectionStatusBadge } from "@/shared/components/ConnectionStatusBadge/ConnectionStatusBadge";
 import { cacheSession } from "@/shared/api/session";
@@ -69,7 +69,7 @@ export function GamePage() {
   }
 
   if (roomQuery.isError || !room) {
-    return <main role="alert">Unable to load this room.</main>;
+    return <Navigate to="/" replace />;
   }
 
   if (room.gameId !== NOB_CATALOGUE_ID) {

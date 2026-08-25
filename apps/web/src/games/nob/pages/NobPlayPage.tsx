@@ -1439,7 +1439,7 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
                       .replace("{score}", String(seat.score ?? seat.moonMarkCount ?? 0))}
                     {typeof seat.eloDelta === "number" ? (
                       <small className={styles.overElo}>
-                        {t("eloDelta")}: {seat.eloDelta >= 0 ? "+" : ""}{seat.eloDelta / 10}
+                        {t("eloDelta")}: {seat.eloDelta >= 0 ? "+" : ""}{seat.eloDelta}
                       </small>
                     ) : null}
                   </span>
