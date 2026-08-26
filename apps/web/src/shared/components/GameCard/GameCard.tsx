@@ -1,6 +1,7 @@
 import { Clock, Play, Users } from "lucide-react";
 import type { GameManifest } from "@/game/core/GameManifest";
 import { NOB_BRANDING, NOB_CATALOGUE_ID } from "@/games/nob";
+import { NOT_IN_MY_POT_ASSETS } from "@/games/notInMyPot";
 import { usePlayGame } from "@/shared/hooks/useRooms";
 import { useLocale, useT } from "@/shared/i18n/useT";
 import { memberLoginPath } from "@/shared/auth/memberAccess";
@@ -27,6 +28,8 @@ export function GameCard({ game }: GameCardProps) {
       <div className={`${styles.art} ${artClass}`} aria-hidden="true">
         {game.id === NOB_CATALOGUE_ID ? (
           <img className={styles.artPhoto} src={NOB_BRANDING.visualIdentity} alt="" />
+        ) : game.id === "not-in-my-pot" ? (
+          <img className={styles.artPhoto} src={NOT_IN_MY_POT_ASSETS.visualIdentity} alt="" />
         ) : (
           <span className={styles.artMark} />
         )}
@@ -57,7 +60,7 @@ export function GameCard({ game }: GameCardProps) {
             aria-label={`${t("play")} ${title}`}
           >
             <Play size={14} fill="currentColor" aria-hidden="true" />
-            {game.enabled ? t("play") : t("comingSoon")}
+            {play.isPending ? t("playingNow") : game.enabled ? t("play") : t("comingSoon")}
           </button>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Navigate, useParams } from "react-router-dom";
 import { fetchNobSnapshot, NOB_CATALOGUE_ID, NobPlayPage, parseNobView, type NobView } from "@/games/nob";
+import { NOT_IN_MY_POT_ID, NotInMyPotPlayPage, useNotInMyPotGame } from "@/games/notInMyPot";
 import { ConnectionStatusBadge } from "@/shared/components/ConnectionStatusBadge/ConnectionStatusBadge";
 import { cacheSession } from "@/shared/api/session";
 import { useRoomRealtime } from "@/shared/hooks/useRoomRealtime";
@@ -17,6 +18,9 @@ export function GamePage() {
   const [view, setView] = useState<NobView | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [rejectCode, setRejectCode] = useState<string | null>(null);
+  const isNob = room?.gameId === NOB_CATALOGUE_ID;
+  const isNotInMyPot = room?.gameId === NOT_IN_MY_POT_ID;
+  const notInMyPot = useNotInMyPotGame(roomId, Boolean(isNotInMyPot));
 
   useEffect(() => {
     if (session && roomId) {
@@ -27,7 +31,7 @@ export function GamePage() {
   useEffect(() => {
     if (
       !roomId ||
-      room?.gameId !== NOB_CATALOGUE_ID ||
+      !isNob ||
       (realtimeStatus !== "open" && realtimeStatus !== "connecting")
     ) {
       return;
@@ -48,9 +52,9 @@ export function GamePage() {
     return () => {
       cancelled = true;
     };
-  }, [room?.gameId, roomId, realtimeStatus]);
+  }, [isNob, roomId, realtimeStatus]);
 
-  useRoomRealtime(roomId, {
+  useRoomRealtime(isNob ? roomId : undefined, {
     onView: (next) => {
       const nob = parseNobView(next);
       if (nob) {
@@ -73,6 +77,22 @@ export function GamePage() {
   }
 
   if (room.gameId !== NOB_CATALOGUE_ID) {
+    if (room.gameId === NOT_IN_MY_POT_ID) {
+      return (
+        <>
+          <ConnectionStatusBadge />
+          <NotInMyPotPlayPage
+            room={room}
+            view={notInMyPot.view}
+            snapshotPending={notInMyPot.snapshotPending}
+            snapshotError={notInMyPot.snapshotError}
+            notice={notInMyPot.notice}
+            rejectCode={notInMyPot.rejectCode}
+            sendCommand={notInMyPot.sendCommand}
+          />
+        </>
+      );
+    }
     return <main role="alert">This game is no longer available.</main>;
   }
 

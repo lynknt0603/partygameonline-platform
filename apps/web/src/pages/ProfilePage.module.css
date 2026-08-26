@@ -73,6 +73,20 @@
   flex: 1;
 }
 
+.profileNameBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.identityLabel {
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 .nameRow {
   display: flex;
   align-items: center;
@@ -126,6 +140,11 @@
 .metaValue {
   color: var(--text-primary);
   font-weight: 600;
+}
+
+.mutedValue {
+  color: var(--text-muted);
+  font-weight: 500;
 }
 
 .copyBtn {

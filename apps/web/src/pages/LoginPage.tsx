@@ -32,7 +32,7 @@ export function LoginPage({ defaultTab = "login" }: LoginPageProps) {
 
   const login = useSessionStore((state) => state.login);
   const register = useSessionStore((state) => state.register);
-  const rename = useSessionStore((state) => state.rename);
+  const startGuest = useSessionStore((state) => state.startGuest);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -81,7 +81,7 @@ export function LoginPage({ defaultTab = "login" }: LoginPageProps) {
     const name = guestName.trim() || "Player";
     setGuestLoading(true);
     try {
-      await rename(name);
+      await startGuest(name);
       navigate("/");
     } catch {
       setErrorMessage(t("sessionError"));

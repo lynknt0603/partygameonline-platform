@@ -9,7 +9,7 @@ export function BottomNav() {
     { to: "/games", label: t("navGames"), Icon: LayoutGrid },
     { to: "/ranking", label: t("navRanking"), Icon: Trophy },
     { to: "/rooms", label: t("navRooms"), Icon: DoorOpen },
-    { to: "/friends", label: t("navFriends"), Icon: Users },
+    { to: "/players", label: t("navPlayers"), Icon: Users },
     { to: "/settings", label: t("navSettings"), Icon: Settings },
   ];
 

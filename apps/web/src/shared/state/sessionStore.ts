@@ -8,6 +8,7 @@ import {
   loginUser,
   registerUser,
   storedDisplayName,
+  updateDisplayName as updateDisplayNameRequest,
 } from "@/shared/api/session";
 import type { AuthPayload, SessionDto } from "@/shared/api/types";
 
@@ -17,7 +18,8 @@ interface SessionState {
   error: string | null;
   bootstrap: () => Promise<void>;
   refresh: () => Promise<void>;
-  rename: (displayName: string) => Promise<void>;
+  startGuest: (displayName: string) => Promise<SessionDto>;
+  updateDisplayName: (displayName: string) => Promise<void>;
   setAvatar: (avatarUrl: string) => void;
   login: (payload: AuthPayload) => Promise<SessionDto>;
   register: (payload: AuthPayload) => Promise<SessionDto>;
@@ -46,10 +48,26 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     cacheSession(session);
     set({ session, ready: true, error: null });
   },
-  rename: async (displayName: string) => {
+  startGuest: async (displayName: string) => {
     const session = await createGuest(displayName);
+    set({ session, ready: true, error: null });
+    return session;
+  },
+  updateDisplayName: async (displayName: string) => {
+    const current = get().session;
+    if (!current) {
+      const session = await createGuest(displayName);
+      set({ session, ready: true, error: null });
+      return;
+    }
+    const updated = await updateDisplayNameRequest(displayName);
+    const session = {
+      ...current,
+      ...updated,
+      avatarUrl: updated.avatarUrl ?? current.avatarUrl,
+    };
     cacheSession(session);
-    set({ session });
+    set({ session, ready: true, error: null });
   },
   setAvatar: (avatarUrl: string) => {
     const current = get().session;
