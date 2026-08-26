@@ -25,7 +25,7 @@ import styles from "./ProfilePage.module.css";
 export function ProfilePage({ profileUsername }: { profileUsername?: string } = {}) {
   const t = useT();
   const session = useSessionStore((state) => state.session);
-  const rename = useSessionStore((state) => state.rename);
+  const updateDisplayName = useSessionStore((state) => state.updateDisplayName);
   const setAvatar = useSessionStore((state) => state.setAvatar);
 
   const [copied, setCopied] = useState(false);
@@ -54,6 +54,7 @@ export function ProfilePage({ profileUsername }: { profileUsername?: string } = 
   }
 
   const displayName = (isPublicProfile ? stats?.player.displayName : session?.displayName || stats?.player.displayName) || profileUsername || "BloodMoon";
+  const username = stats?.player.username?.trim() || null;
   const playerId = (isPublicProfile ? stats?.player.playerId : session?.playerId || stats?.player.playerId) || "NB-7X9X2M";
   const joinedDate = stats?.player.joinedAt || "12/02/2025";
   const platformName = stats?.player.platform || "Web";
@@ -86,7 +87,7 @@ export function ProfilePage({ profileUsername }: { profileUsername?: string } = 
     if (!nameInput.trim()) return;
     setIsSaving(true);
     try {
-      await rename(nameInput.trim());
+      await updateDisplayName(nameInput.trim());
       setEditing(false);
     } finally {
       setIsSaving(false);
@@ -110,7 +111,7 @@ export function ProfilePage({ profileUsername }: { profileUsername?: string } = 
     <div className={styles.page}>
       <PageHeading
         title={isPublicProfile ? displayName : t("profileTitle")}
-        subtitle={isPublicProfile ? `@${profileUsername}` : t("profileSub")}
+        subtitle={isPublicProfile ? (username ? `@${username}` : t("guestProfileSub")) : t("profileSub")}
       />
 
       {/* Top User Info Card */}
@@ -135,12 +136,22 @@ export function ProfilePage({ profileUsername }: { profileUsername?: string } = 
         </div>
 
         <div className={styles.profileDetails}>
-          <div className={styles.nameRow}>
-            <h2 className={styles.displayName}>{displayName}</h2>
-            <span className={styles.roleBadge}>{memberRole}</span>
+          <div className={styles.profileNameBlock}>
+            <span className={styles.identityLabel}>{t("profileName")}</span>
+            <div className={styles.nameRow}>
+              <h2 className={styles.displayName}>{displayName}</h2>
+              <span className={styles.roleBadge}>{memberRole}</span>
+            </div>
           </div>
 
           <div className={styles.metaGrid}>
+            <div className={styles.metaItem}>
+              <span className={styles.metaLabel}>{t("profileUsername")}</span>
+              <span className={`${styles.metaValue} ${!username ? styles.mutedValue : ""}`}>
+                {username ? `@${username}` : t("noUsername")}
+              </span>
+            </div>
+
             <div className={styles.metaItem}>
               <span className={styles.metaLabel}>{t("userId")}</span>
               <span className={styles.metaValue}>{playerId}</span>
@@ -190,13 +201,13 @@ export function ProfilePage({ profileUsername }: { profileUsername?: string } = 
           <div className={`${styles.editModal} theme-panel`} onClick={(e) => e.stopPropagation()}>
             <h3>{t("editProfile")}</h3>
             <form onSubmit={handleSaveName} className={styles.editForm}>
-              <label htmlFor="profileNameInput">{t("guestName")}</label>
+              <label htmlFor="profileNameInput">{t("profileName")}</label>
               <input
                 id="profileNameInput"
                 type="text"
                 value={nameInput}
                 onChange={(e) => setNameInput(e.target.value)}
-                maxLength={24}
+                maxLength={32}
                 required
                 autoFocus
               />

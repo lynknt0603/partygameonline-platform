@@ -1,7 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import type { ReactNode } from "react";
 import { AppShell } from "@/app/shell/AppShell";
-import { FriendsPage } from "@/pages/FriendsPage";
 import { GamePage } from "@/pages/GamePage";
 import { GamesPage } from "@/pages/GamesPage";
 import { HomePage } from "@/pages/HomePage";
@@ -10,6 +9,7 @@ import { LoginPage } from "@/pages/LoginPage";
 import { MatchHistoryPage } from "@/pages/MatchHistoryPage";
 import { ProfilePage } from "@/pages/ProfilePage";
 import { PublicProfilePage } from "@/pages/PublicProfilePage";
+import { PlayersPage } from "@/pages/PlayersPage";
 import { RankingPage } from "@/pages/RankingPage";
 import { RoomsPage } from "@/pages/RoomsPage";
 import { SettingsPage } from "@/pages/SettingsPage";
@@ -41,7 +41,8 @@ export function AppRouter() {
           <Route path="games" element={<GamesPage />} />
           <Route path="rooms" element={<RoomsPage />} />
           <Route path="rooms/:roomId" element={<MemberOnly><LobbyPage /></MemberOnly>} />
-          <Route path="friends" element={<FriendsPage />} />
+          <Route path="players" element={<PlayersPage />} />
+          <Route path="friends" element={<Navigate to="/players" replace />} />
           <Route path="ranking" element={<RankingPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="profile" element={<ProfilePage />} />

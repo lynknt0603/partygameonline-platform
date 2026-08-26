@@ -34,35 +34,6 @@
   accent-color: var(--brand);
 }
 
-.nameForm {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-}
-
-.nameForm input {
-  flex: 1 1 180px;
-  min-height: var(--touch-min);
-  padding: 0 12px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  background: var(--surface-secondary);
-  color: var(--text);
-}
-
-.nameForm button {
-  min-height: var(--touch-min);
-  padding: 0 16px;
-  border-radius: var(--radius-md);
-  font-weight: 750;
-  background: var(--brand);
-  color: var(--on-brand);
-}
-
-.nameForm button:disabled {
-  opacity: 0.6;
-}
-
 .account {
   display: flex;
   align-items: center;

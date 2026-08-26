@@ -18,7 +18,7 @@ export function Header() {
     { to: "/games", label: t("navGames") },
     { to: "/ranking", label: t("navRanking") },
     { to: "/rooms", label: t("navRooms") },
-    { to: "/friends", label: t("navFriends") },
+    { to: "/players", label: t("navPlayers") },
     { to: "/settings", label: t("navSettings") },
   ];
 
