@@ -184,10 +184,11 @@ export function useLeaveRoom() {
 
 export function useReadyRoom(roomId: string) {
   const queryClient = useQueryClient();
+  const normalized = roomId.toUpperCase();
   return useMutation({
-    mutationFn: (ready: boolean) => setReady(roomId, ready),
+    mutationFn: (ready: boolean) => setReady(normalized, ready),
     onSuccess: (room) => {
-      queryClient.setQueryData(["room", roomId], room);
+      queryClient.setQueryData(["room", normalized], room);
     },
   });
 }
@@ -228,10 +229,11 @@ export function useUpdateRoomSettings(roomId: string) {
 export function useStartRoom(roomId: string) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const normalized = roomId.toUpperCase();
   return useMutation({
-    mutationFn: () => startRoom(roomId),
+    mutationFn: () => startRoom(normalized),
     onSuccess: (room) => {
-      queryClient.setQueryData(["room", roomId], room);
+      queryClient.setQueryData(["room", normalized], room);
       navigate(`/play/${room.id}`);
     },
   });

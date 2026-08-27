@@ -37,6 +37,40 @@ export function LobbyPage() {
   const chat = useLobbyChat(roomId, youId);
   const joinAttempted = useRef(false);
 
+  // Websocket events are the fast path, but a lobby must also recover when a
+  // tab reconnects while a join event is in flight (or a proxy drops it).
+  // Refresh only while waiting so an open lobby stays authoritative without
+  // adding polling traffic once the game has started.
+  const refetchRoom = roomQuery.refetch;
+  useEffect(() => {
+    if (!roomId || room?.status !== "waiting") {
+      return;
+    }
+    let stopped = false;
+    let inFlight = false;
+
+    const refresh = async () => {
+      if (stopped || inFlight) {
+        return;
+      }
+      inFlight = true;
+      try {
+        await refetchRoom();
+      } finally {
+        inFlight = false;
+      }
+    };
+
+    const timer = window.setInterval(() => {
+      void refresh();
+    }, 2000);
+
+    return () => {
+      stopped = true;
+      window.clearInterval(timer);
+    };
+  }, [refetchRoom, room?.status, roomId]);
+
   useEffect(() => {
     if (!room || !youId) {
       return;
