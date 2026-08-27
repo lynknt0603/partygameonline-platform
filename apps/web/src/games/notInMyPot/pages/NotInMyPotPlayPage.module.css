@@ -181,35 +181,25 @@
 .gameLayout {
   display: grid;
   flex: 1 1 auto;
-  grid-template-columns: minmax(0, 1fr) 300px;
-  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 12px;
   width: min(1460px, 100%);
   min-height: 0;
   margin: 0 auto;
   overflow: hidden;
 }
 
-.tablePanel,
-.sidePanel,
-.handPanel {
-  border: 1px solid rgba(91, 69, 35, 0.16);
-  border-radius: 18px;
-  background: rgba(255, 249, 235, 0.75);
-  box-shadow: var(--nimp-shadow);
-  backdrop-filter: blur(12px);
-}
-
 .tablePanel {
+  position: relative;
   display: flex;
   flex-direction: column;
   min-width: 0;
   min-height: 0;
-  padding: 12px;
+  padding: 0;
 }
 
 .panelHeader,
-.sideHeader,
-.handHeader {
+.sideHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -217,8 +207,24 @@
 }
 
 .panelHeader {
-  flex: 0 0 auto;
-  padding: 0 3px 9px;
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  left: 18px;
+  z-index: 5;
+  align-items: flex-start;
+  padding: 0;
+  pointer-events: none;
+}
+
+.panelHeader > div:first-child,
+.scoreTarget {
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 238, 188, 0.3);
+  border-radius: 12px;
+  background: rgba(18, 56, 35, 0.78);
+  box-shadow: 0 8px 18px rgba(10, 31, 20, 0.22);
+  backdrop-filter: blur(8px);
 }
 
 .modalEyebrow {
@@ -231,18 +237,17 @@
 }
 
 .panelHeader h1,
-.sideHeader h2,
-.handHeader h2 {
+.sideHeader h2 {
   margin: 0;
   color: var(--nimp-ink);
 }
 
 .panelHeader h1 {
+  color: #fff6da;
   font-size: clamp(1.35rem, 3vw, 1.9rem);
 }
 
-.sideHeader h2,
-.handHeader h2 {
+.sideHeader h2 {
   font-size: 1.05rem;
 }
 
@@ -255,13 +260,13 @@
 }
 
 .scoreTarget span {
-  color: var(--nimp-muted);
+  color: rgba(255, 244, 211, 0.72);
   font-size: 11px;
   font-weight: 700;
 }
 
 .scoreTarget strong {
-  color: var(--nimp-green-dark);
+  color: #f4ce72;
   font-family: var(--font-display);
   font-size: 1.55rem;
   line-height: 1;
@@ -277,6 +282,8 @@
   position: relative;
   flex: 1 1 auto;
   min-height: 0;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
   border: 9px solid #9d6330;
   border-radius: 42% / 25%;
@@ -611,12 +618,12 @@
 }
 
 .turnBanner {
-  flex: 0 0 auto;
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   gap: 10px;
   min-height: 54px;
-  margin-top: 8px;
+  margin: 10px 10px 0;
   padding: 9px 12px;
   border: 1px solid rgba(91, 69, 35, 0.14);
   border-radius: 12px;
@@ -656,13 +663,13 @@
   color: var(--nimp-ink);
   font-size: 12px;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .turnBanner small {
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
   font-size: 10px;
 }
 
@@ -678,8 +685,12 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  border-left: 1px solid rgba(91, 69, 35, 0.18);
+  border-radius: 0 14px 14px 0;
+  background: rgba(255, 249, 235, 0.5);
   gap: 0;
   overflow: hidden;
+  backdrop-filter: blur(8px);
 }
 
 .sideSection {
@@ -771,55 +782,25 @@
 }
 
 .handPanel {
+  position: relative;
   display: flex;
-  flex: 0 0 clamp(230px, 30dvh, 300px);
+  flex: 0 0 clamp(210px, 27dvh, 270px);
   flex-direction: column;
   width: min(1460px, 100%);
   min-height: 0;
   margin: 0 auto;
-  padding: 8px 14px 10px;
-  border-color: rgba(238, 203, 111, 0.34);
-  background:
-    radial-gradient(circle at 50% 0%, rgba(240, 203, 106, 0.12), transparent 42%),
-    linear-gradient(180deg, rgba(37, 83, 50, 0.96), rgba(18, 51, 33, 0.98));
-  box-shadow: 0 -8px 24px rgba(42, 29, 15, 0.14), 0 14px 32px rgba(37, 23, 10, 0.2);
-}
-
-.handHeader {
-  flex: 0 0 auto;
-  margin-bottom: 3px;
-}
-
-.handHeader h2 {
-  color: #fff7dd;
-  font-size: 0.95rem;
-}
-
-.handHeader .modalEyebrow {
-  color: #e9bd5e;
-}
-
-.handCount {
-  display: grid;
-  place-items: center;
-  min-width: 41px;
-  height: 28px;
-  border: 1px solid rgba(91, 69, 35, 0.18);
-  border-radius: 8px;
-  background: rgba(255, 245, 207, 0.12);
-  color: #f2cf77;
-  font-size: 12px;
-  font-weight: 850;
+  padding: 0 12px;
+  background: transparent;
 }
 
 .handGrid {
   display: flex;
   flex: 1 1 auto;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
   gap: clamp(8px, 1.4vw, 16px);
   min-height: 0;
-  padding: 2px 5px 4px;
+  padding: 4px 5px 8px;
   overflow-x: auto;
   overflow-y: hidden;
 }
@@ -833,7 +814,7 @@
 .gameCard {
   position: relative;
   display: flex;
-  flex: 0 0 clamp(82px, 7.5vw, 106px);
+  flex: 0 0 clamp(98px, 8vw, 122px);
   flex-direction: column;
   min-width: 0;
   padding: 0;
@@ -936,17 +917,15 @@ button.gameCard:hover:not(:disabled) {
 }
 
 .actionDock {
+  position: absolute;
+  top: 4px;
+  right: 14px;
+  z-index: 3;
   display: flex;
   align-items: center;
   gap: 14px;
-  min-height: 34px;
-  padding: 4px 2px 0;
-}
-
-.actionHint {
-  margin: 0;
-  color: rgba(255, 246, 216, 0.72);
-  font-size: 10px;
+  min-height: 38px;
+  padding: 0;
 }
 
 .readyButton,
@@ -1723,12 +1702,10 @@ button.gameCard:hover:not(:disabled) {
     padding-bottom: 8px;
   }
 
-  .tablePanel {
-    padding: 8px;
-  }
-
   .panelHeader {
-    padding-bottom: 6px;
+    top: 10px;
+    right: 12px;
+    left: 12px;
   }
 
   .panelHeader h1 {
@@ -1812,6 +1789,9 @@ button.gameCard:hover:not(:disabled) {
 
   .sidePanel {
     display: block;
+    border-top: 1px solid rgba(192, 148, 78, 0.24);
+    border-left: 0;
+    border-radius: 12px;
   }
 
   .sideSection:first-child {
@@ -1882,16 +1862,28 @@ button.gameCard:hover:not(:disabled) {
 
   .tablePanel {
     min-height: 0;
-    padding: 10px;
-    border-radius: 15px;
+    padding: 0;
+    border-radius: 0;
   }
 
   .panelHeader {
-    padding-bottom: 9px;
+    top: 8px;
+    right: 8px;
+    left: 8px;
   }
 
   .panelHeader h1 {
-    font-size: 1.25rem;
+    font-size: 1rem;
+  }
+
+  .panelHeader > div:first-child,
+  .scoreTarget {
+    padding: 5px 7px;
+    border-radius: 9px;
+  }
+
+  .panelHeader .modalEyebrow {
+    display: none;
   }
 
   .tableSurface {
@@ -1995,7 +1987,7 @@ button.gameCard:hover:not(:disabled) {
 
   .turnBanner {
     min-height: 46px;
-    margin-top: 8px;
+    margin: 8px 8px 0;
     padding: 6px 8px;
   }
 
@@ -2039,8 +2031,8 @@ button.gameCard:hover:not(:disabled) {
   }
 
   .handPanel {
-    padding: 12px 10px 10px;
-    border-radius: 15px;
+    padding: 0 4px;
+    border-radius: 0;
   }
 
   .handGrid {
@@ -2071,18 +2063,16 @@ button.gameCard:hover:not(:disabled) {
   }
 
   .actionDock {
-    align-items: stretch;
-    flex-direction: column;
-    gap: 7px;
-    padding-top: 2px;
-  }
-
-  .actionHint {
-    font-size: 9px;
+    top: 4px;
+    right: 4px;
+    align-items: center;
+    flex-direction: row;
+    gap: 0;
+    padding: 0;
   }
 
   .readyButton {
-    width: 100%;
+    width: auto;
     margin-left: 0;
   }
 

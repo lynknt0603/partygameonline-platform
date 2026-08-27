@@ -887,14 +887,14 @@ export function NotInMyPotPlayPage({
             </div>
           </div>
 
+        </section>
+
+        <aside className={styles.sidePanel}>
           <div className={`${styles.turnBanner} ${view.canAct ? styles.turnBannerYou : ""}`}>
             <span className={styles.turnIcon}>{pendingForYou ? <CircleAlert size={17} /> : view.canAct ? <Flame size={17} /> : <Clock3 size={17} />}</span>
             <span><strong>{turnText}</strong>{pendingTitle ? <small>{pendingTitle}</small> : !view.finished ? <small>{locale === "vi" ? "Chọn một lá trên tay hoặc tuyên bố nồi đã sẵn sàng." : "Play a card from your hand or declare the pot ready."}</small> : null}</span>
             {pendingSeconds !== null && pendingForYou ? <em>{pendingSeconds}s</em> : null}
           </div>
-        </section>
-
-        <aside className={styles.sidePanel}>
           <div className={styles.sideSection}>
             <div className={styles.sideHeader}><div><p className={styles.modalEyebrow}>{locale === "vi" ? "CÔNG KHAI" : "PUBLIC"}</p><h2>{locale === "vi" ? "Nhật ký bàn" : "Table log"}</h2></div><button type="button" className={styles.mobileLogButton} onClick={() => setShowLog((current) => !current)}>{showLog ? <X size={16} /> : <Info size={16} />}</button></div>
             <div className={`${styles.logList} ${showLog ? styles.logOpen : ""}`}>
@@ -904,16 +904,12 @@ export function NotInMyPotPlayPage({
         </aside>
       </div>
 
-      <section className={styles.handPanel} aria-labelledby="nimp-hand-title">
-        <div className={styles.handHeader}><div><p className={styles.modalEyebrow}>{locale === "vi" ? "KHO CỦA BẠN" : "YOUR PANTRY"}</p><h2 id="nimp-hand-title">{locale === "vi" ? "Bài trên tay" : "Cards in hand"}</h2></div><span className={styles.handCount}>{view.myHand.length}/3</span></div>
+      <section className={styles.handPanel} aria-label={locale === "vi" ? "Bài trên tay" : "Cards in hand"}>
         <div className={styles.handGrid}>
           {view.myHand.map((card) => <NimpCard key={card.cardId} card={card} locale={locale} disabled={!view.canAct || busy || Boolean(pending)} onClick={() => onHandCard(card)} />)}
           {view.myHand.length === 0 ? <p className={styles.emptyHand}>{locale === "vi" ? "Bạn không còn lá trên tay." : "You have no cards in hand."}</p> : null}
         </div>
-        <div className={styles.actionDock}>
-          <p className={styles.actionHint}>{view.canAct ? (locale === "vi" ? "Chọn bài để nấu. Loại nguyên liệu và điểm được lấy trực tiếp từ lá bài." : "Pick a card to cook. Its ingredient type and score come directly from the card.") : (locale === "vi" ? "Bàn sẽ cập nhật khi người chơi hiện tại hoàn thành lượt." : "The table will update when the current player finishes their turn.")}</p>
-          {view.canDeclarePotReady ? <button type="button" className={styles.readyButton} disabled={busy} onClick={() => setShowPotReady(true)}><ShieldCheck size={17} /> {locale === "vi" ? "Nồi đã sẵn sàng" : "Pot Ready"}</button> : null}
-        </div>
+        {view.canDeclarePotReady ? <div className={styles.actionDock}><button type="button" className={styles.readyButton} disabled={busy} onClick={() => setShowPotReady(true)}><ShieldCheck size={17} /> {locale === "vi" ? "Nồi đã sẵn sàng" : "Pot Ready"}</button></div> : null}
       </section>
 
       {notice && !noticeHidden ? <div className={`${styles.notice} ${rejectCode ? styles.noticeError : ""}`} role="status"><CircleAlert size={15} /> <span>{notice}</span><button type="button" onClick={() => setNoticeHidden(true)} aria-label="Dismiss"><X size={14} /></button></div> : null}
