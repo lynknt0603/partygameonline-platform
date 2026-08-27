@@ -901,14 +901,6 @@ export function NotInMyPotPlayPage({
               {events.length === 0 ? <p className={styles.emptyLog}>{locale === "vi" ? "Bàn đang chờ sự kiện đầu tiên." : "Waiting for the first table event."}</p> : events.map((event, index) => <div className={styles.logItem} key={`${event.type}-${index}`}><span className={styles.logMarker} /><div><p>{eventText(event, view.players, locale)}</p><small>{event.type.replaceAll("_", " ")}</small></div></div>)}
             </div>
           </div>
-          <div className={styles.sideSection}>
-            <div className={styles.sideHeader}><div><p className={styles.modalEyebrow}>{locale === "vi" ? "NHẮC NHỞ" : "QUICK GUIDE"}</p><h2>{locale === "vi" ? "Bí kíp căn bếp" : "Kitchen notes"}</h2></div><Sparkles size={17} /></div>
-            <ul className={styles.guideList}>
-              <li><EyeOff size={15} /> {locale === "vi" ? "Chỉ bạn biết vai và các lá trên tay." : "Only you see your role and hand."}</li>
-              <li><Flame size={15} /> {locale === "vi" ? "Loại và điểm nguyên liệu được xác định trực tiếp từ lá bài." : "Each ingredient card determines its own type and score."}</li>
-              <li><ShieldCheck size={15} /> {locale === "vi" ? "Người ăn chay thắng khi nồi đạt mục tiêu." : "Vegetarians win when the pot reaches target."}</li>
-            </ul>
-          </div>
         </aside>
       </div>
 
