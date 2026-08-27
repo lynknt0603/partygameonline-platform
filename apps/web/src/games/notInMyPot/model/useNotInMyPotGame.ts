@@ -29,22 +29,25 @@ export function useNotInMyPotGame(roomId: string | undefined, enabled: boolean):
     queryFn: () => fetchNotInMyPotSnapshot(normalizedRoomId!),
     enabled: Boolean(normalizedRoomId && enabled),
     staleTime: 5_000,
+    gcTime: 0,
+    refetchInterval: normalizedRoomId && enabled ? 2_000 : false,
   });
   const [view, setView] = useState<NotInMyPotView | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [rejectCode, setRejectCode] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!snapshot.data) {
+    const next = snapshot.data;
+    if (!next) {
       return;
     }
     setView((current) => {
       // A finished view is intentionally kept while the backend recycles the
       // room immediately after publishing GAME_FINISHED.
-      if (current?.finished && !snapshot.data?.finished) {
+      if (current?.finished && !next.finished) {
         return current;
       }
-      return snapshot.data;
+      return !current || next.stateVersion >= current.stateVersion ? next : current;
     });
     setRejectCode(null);
   }, [snapshot.data]);
@@ -58,7 +61,7 @@ export function useNotInMyPotGame(roomId: string | undefined, enabled: boolean):
       if (current?.finished && !next.finished) {
         return current;
       }
-      return next;
+      return !current || next.stateVersion >= current.stateVersion ? next : current;
     });
     setRejectCode(null);
     setNotice(null);

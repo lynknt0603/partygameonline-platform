@@ -125,8 +125,6 @@ const ACTION_TYPES = new Set([
   "TRASH_OUT",
 ]);
 
-const DECLARATIONS = ["VEGETABLE", "SALT", "MEAT"] as const;
-
 function cardMeta(card: NotInMyPotCard): CardMeta {
   return (
     CARD_META[card.type] ?? {
@@ -211,7 +209,7 @@ function eventText(event: NotInMyPotEvent, players: NotInMyPotPlayer[], locale: 
     case "TURN_STARTED":
       return locale === "vi" ? `Đến lượt ${actor}.` : `${actor}'s turn started.`;
     case "INGREDIENT_DECLARED":
-      return locale === "vi" ? `${actor} đã bỏ một nguyên liệu và tuyên bố là ${actionLabel(declaredType, locale)}.` : `${actor} played an ingredient and claimed it was ${actionLabel(declaredType, locale)}.`;
+      return locale === "vi" ? `${actor} đã bỏ ${actionLabel(declaredType, locale)} vào nồi.` : `${actor} added ${actionLabel(declaredType, locale)} to the pot.`;
     case "ACTION_STARTED":
       return locale === "vi" ? `${actor} dùng ${actionLabel(actionType, locale)}.` : `${actor} played ${actionLabel(actionType, locale)}.`;
     case "TARGET_SELECTION_REQUIRED":
@@ -364,6 +362,9 @@ function TableSeat({
         <PlayerAvatar playerId={player.playerId} displayName={player.displayName} avatarUrl={avatarUrl} size={50} decorative />
         {player.you ? <span className={styles.youDot}>{locale === "vi" ? "Bạn" : "You"}</span> : null}
       </span>
+      {player.you && player.role ? (
+        <img className={styles.seatRoleCard} src={roleArt(player.role)} alt={roleLabel(player.role, locale)} />
+      ) : null}
       <span className={styles.seatMeta}>
         <strong className={styles.seatName}>{player.displayName}</strong>
         <span className={styles.seatSub}>
@@ -649,7 +650,6 @@ export function NotInMyPotPlayPage({
   const [roleSeen, setRoleSeen] = useState(false);
   const [showRules, setShowRules] = useState(false);
   const [showLog, setShowLog] = useState(false);
-  const [declarationCard, setDeclarationCard] = useState<NotInMyPotCard | null>(null);
   const [selectedAction, setSelectedAction] = useState<NotInMyPotCard | null>(null);
   const [selectedActionTarget, setSelectedActionTarget] = useState<string | null>(null);
   const [showPotReady, setShowPotReady] = useState(false);
@@ -748,7 +748,7 @@ export function NotInMyPotPlayPage({
       return;
     }
     if (isIngredient(card)) {
-      setDeclarationCard(card);
+      submit({ type: "PLAY_INGREDIENT", cardId: card.cardId, declaredType: card.type });
       return;
     }
     setSelectedActionTarget(null);
@@ -905,7 +905,7 @@ export function NotInMyPotPlayPage({
             <div className={styles.sideHeader}><div><p className={styles.modalEyebrow}>{locale === "vi" ? "NHẮC NHỞ" : "QUICK GUIDE"}</p><h2>{locale === "vi" ? "Bí kíp căn bếp" : "Kitchen notes"}</h2></div><Sparkles size={17} /></div>
             <ul className={styles.guideList}>
               <li><EyeOff size={15} /> {locale === "vi" ? "Chỉ bạn biết vai và các lá trên tay." : "Only you see your role and hand."}</li>
-              <li><Flame size={15} /> {locale === "vi" ? "Bạn có thể nói dối khi tuyên bố nguyên liệu." : "You may bluff when naming an ingredient."}</li>
+              <li><Flame size={15} /> {locale === "vi" ? "Loại và điểm nguyên liệu được xác định trực tiếp từ lá bài." : "Each ingredient card determines its own type and score."}</li>
               <li><ShieldCheck size={15} /> {locale === "vi" ? "Người ăn chay thắng khi nồi đạt mục tiêu." : "Vegetarians win when the pot reaches target."}</li>
             </ul>
           </div>
@@ -919,7 +919,7 @@ export function NotInMyPotPlayPage({
           {view.myHand.length === 0 ? <p className={styles.emptyHand}>{locale === "vi" ? "Bạn không còn lá trên tay." : "You have no cards in hand."}</p> : null}
         </div>
         <div className={styles.actionDock}>
-          <p className={styles.actionHint}>{view.canAct ? (locale === "vi" ? "Chọn bài để nấu hoặc bluff. Hành động sẽ được máy chủ xác nhận." : "Pick a card to cook or bluff. The server confirms every action.") : (locale === "vi" ? "Bàn sẽ cập nhật khi người chơi hiện tại hoàn thành lượt." : "The table will update when the current player finishes their turn.")}</p>
+          <p className={styles.actionHint}>{view.canAct ? (locale === "vi" ? "Chọn bài để nấu. Loại nguyên liệu và điểm được lấy trực tiếp từ lá bài." : "Pick a card to cook. Its ingredient type and score come directly from the card.") : (locale === "vi" ? "Bàn sẽ cập nhật khi người chơi hiện tại hoàn thành lượt." : "The table will update when the current player finishes their turn.")}</p>
           {view.canDeclarePotReady ? <button type="button" className={styles.readyButton} disabled={busy} onClick={() => setShowPotReady(true)}><ShieldCheck size={17} /> {locale === "vi" ? "Nồi đã sẵn sàng" : "Pot Ready"}</button> : null}
         </div>
       </section>
@@ -937,23 +937,13 @@ export function NotInMyPotPlayPage({
         </ModalShell>
       ) : null}
 
-      {declarationCard ? (
-        <ModalShell title={locale === "vi" ? "Bạn muốn tuyên bố gì?" : "What will you claim?"} onClose={() => setDeclarationCard(null)}>
-          <div className={styles.actionPreview}><NimpCard card={declarationCard} locale={locale} compact interactive={false} /><div><p className={styles.modalEyebrow}>{locale === "vi" ? "LÁ NGUYÊN LIỆU" : "INGREDIENT CARD"}</p><h3>{locale === "vi" ? "Bỏ lá úp vào nồi" : "Place a hidden card in the pot"}</h3><p>{locale === "vi" ? "Lá thật và lời bạn nói có thể khác nhau. Bàn chỉ thấy lời tuyên bố." : "The card and your claim may differ. The table only sees your declaration."}</p></div></div>
-          <div className={styles.declarationGrid}>
-            {DECLARATIONS.map((type) => <button type="button" key={type} className={styles.declarationButton} disabled={busy} onClick={() => { submit({ type: "PLAY_INGREDIENT", cardId: declarationCard.cardId, declaredType: type }); setDeclarationCard(null); }}><span className={`${styles.declarationSwatch} ${styles[`swatch${type}`]}`} /><strong>{actionLabel(type, locale)}</strong><small>{type === "VEGETABLE" ? "+1" : type === "MEAT" ? "−2" : "0"} {locale === "vi" ? "điểm" : "points"}</small></button>)}
-          </div>
-          <p className={styles.privateNote}><EyeOff size={14} /> {locale === "vi" ? "Chỉ bạn thấy giá trị thật của lá." : "Only you see the card's real value."}</p>
-        </ModalShell>
-      ) : null}
-
       {selectedAction ? <ActionCardModal card={selectedAction} players={view.players} locale={locale} selectedTargetId={selectedActionTarget} onSelectTarget={setSelectedActionTarget} onConfirm={confirmAction} onClose={() => { setSelectedAction(null); setSelectedActionTarget(null); }} busy={busy} /> : null}
 
       {pending && pendingForYou ? <PendingActionModal pending={pending} inspectedCards={view.privateInspectedCards} hand={view.myHand} players={view.players} locale={locale} reorderIds={reorderIds} returnIds={returnIds} onReorder={reorder} onToggleReturn={toggleReturn} onTarget={(playerId) => { submit({ type: "SELECT_TARGET", targetPlayerId: playerId }); }} onSubmitReorder={() => { submit({ type: "REORDER_POT_CARDS", cardIds: reorderIds }); }} onSubmitReturn={() => { submit({ type: "RETURN_SHOPPING_CARDS", cardIds: returnIds }); }} busy={busy} /> : null}
 
       {showPotReady ? <ModalShell title={locale === "vi" ? "Mở nồi ngay?" : "Reveal the pot now?"} onClose={() => setShowPotReady(false)}><div className={styles.readyModal}><div className={styles.readyIcon}><ShieldCheck size={26} /></div><h3>{locale === "vi" ? "Nồi đã đủ chín?" : "Is the pot ready?"}</h3><p>{locale === "vi" ? `Máy chủ sẽ mở nồi và so sánh điểm với mục tiêu ${view.targetScore}. Hành động này kết thúc ván.` : `The server will reveal the pot and compare it with the ${view.targetScore}-point target. This ends the game.`}</p></div><div className={styles.modalFooter}><button type="button" className={styles.ghostButton} onClick={() => setShowPotReady(false)}>{locale === "vi" ? "Chưa" : "Not yet"}</button><button type="button" className={styles.primaryButton} disabled={busy} onClick={() => { submit({ type: "DECLARE_POT_READY" }); setShowPotReady(false); }}><Check size={16} /> {locale === "vi" ? "Mở nồi" : "Reveal pot"}</button></div></ModalShell> : null}
 
-      {showRules ? <ModalShell title={locale === "vi" ? "Luật nhanh — Not In My Pot!" : "Quick rules — Not In My Pot!"} onClose={() => setShowRules(false)} wide><div className={styles.rulesGrid}><div><span className={styles.rulesNumber}>01</span><h3>{locale === "vi" ? "Bỏ bài & tuyên bố" : "Play & declare"}</h3><p>{locale === "vi" ? "Mỗi lượt, bỏ một nguyên liệu úp và nói đó là rau, muối hay thịt. Bluff được phép." : "Each turn, play one ingredient facedown and call it vegetable, salt, or meat. Bluffing is allowed."}</p></div><div><span className={styles.rulesNumber}>02</span><h3>{locale === "vi" ? "Dùng action" : "Use actions"}</h3><p>{locale === "vi" ? "Đuổi người, vớt nồi, xem lại bài, đi chợ gấp hoặc đổ rác để phá kế hoạch." : "Send someone out, scoop the pot, inspect cards, shop in an emergency, or trash a hand."}</p></div><div><span className={styles.rulesNumber}>03</span><h3>{locale === "vi" ? "Nồi đạt mục tiêu" : "Hit the target"}</h3><p>{locale === "vi" ? "Người ăn chay có thể bấm Nồi đã sẵn sàng đầu lượt để mở điểm thật." : "A Vegetarian may press Pot Ready at the start of their turn to reveal the true score."}</p></div><div><span className={styles.rulesNumber}>04</span><h3>{locale === "vi" ? "Cửa nhà" : "Door marks"}</h3><p>{locale === "vi" ? "Một người bị mời ra 3 lần sẽ bị loại và lộ vai. Suy luận cẩn thận." : "A player sent out three times is expelled and reveals their role. Deduce carefully."}</p></div></div><div className={styles.rulesPrivacy}><EyeOff size={17} /><span>{locale === "vi" ? "Thông tin riêng: vai, bài trên tay và các lá bạn xem chỉ được gửi cho chính bạn." : "Private data: your role, hand, and inspected cards are only projected to you."}</span></div></ModalShell> : null}
+      {showRules ? <ModalShell title={locale === "vi" ? "Luật nhanh — Not In My Pot!" : "Quick rules — Not In My Pot!"} onClose={() => setShowRules(false)} wide><div className={styles.rulesGrid}><div><span className={styles.rulesNumber}>01</span><h3>{locale === "vi" ? "Bỏ nguyên liệu" : "Play an ingredient"}</h3><p>{locale === "vi" ? "Mỗi lá nguyên liệu có loại và điểm cố định: Rau củ +1, Muối 0, Thịt −2. Máy chủ lấy đúng giá trị trên lá." : "Every ingredient has a fixed type and score: Vegetable +1, Salt 0, Meat −2. The server uses the card's actual value."}</p></div><div><span className={styles.rulesNumber}>02</span><h3>{locale === "vi" ? "Dùng action" : "Use actions"}</h3><p>{locale === "vi" ? "Đuổi người, vớt nồi, xem lại bài, đi chợ gấp hoặc đổ rác để phá kế hoạch." : "Send someone out, scoop the pot, inspect cards, shop in an emergency, or trash a hand."}</p></div><div><span className={styles.rulesNumber}>03</span><h3>{locale === "vi" ? "Nồi đạt mục tiêu" : "Hit the target"}</h3><p>{locale === "vi" ? "Người ăn chay có thể bấm Nồi đã sẵn sàng đầu lượt để mở điểm thật." : "A Vegetarian may press Pot Ready at the start of their turn to reveal the true score."}</p></div><div><span className={styles.rulesNumber}>04</span><h3>{locale === "vi" ? "Cửa nhà" : "Door marks"}</h3><p>{locale === "vi" ? "Một người bị mời ra 3 lần sẽ bị loại và lộ vai. Suy luận cẩn thận." : "A player sent out three times is expelled and reveals their role. Deduce carefully."}</p></div></div><div className={styles.rulesPrivacy}><EyeOff size={17} /><span>{locale === "vi" ? "Thông tin riêng: vai, bài trên tay và các lá bạn xem chỉ được gửi cho chính bạn." : "Private data: your role, hand, and inspected cards are only projected to you."}</span></div></ModalShell> : null}
 
       {view.finished ? <ResultModal view={view} room={room} locale={locale} onPlayAgain={() => navigate(`/rooms/${room.id}`)} onReturnRoom={() => navigate(`/rooms/${room.id}`)} onLeave={() => leave.mutate(room.id)} /> : null}
     </main>

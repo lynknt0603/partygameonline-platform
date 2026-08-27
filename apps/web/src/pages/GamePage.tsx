@@ -18,7 +18,7 @@ export function GamePage() {
   const [rejectCode, setRejectCode] = useState<string | null>(null);
   const isNob = room?.gameId === NOB_CATALOGUE_ID;
   const isNotInMyPot = room?.gameId === NOT_IN_MY_POT_ID;
-  const notInMyPot = useNotInMyPotGame(roomId, Boolean(isNotInMyPot));
+  const notInMyPot = useNotInMyPotGame(roomId, Boolean(isNotInMyPot && room?.status === "in_game"));
 
   useEffect(() => {
     if (session && roomId) {
