@@ -37,6 +37,9 @@ export class RealtimeSocket {
       this.flush();
     });
     socket.addEventListener("message", (event) => {
+      if (this.socket !== socket) {
+        return;
+      }
       const message = JSON.parse(event.data as string) as WsEnvelope;
       if (typeof message.serverSequence === "number") {
         this.lastSequence = message.serverSequence;
@@ -44,9 +47,10 @@ export class RealtimeSocket {
       this.listeners.forEach((listener) => listener(message));
     });
     socket.addEventListener("close", () => {
-      if (this.socket === socket) {
-        this.socket = null;
+      if (this.socket !== socket) {
+        return;
       }
+      this.socket = null;
       if (!this.closedByUs) {
         this.setStatus("reconnecting");
         this.scheduleReconnect();
@@ -65,6 +69,20 @@ export class RealtimeSocket {
 
   currentStatus(): RealtimeStatus {
     return this.status;
+  }
+
+  reconnect(): void {
+    if (this.reconnectTimer !== null) {
+      window.clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+    this.closedByUs = false;
+    this.attempts = 0;
+    const previous = this.socket;
+    this.socket = null;
+    previous?.close();
+    this.setStatus("connecting");
+    this.connect();
   }
 
   lastServerSequence(): number {

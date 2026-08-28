@@ -29,6 +29,7 @@ export function useRoomRealtime(roomId: string | undefined, options: Options = {
   const pathRef = useRef(location.pathname);
   pathRef.current = location.pathname;
   const staleResynced = useRef<string | null>(null);
+  const membershipRecoveryAttempted = useRef(false);
 
   useEffect(() => {
     if (!roomId) {
@@ -36,6 +37,7 @@ export function useRoomRealtime(roomId: string | undefined, options: Options = {
     }
     const normalized = roomId.toUpperCase();
     staleResynced.current = null;
+    membershipRecoveryAttempted.current = false;
     const requestSnapshot = () => realtime.send("ROOM_SNAPSHOT", normalized);
     const unsubStatus = realtime.subscribeStatus((status) => {
       if (status === "open") {
@@ -72,6 +74,9 @@ export function useRoomRealtime(roomId: string | undefined, options: Options = {
         // that event must still leave the lobby as soon as the authoritative
         // room snapshot says the game is already running.
         const isMember = Boolean(playerId && room.players.some((player) => player.playerId === playerId));
+        if (isMember) {
+          membershipRecoveryAttempted.current = false;
+        }
         if (isMember && (room.status === "IN_GAME" || room.status === "STARTING") && !pathRef.current.startsWith("/play/")) {
           navigate(`/play/${normalized}`, { replace: true });
         }
@@ -96,6 +101,15 @@ export function useRoomRealtime(roomId: string | undefined, options: Options = {
           return;
         }
         if (code === "NOT_ROOM_MEMBER") {
+          const cachedRoom = queryClient.getQueryData<RoomDto>(["room", normalized]);
+          const restStillHasMember = Boolean(
+            playerId && cachedRoom?.players.some((roomPlayer) => roomPlayer.playerId === playerId),
+          );
+          if (restStillHasMember && !membershipRecoveryAttempted.current) {
+            membershipRecoveryAttempted.current = true;
+            realtime.reconnect();
+            void queryClient.invalidateQueries({ queryKey: ["room", normalized], exact: true });
+          }
           return;
         }
         if (code === "STALE_DECISION") {
