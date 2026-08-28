@@ -584,11 +584,15 @@ function ResultModal({
   const winnerRole = roleLabel(view.winnerFaction, locale);
   const gameEndedEvent = [...view.publicEvents].reverse().find((event) => event.type === "GAME_ENDED");
   const endReason = typeof gameEndedEvent?.payload.reason === "string" ? gameEndedEvent.payload.reason : null;
-  const automaticMeatWin = view.finalPotScore === null
-    && (endReason === "FACTIONS_EQUAL" || endReason === "DRAW_PILE_EMPTY");
+  const automaticEnd = view.finalPotScore === null
+    && (endReason === "FACTIONS_EQUAL"
+      || endReason === "DRAW_PILE_EMPTY"
+      || endReason === "ALL_MEAT_EATERS_EXPELLED");
   const automaticReasonText = endReason === "FACTIONS_EQUAL"
     ? (locale === "vi" ? "Số Người Ăn Thịt còn lại bằng số Người Ăn Chay còn lại." : "The remaining Meat Eaters equal the remaining Vegetarians.")
-    : (locale === "vi" ? "Chồng bài rút đã hết." : "The draw pile is empty.");
+    : endReason === "ALL_MEAT_EATERS_EXPELLED"
+      ? (locale === "vi" ? "Tất cả Người Ăn Thịt đã bị loại khỏi nhà." : "All Meat Eaters were expelled from the house.")
+      : (locale === "vi" ? "Chồng bài rút đã hết." : "The draw pile is empty.");
   return (
     <div className={styles.resultLayer} role="dialog" aria-modal="true" aria-labelledby="nimp-result-title">
       <div className={styles.resultBackdrop} />
@@ -600,7 +604,7 @@ function ResultModal({
           <h2 id="nimp-result-title">{winnerRole}</h2>
         </div>
         <div className={styles.resultScore}>
-          {automaticMeatWin ? (
+          {automaticEnd ? (
             <>
               <span>{locale === "vi" ? "KẾT THÚC TỰ ĐỘNG" : "AUTOMATIC END"}</span>
               <strong>{locale === "vi" ? "Không mở nồi" : "Pot not revealed"}</strong>
