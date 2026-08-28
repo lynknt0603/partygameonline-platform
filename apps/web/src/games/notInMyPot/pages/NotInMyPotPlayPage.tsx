@@ -680,6 +680,7 @@ export function NotInMyPotPlayPage({
   const [reorderIds, setReorderIds] = useState<string[]>([]);
   const [returnIds, setReturnIds] = useState<string[]>([]);
   const [now, setNow] = useState(() => Date.now());
+  const [visibleActionEventKey, setVisibleActionEventKey] = useState<string | null>(null);
 
   useEffect(() => {
     const images = NOT_IN_MY_POT_PRELOAD_ASSETS.map((src) => {
@@ -774,12 +775,24 @@ export function NotInMyPotPlayPage({
   const pendingTargetIds = pendingForYou && pending?.type === "SELECT_TARGET" ? new Set(pending.allowedTargetPlayerIds) : new Set<string>();
   const currentPlayer = view?.players.find((player) => player.playerId === view.currentPlayerId);
   const events = view?.publicEvents.slice(-24).reverse() ?? [];
-  const latestActionEvent = events.find((event) => event.type === "ACTION_STARTED") ?? null;
+  const latestActionEventIndex = view?.publicEvents.map((event) => event.type).lastIndexOf("ACTION_STARTED") ?? -1;
+  const latestActionEvent = view && latestActionEventIndex >= 0 ? view.publicEvents[latestActionEventIndex] : null;
+  const latestActionEventKey = latestActionEvent ? `${view?.roomId ?? room.id}:${latestActionEventIndex}` : null;
   const latestIngredientEvent = events.find((event) => event.type === "INGREDIENT_DECLARED") ?? null;
   const latestMotionEvent = events.find((event) => ["SCOOP_OUT_RESOLVED", "POT_REORDER_REQUIRED", "EMERGENCY_SHOPPING_RESOLVED", "TRASH_OUT_RESOLVED", "PLAYER_DOOR_UPDATED"].includes(event.type)) ?? null;
   const pendingSeconds = remainingSeconds(pending?.deadline);
   // Keep `now` in the component so the countdown updates even when the server is quiet.
   void now;
+
+  useEffect(() => {
+    if (!latestActionEventKey) {
+      setVisibleActionEventKey(null);
+      return;
+    }
+    setVisibleActionEventKey(latestActionEventKey);
+    const timer = window.setTimeout(() => setVisibleActionEventKey(null), 10_000);
+    return () => window.clearTimeout(timer);
+  }, [latestActionEventKey]);
 
   const onHandCard = (card: NotInMyPotCard) => {
     if (!view?.canAct || busy || pending || movingCard) {
@@ -884,11 +897,11 @@ export function NotInMyPotPlayPage({
     type: actionType,
     score: null,
   } satisfies NotInMyPotCard : null;
-  const latestActionKey = latestActionEvent ? JSON.stringify(latestActionEvent) : "action-empty";
+  const showActionToast = Boolean(actionCard && latestActionEventKey === visibleActionEventKey);
   const ingredientActorId = typeof latestIngredientEvent?.payload.playerId === "string" ? latestIngredientEvent.payload.playerId : null;
   const latestIngredientKey = latestIngredientEvent ? JSON.stringify(latestIngredientEvent) : "ingredient-empty";
   const showRemoteIngredientFlight = Boolean(latestIngredientEvent && ingredientActorId !== view.you);
-  const latestAnnouncement = events.find((event) => event.type === "INGREDIENT_DECLARED" || event.type === "ACTION_STARTED") ?? null;
+  const latestAnnouncement = latestIngredientEvent;
   const latestAnnouncementKey = latestAnnouncement ? JSON.stringify(latestAnnouncement) : "announcement-empty";
   const latestMotionKey = latestMotionEvent ? JSON.stringify(latestMotionEvent) : "motion-empty";
   const revealInProgress = view.finished && view.finalPot.length > 0 && revealCompletedVersion !== view.stateVersion;
@@ -971,15 +984,15 @@ export function NotInMyPotPlayPage({
                 />
               </div>
 
-              <div className={`${styles.actionZone} ${actionCard ? styles.actionZoneActive : ""}`} key={latestActionKey}>
+              {showActionToast ? <div className={`${styles.actionZone} ${styles.actionZoneActive}`} key={latestActionEventKey ?? undefined}>
                 <div className={styles.actionZoneLabel}><Sparkles size={14} /><span>ACTION ZONE</span></div>
                 {actionCard ? (
                   <div className={styles.actionZoneContent}>
                     <NimpCard card={actionCard} locale={locale} compact interactive={false} showScore={false} />
                     <span><strong>{cardLabel(actionCard, locale)}</strong><small>{actionActor} {locale === "vi" ? "đang xử lý hành động" : "is resolving an action"}</small></span>
                   </div>
-                ) : <small>{locale === "vi" ? "Lá hành động sẽ xuất hiện ở đây" : "Action cards appear here"}</small>}
-              </div>
+                ) : null}
+              </div> : null}
 
               {latestAnnouncement ? <div className={styles.tableAnnouncement} key={latestAnnouncementKey}>{eventText(latestAnnouncement, view.players, locale)}</div> : null}
             </div>

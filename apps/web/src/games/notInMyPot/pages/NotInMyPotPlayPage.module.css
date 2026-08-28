@@ -2536,12 +2536,16 @@ button.gameCard:hover:not(:disabled) {
 }
 
 .actionZone {
-  position: relative;
+  position: absolute;
+  bottom: calc(100% + 18px);
+  left: 50%;
+  z-index: 12;
   display: flex;
   width: min(430px, 78%);
   min-height: 52px;
-  margin-top: 28px;
+  margin: 0;
   padding: 7px 12px;
+  transform: translateX(-50%);
   align-items: center;
   justify-content: center;
   border: 1px dashed rgba(128, 81, 39, 0.28);
@@ -2549,6 +2553,7 @@ button.gameCard:hover:not(:disabled) {
   color: #92775b;
   background: rgba(255, 248, 230, 0.46);
   font-size: 9px;
+  pointer-events: none;
 }
 
 .actionZoneLabel {
@@ -2576,7 +2581,7 @@ button.gameCard:hover:not(:disabled) {
   display: flex;
   align-items: center;
   gap: 10px;
-  animation: nimpActionZone 2.8s ease both;
+  animation: nimpActionZone 10s ease both;
 }
 
 .actionZoneContent .compactCard {
@@ -3133,7 +3138,7 @@ button.gameCard.cardSelected:hover:not(:disabled) {
 
 @keyframes nimpActionZone {
   0% { transform: translateY(-28px) scale(0.72); opacity: 0; }
-  14%, 72% { transform: translateY(0) scale(1); opacity: 1; }
+  5%, 90% { transform: translateY(0) scale(1); opacity: 1; }
   100% { transform: translateX(100px) scale(0.76); opacity: 0; }
 }
 
@@ -3380,7 +3385,7 @@ button.gameCard.cardSelected:hover:not(:disabled) {
   .actionZone {
     width: 88%;
     min-height: 44px;
-    margin-top: 24px;
+    margin: 0;
   }
 
   .tableAnnouncement {
