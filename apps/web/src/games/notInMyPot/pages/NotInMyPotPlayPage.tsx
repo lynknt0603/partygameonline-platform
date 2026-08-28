@@ -682,6 +682,8 @@ export function NotInMyPotPlayPage({
   const [returnIds, setReturnIds] = useState<string[]>([]);
   const [now, setNow] = useState(() => Date.now());
   const [visibleActionEventKey, setVisibleActionEventKey] = useState<string | null>(null);
+  const [activeMotionEvent, setActiveMotionEvent] = useState<NotInMyPotEvent | null>(null);
+  const [showRemoteFlight, setShowRemoteFlight] = useState(false);
 
   useEffect(() => {
     const images = NOT_IN_MY_POT_PRELOAD_ASSETS.map((src) => {
@@ -780,7 +782,6 @@ export function NotInMyPotPlayPage({
   const latestActionEvent = view && latestActionEventIndex >= 0 ? view.publicEvents[latestActionEventIndex] : null;
   const latestActionEventKey = latestActionEvent ? `${view?.roomId ?? room.id}:${latestActionEventIndex}` : null;
   const latestIngredientEvent = events.find((event) => event.type === "INGREDIENT_DECLARED") ?? null;
-  const latestMotionEvent = events.find((event) => ["SCOOP_OUT_RESOLVED", "POT_REORDER_REQUIRED", "EMERGENCY_SHOPPING_RESOLVED", "TRASH_OUT_RESOLVED", "PLAYER_DOOR_UPDATED"].includes(event.type)) ?? null;
   const pendingSeconds = remainingSeconds(pending?.deadline);
   // Keep `now` in the component so the countdown updates even when the server is quiet.
   void now;
@@ -794,6 +795,40 @@ export function NotInMyPotPlayPage({
     const timer = window.setTimeout(() => setVisibleActionEventKey(null), 10_000);
     return () => window.clearTimeout(timer);
   }, [latestActionEventKey]);
+
+  const motionTypes = useMemo(() => ["SCOOP_OUT_RESOLVED", "POT_REORDER_REQUIRED", "EMERGENCY_SHOPPING_RESOLVED", "TRASH_OUT_RESOLVED"], []);
+  const latestMotionIdx = view ? view.publicEvents.map((e) => e.type).reduce((acc, type, idx) => motionTypes.includes(type) ? idx : acc, -1) : -1;
+  const latestMotionEvt = view && latestMotionIdx >= 0 ? view.publicEvents[latestMotionIdx] : null;
+  const latestMotionEvtKey = latestMotionEvt ? `${view?.roomId ?? room.id}:motion:${latestMotionIdx}` : null;
+
+  useEffect(() => {
+    if (!latestMotionEvt || !latestMotionEvtKey) {
+      setActiveMotionEvent(null);
+      return;
+    }
+    setActiveMotionEvent(latestMotionEvt);
+    const timer = window.setTimeout(() => {
+      setActiveMotionEvent(null);
+    }, 1100);
+    return () => window.clearTimeout(timer);
+  }, [latestMotionEvtKey, latestMotionEvt]);
+
+  const latestIngredientIdx = view ? view.publicEvents.map((e) => e.type).lastIndexOf("INGREDIENT_DECLARED") : -1;
+  const latestIngredientEvt = view && latestIngredientIdx >= 0 ? view.publicEvents[latestIngredientIdx] : null;
+  const isRemoteIngredient = Boolean(latestIngredientEvt && latestIngredientEvt.payload.playerId !== view?.you);
+  const latestRemoteIngredientKey = isRemoteIngredient && latestIngredientEvt ? `${view?.roomId ?? room.id}:remote-ing:${latestIngredientIdx}` : null;
+
+  useEffect(() => {
+    if (!latestRemoteIngredientKey) {
+      setShowRemoteFlight(false);
+      return;
+    }
+    setShowRemoteFlight(true);
+    const timer = window.setTimeout(() => {
+      setShowRemoteFlight(false);
+    }, 750);
+    return () => window.clearTimeout(timer);
+  }, [latestRemoteIngredientKey]);
 
   const onHandCard = (card: NotInMyPotCard) => {
     if (!view?.canAct || busy || pending || movingCard) {
@@ -899,12 +934,8 @@ export function NotInMyPotPlayPage({
     score: null,
   } satisfies NotInMyPotCard : null;
   const showActionToast = Boolean(actionCard && latestActionEventKey === visibleActionEventKey);
-  const ingredientActorId = typeof latestIngredientEvent?.payload.playerId === "string" ? latestIngredientEvent.payload.playerId : null;
-  const latestIngredientKey = latestIngredientEvent ? JSON.stringify(latestIngredientEvent) : "ingredient-empty";
-  const showRemoteIngredientFlight = Boolean(latestIngredientEvent && ingredientActorId !== view.you);
   const latestAnnouncement = latestIngredientEvent;
   const latestAnnouncementKey = latestAnnouncement ? JSON.stringify(latestAnnouncement) : "announcement-empty";
-  const latestMotionKey = latestMotionEvent ? JSON.stringify(latestMotionEvent) : "motion-empty";
   const revealInProgress = view.finished && view.finalPot.length > 0 && revealCompletedVersion !== view.stateVersion;
 
   return (
@@ -1006,8 +1037,8 @@ export function NotInMyPotPlayPage({
                 </div>
               </div>
             ) : null}
-            {showRemoteIngredientFlight ? <img key={latestIngredientKey} className={styles.remoteCardFlight} src={NOT_IN_MY_POT_ASSETS.cards.gameplayBack} alt="" aria-hidden="true" /> : null}
-            <TableEventAnimation key={latestMotionKey} event={latestMotionEvent} cardBack={NOT_IN_MY_POT_ASSETS.cards.gameplayBack} locale={locale} />
+            {showRemoteFlight ? <img key={latestRemoteIngredientKey ?? undefined} className={styles.remoteCardFlight} src={NOT_IN_MY_POT_ASSETS.cards.gameplayBack} alt="" aria-hidden="true" /> : null}
+            {activeMotionEvent ? <TableEventAnimation key={latestMotionEvtKey ?? undefined} event={activeMotionEvent} cardBack={NOT_IN_MY_POT_ASSETS.cards.gameplayBack} locale={locale} /> : null}
 
             <section className={styles.handPanel} aria-label={locale === "vi" ? "Bài trên tay" : "Cards in hand"}>
               <div className={styles.handTitle}>
