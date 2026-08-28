@@ -86,6 +86,15 @@ export async function createGuest(displayName: string): Promise<SessionDto> {
   return session;
 }
 
+export async function updateDisplayName(displayName: string): Promise<SessionDto> {
+  const session = await api<SessionDto>("/api/v1/profile/me", {
+    method: "PATCH",
+    body: JSON.stringify({ displayName: displayName.trim().slice(0, 32) }),
+  });
+  cacheSession(session);
+  return session;
+}
+
 export async function loginUser(payload: AuthPayload): Promise<SessionDto> {
   const session = await api<SessionDto>("/api/v1/auth/login", {
     method: "POST",

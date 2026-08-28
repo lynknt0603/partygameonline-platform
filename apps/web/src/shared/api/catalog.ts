@@ -25,6 +25,23 @@ const PRESENTATION: Record<string, Presentation> = {
     durationMax: 30,
     theme: { id: "bloodlines-gothic", name: "Gothic Night", prefersDarkCanvas: true, hudVariant: "platform" },
   },
+  "not-in-my-pot": {
+    displayName: "Not In My Pot!",
+    displayNameVi: "Not In My Pot!",
+    genre: "Hidden role • bluff",
+    genreVi: "Ẩn vai • nói dối",
+    summary: "Someone put meat in the pot. Cook, bluff and figure out who is ruining dinner.",
+    summaryVi: "Ai đó đã cho thịt vào nồi. Nấu ăn, nói dối và tìm ra ai đang phá bữa tối.",
+    durationMin: 15,
+    durationMax: 25,
+    theme: {
+      id: "not-in-my-pot-kitchen",
+      name: "Warm Kitchen Table",
+      prefersDarkCanvas: false,
+      hudVariant: "platform",
+      className: "not-in-my-pot",
+    },
+  },
 };
 
 const FALLBACK: Presentation = {

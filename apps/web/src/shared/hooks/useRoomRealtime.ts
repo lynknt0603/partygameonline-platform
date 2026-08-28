@@ -5,6 +5,15 @@ import { realtime } from "@/shared/api/ws";
 import type { RoomDto, WsEnvelope } from "@/shared/api/types";
 import { useSessionStore } from "@/shared/state/sessionStore";
 
+const ROOM_STATE_MESSAGES = new Set([
+  "PLAYER_JOINED",
+  "PLAYER_LEFT",
+  "PLAYER_READY_CHANGED",
+  "PLAYER_DISCONNECTED",
+  "PLAYER_RECONNECTED",
+  "ROOM_SETTINGS_CHANGED",
+]);
+
 interface Options {
   onView?: (view: Record<string, unknown>, envelope: WsEnvelope) => void;
   onRejected?: (code: string, message: string) => void;
@@ -47,6 +56,13 @@ export function useRoomRealtime(roomId: string | undefined, options: Options = {
         return;
       }
       const payload = message.payload ?? {};
+      // The room object is included in state-change events, but refetch as
+      // well so a host is corrected even if an older client/proxy drops the
+      // nested snapshot or delivers it out of order. React Query only
+      // refetches active observers, so this does not create a polling loop.
+      if (ROOM_STATE_MESSAGES.has(message.type)) {
+        void queryClient.invalidateQueries({ queryKey: ["room", normalized], exact: true });
+      }
       const room = payload.room as RoomDto | undefined;
       if (room) {
         queryClient.setQueryData(["room", normalized], room);

@@ -807,6 +807,27 @@
   font-weight: 700;
 }
 
+.overPlayerDetails {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.overPlayerDetails strong {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.overMoonScore {
+  color: #e6c98a;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
 .overPlayer img,
 .overPlayer span:first-child {
   width: 56px;
@@ -863,6 +884,21 @@
   text-align: left;
 }
 
+.overWinner[data-winner="false"] {
+  border-color: rgba(196, 161, 90, 0.35);
+  box-shadow: none;
+}
+
+.overRank {
+  width: 30px;
+  flex: 0 0 30px;
+  color: #e6c98a !important;
+  font-family: var(--font-body) !important;
+  font-size: 0.82rem !important;
+  font-weight: 900;
+  text-align: center;
+}
+
 .over[data-win="false"] .overWinner {
   border-color: rgba(196, 161, 90, 0.35);
   background: linear-gradient(180deg, rgba(32, 18, 22, 0.9), rgba(12, 8, 10, 0.92));
@@ -891,9 +927,20 @@
 
 .overElo {
   display: block;
-  color: #4ade80;
   font-size: 0.75rem;
   font-weight: 800;
+}
+
+.overElo[data-positive="true"] {
+  color: #4ade80;
+}
+
+.overElo[data-positive="false"] {
+  color: #fb7185;
+}
+
+.overElo[data-positive="neutral"] {
+  color: #aeb6c2;
 }
 
 .overPlay,

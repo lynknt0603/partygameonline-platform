@@ -9,6 +9,7 @@ export interface FactionStats {
 export interface PlayerStatsDto {
   player: {
     playerId: string;
+    username?: string | null;
     displayName: string;
     avatarUrl?: string;
     joinedAt?: string;
@@ -30,6 +31,7 @@ export interface PlayerStatsDto {
 export const DEFAULT_PLAYER_STATS: PlayerStatsDto = {
   player: {
     playerId: "NB-7X9X2M",
+    username: "bloodmoon",
     displayName: "BloodMoon",
     avatarUrl: "/assets/avatar-default.png",
     joinedAt: "12/02/2025",

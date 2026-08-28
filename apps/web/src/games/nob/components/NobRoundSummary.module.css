@@ -177,6 +177,10 @@
   color: #fb7185;
 }
 
+.eloDelta[data-positive="neutral"] {
+  color: var(--text-muted);
+}
+
 .badge[data-dead="true"] {
   background: rgba(215, 92, 92, 0.2);
   color: #d75c5c;

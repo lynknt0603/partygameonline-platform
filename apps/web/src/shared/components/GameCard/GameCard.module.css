@@ -45,6 +45,12 @@
     linear-gradient(165deg, #2a1218 0%, #12080c 70%, #1a1014 100%);
 }
 
+.notinmypot {
+  background:
+    radial-gradient(ellipse 70% 80% at 72% 22%, rgba(248, 202, 104, 0.36), transparent 55%),
+    linear-gradient(150deg, #e4c180, #5d803e 74%, #375b32);
+}
+
 .taverndice {
   background:
     radial-gradient(circle at 20% 80%, rgba(201, 164, 92, 0.28), transparent 40%),
