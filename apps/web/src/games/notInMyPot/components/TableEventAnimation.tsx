@@ -65,8 +65,7 @@ export function TableEventAnimation({ event, cardBack, locale }: TableEventAnima
   }
 
   if (event.type === "PLAYER_DOOR_UPDATED") {
-    const doorCount = typeof event.payload.doorCount === "number" ? event.payload.doorCount : 1;
-    return <div className={styles.doorMarkerMotion} aria-label={`${doorCount} / 3`}>🚪 <strong>{doorCount}/3</strong></div>;
+    return null;
   }
 
   return null;

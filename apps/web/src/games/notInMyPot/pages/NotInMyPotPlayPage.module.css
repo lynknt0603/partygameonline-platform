@@ -2307,7 +2307,7 @@ button.gameCard:hover:not(:disabled) {
 
 .turnIndicator {
   position: absolute;
-  top: 83px;
+  top: 14px;
   left: 50%;
   z-index: 6;
   display: flex;
@@ -3326,7 +3326,7 @@ button.gameCard.cardSelected:hover:not(:disabled) {
   }
 
   .turnIndicator {
-    top: 158px;
+    top: 12px;
     max-width: calc(100% - 24px);
     min-width: 0;
     width: max-content;
@@ -3654,7 +3654,7 @@ button.gameCard.cardSelected:hover:not(:disabled) {
   }
 
   .turnIndicator {
-    top: 151px;
+    top: 12px;
   }
 
   .centerStage {
