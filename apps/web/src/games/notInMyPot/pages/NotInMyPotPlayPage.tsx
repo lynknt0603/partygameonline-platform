@@ -211,7 +211,6 @@ function eventText(event: NotInMyPotEvent, players: NotInMyPotPlayer[], locale: 
   const payload = event.payload;
   const actor = playerName(players, payload.playerId, locale);
   const target = playerName(players, payload.targetPlayerId, locale);
-  const declaredType = typeof payload.declaredType === "string" ? payload.declaredType : "";
   const actionType = typeof payload.actionType === "string" ? payload.actionType : "";
   const role = typeof payload.role === "string" ? payload.role : null;
   switch (event.type) {
@@ -220,7 +219,7 @@ function eventText(event: NotInMyPotEvent, players: NotInMyPotPlayer[], locale: 
     case "TURN_STARTED":
       return locale === "vi" ? `Đến lượt ${actor}.` : `${actor}'s turn started.`;
     case "INGREDIENT_DECLARED":
-      return locale === "vi" ? `${actor} đã bỏ ${actionLabel(declaredType, locale)} vào nồi.` : `${actor} added ${actionLabel(declaredType, locale)} to the pot.`;
+      return locale === "vi" ? `${actor} đã bỏ nguyên liệu vào nồi.` : `${actor} added an ingredient to the pot.`;
     case "ACTION_STARTED":
       return locale === "vi" ? `${actor} dùng ${actionLabel(actionType, locale)}.` : `${actor} played ${actionLabel(actionType, locale)}.`;
     case "TARGET_SELECTION_REQUIRED":
