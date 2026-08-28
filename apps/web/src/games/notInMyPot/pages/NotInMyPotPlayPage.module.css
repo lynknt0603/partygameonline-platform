@@ -1659,17 +1659,16 @@ button.gameCard:hover:not(:disabled) {
 .resultActions {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  padding-top: 3px;
+  gap: 10px;
+  padding-top: 6px;
 }
 
 .resultActions .primaryButton {
-  grid-column: 1 / -1;
-  min-height: 46px;
+  min-height: 44px;
 }
 
 .resultActions .dangerButton {
-  grid-column: 1 / -1;
+  min-height: 44px;
 }
 
 @keyframes nimpPulse {
@@ -2160,12 +2159,13 @@ button.gameCard:hover:not(:disabled) {
   }
 
   .resultActions {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
   }
 
   .resultActions .primaryButton,
   .resultActions .dangerButton {
-    grid-column: auto;
+    min-height: 42px;
   }
 
   .rulesGrid {

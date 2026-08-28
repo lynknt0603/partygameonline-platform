@@ -569,14 +569,12 @@ function ResultModal({
   room,
   locale,
   onPlayAgain,
-  onReturnRoom,
   onLeave,
 }: {
   view: NotInMyPotView;
   room: RoomView;
   locale: "vi" | "en";
   onPlayAgain: () => void;
-  onReturnRoom: () => void;
   onLeave: () => void;
 }) {
   const won = view.winnerPlayerIds.includes(view.you);
@@ -648,7 +646,6 @@ function ResultModal({
         </div>
         <div className={styles.resultActions}>
           <button type="button" className={styles.primaryButton} onClick={onPlayAgain}><RotateCcw size={17} /> {locale === "vi" ? "Chơi lại" : "Play again"}</button>
-          <button type="button" className={styles.ghostButton} onClick={onReturnRoom}><ArrowLeft size={17} /> {locale === "vi" ? "Về phòng chờ" : "Back to room"}</button>
           <button type="button" className={styles.dangerButton} onClick={onLeave}><LogOut size={16} /> {locale === "vi" ? "Rời phòng" : "Leave room"}</button>
         </div>
       </section>
@@ -1091,7 +1088,7 @@ export function NotInMyPotPlayPage({
 
       {revealInProgress ? <PotRevealSequence cards={view.finalPot} targetScore={view.targetScore} locale={locale} onComplete={() => setRevealCompletedVersion(view.stateVersion)} /> : null}
 
-      {view.finished && !revealInProgress ? <ResultModal view={view} room={room} locale={locale} onPlayAgain={() => navigate(`/rooms/${room.id}`)} onReturnRoom={() => navigate(`/rooms/${room.id}`)} onLeave={() => leave.mutate(room.id)} /> : null}
+      {view.finished && !revealInProgress ? <ResultModal view={view} room={room} locale={locale} onPlayAgain={() => navigate(`/rooms/${room.id}`)} onLeave={() => leave.mutate(room.id)} /> : null}
     </main>
   );
 }
