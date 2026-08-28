@@ -72,6 +72,15 @@ export function storeDisplayName(name: string): void {
   localStorage.setItem(NAME_KEY, name.trim().slice(0, 32));
 }
 
+export function clearStoredIdentity(): void {
+  try {
+    localStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(NAME_KEY);
+  } catch {
+    /* ignore unavailable storage */
+  }
+}
+
 export async function fetchSession(): Promise<SessionDto> {
   return api<SessionDto>("/api/v1/session/me");
 }
@@ -114,24 +123,30 @@ export async function registerUser(payload: AuthPayload): Promise<SessionDto> {
 }
 
 export async function endSession(): Promise<void> {
-  await api<void>("/api/v1/session", { method: "DELETE" });
   try {
-    localStorage.removeItem(SESSION_KEY);
-  } catch {
-    /* ignore */
+    await api<void>("/api/v1/session", { method: "DELETE" });
+  } finally {
+    clearStoredIdentity();
+    clearCsrf();
   }
-  clearCsrf();
 }
 
 export async function bootstrapSession(): Promise<SessionDto> {
   await ensureCsrf();
   try {
-    const session = await fetchSession();
+    const fetchedSession = await fetchSession();
+    const session = fetchedSession.kind === "MEMBER"
+      ? fetchedSession
+      : { ...fetchedSession, displayName: "Player", avatarUrl: null };
+    if (fetchedSession.kind !== "MEMBER") {
+      clearStoredIdentity();
+    }
     cacheSession(session);
     return session;
   } catch (error) {
     if (error instanceof Error && "status" in error && (error as { status: number }).status === 401) {
-      return createGuest(storedDisplayName());
+      clearStoredIdentity();
+      return createGuest("Player");
     }
     throw error;
   }

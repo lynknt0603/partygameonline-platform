@@ -7,7 +7,6 @@ import {
   endSession,
   loginUser,
   registerUser,
-  storedDisplayName,
   updateDisplayName as updateDisplayNameRequest,
 } from "@/shared/api/session";
 import type { AuthPayload, SessionDto } from "@/shared/api/types";
@@ -95,7 +94,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       /* ignore */
     }
     try {
-      const guestSession = await createGuest(storedDisplayName());
+      const guestSession = await createGuest("Player");
       set({ session: guestSession, ready: true, error: null });
     } catch {
       set({ session: null, ready: true, error: null });
