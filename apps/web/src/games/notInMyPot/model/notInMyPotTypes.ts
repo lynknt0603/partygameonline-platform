@@ -4,6 +4,7 @@ export type NotInMyPotRole = "VEGETARIAN" | "MEAT_EATER";
 export type NotInMyPotCardType =
   | "VEGETABLE"
   | "SALT"
+  | "TOFU"
   | "MEAT"
   | "OUT_OF_HOUSE"
   | "SCOOP_OUT"

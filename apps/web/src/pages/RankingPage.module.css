@@ -50,6 +50,41 @@
   text-shadow: 0 0 16px rgba(212, 175, 55, 0.25);
 }
 
+.gameSelector {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 0 10px 4px;
+}
+
+.gameSelector > span {
+  color: #8f8378;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.gameSelector select {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 34px 0 12px;
+  border: 1px solid #5b3a20;
+  border-radius: var(--radius-sm);
+  background-color: #160e0d;
+  color: #f5dfa8;
+  font-size: 0.78rem;
+  font-weight: 750;
+  cursor: pointer;
+  color-scheme: dark;
+}
+
+.gameSelector select:hover,
+.gameSelector select:focus-visible {
+  border-color: #b88628;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(184, 134, 40, 0.16);
+}
+
 .filterList {
   display: flex;
   flex-direction: column;
@@ -158,6 +193,31 @@
 .werewolf .bloodlineFilterLabel { color: #60a5fa; }
 .halfblood .bloodlineFilterLabel { color: #c084fc; }
 
+.notInMyPotSidebarNote {
+  margin-top: auto;
+  padding: 18px 14px;
+  border: 1px solid #4c351c;
+  border-radius: var(--radius-sm);
+  background:
+    radial-gradient(circle at 85% 15%, rgba(212, 175, 55, 0.14), transparent 42%),
+    rgba(25, 16, 8, 0.72);
+}
+
+.notInMyPotSidebarNote span {
+  color: #ffd97d;
+  font-family: var(--font-display, serif);
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.notInMyPotSidebarNote p {
+  margin: 8px 0 0;
+  color: #a99b8b;
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
 /* Right Main Content */
 .content {
   display: flex;
@@ -184,6 +244,15 @@
   color: #d4af37;
   text-transform: uppercase;
   text-shadow: 0 0 12px rgba(212, 175, 55, 0.2);
+}
+
+.headerGameName {
+  margin: 5px 0 0;
+  color: #9f9184;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 /* Empty Notice */
@@ -630,6 +699,9 @@
     grid-template-columns: repeat(3, 1fr);
     gap: 4px;
   }
+  .gameSelector {
+    padding: 0;
+  }
   .filterButton {
     min-height: 44px;
     padding: 6px;
@@ -651,6 +723,9 @@
   .bloodlineCrestWrapper { width: 30px; height: 38px; }
   .bloodlineFilterLabel { font-size: 0.62rem; }
   .bloodlineChevron { display: none; }
+  .notInMyPotSidebarNote {
+    margin-top: 0;
+  }
 
   .content {
     padding: var(--space-4) var(--space-3);

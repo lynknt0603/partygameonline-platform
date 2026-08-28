@@ -4,6 +4,8 @@ import {
   BookOpen,
   Check,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   ChevronUp,
   CircleAlert,
   Clock3,
@@ -15,9 +17,7 @@ import {
   ShieldCheck,
   ShoppingBasket,
   Sparkles,
-  Trash2,
   Utensils,
-  Users,
   X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -34,6 +34,9 @@ import type {
   NotInMyPotPlayer,
   NotInMyPotView,
 } from "../model/notInMyPotTypes";
+import { CardPile } from "../components/CardPile";
+import { PotRevealSequence } from "../components/PotRevealSequence";
+import { TableEventAnimation } from "../components/TableEventAnimation";
 import styles from "./NotInMyPotPlayPage.module.css";
 
 interface NotInMyPotPlayPageProps {
@@ -64,12 +67,20 @@ const CARD_META: Record<string, CardMeta> = {
     art: NOT_IN_MY_POT_ASSETS.cards.vegetable,
     ingredient: true,
   },
-  SALT: {
-    labelVi: "Muối",
-    labelEn: "Salt",
+  TOFU: {
+    labelVi: "Đậu phụ",
+    labelEn: "Tofu",
     descriptionVi: "Thành phần trung tính",
     descriptionEn: "A neutral ingredient",
-    art: NOT_IN_MY_POT_ASSETS.cards.salt,
+    art: NOT_IN_MY_POT_ASSETS.cards.tofu,
+    ingredient: true,
+  },
+  SALT: {
+    labelVi: "Đậu phụ",
+    labelEn: "Tofu",
+    descriptionVi: "Thành phần trung tính",
+    descriptionEn: "A neutral ingredient",
+    art: NOT_IN_MY_POT_ASSETS.cards.tofu,
     ingredient: true,
   },
   MEAT: {
@@ -336,7 +347,6 @@ function TableSeat({
   player,
   position,
   total,
-  avatarUrl,
   locale,
   targetable,
   onTarget,
@@ -344,7 +354,6 @@ function TableSeat({
   player: NotInMyPotPlayer;
   position: number;
   total: number;
-  avatarUrl?: string | null;
   locale: "vi" | "en";
   targetable: boolean;
   onTarget: () => void;
@@ -352,31 +361,25 @@ function TableSeat({
   const angle = total > 1 ? 90 + (position * 360) / total : 90;
   const left = 50 + Math.cos((angle * Math.PI) / 180) * 42;
   const top = 50 + Math.sin((angle * Math.PI) / 180) * 38;
-  const roleVisible = Boolean(player.role);
   const seatClass = [styles.seat, player.you ? styles.seatSelf : "", targetable ? styles.seatTarget : "", player.expelled ? styles.seatExpelled : ""]
     .filter(Boolean)
     .join(" ");
   const seatContent = (
     <>
-      <span className={styles.seatAvatarWrap}>
-        <PlayerAvatar playerId={player.playerId} displayName={player.displayName} avatarUrl={avatarUrl} size={50} decorative />
-        {player.you ? <span className={styles.youDot}>{locale === "vi" ? "Bạn" : "You"}</span> : null}
-      </span>
-      {player.you && player.role ? (
-        <img className={styles.seatRoleCard} src={roleArt(player.role)} alt={roleLabel(player.role, locale)} />
-      ) : null}
       <span className={styles.seatMeta}>
-        <strong className={styles.seatName}>{player.displayName}</strong>
-        <span className={styles.seatSub}>
-          {player.newElo !== null ? `ELO ${player.newElo}` : "ELO —"} · {player.handCount} {locale === "vi" ? "lá" : "cards"}
-        </span>
+        <strong className={styles.seatName}>{player.displayName}{player.you ? <em>{locale === "vi" ? "BẠN" : "YOU"}</em> : null}</strong>
       </span>
-      <span className={styles.seatBadges}>
-        {roleVisible ? <span className={styles.roleBadge}>{roleLabel(player.role, locale)}</span> : <span className={styles.hiddenBadge}><EyeOff size={11} /> {locale === "vi" ? "Ẩn vai" : "Hidden"}</span>}
-        <span className={styles.doorTrack} aria-label={`${player.doorCount} / 3 ${locale === "vi" ? "dấu cửa" : "door marks"}`}>
-          {[0, 1, 2].map((door) => <span key={door} className={`${styles.door} ${door < player.doorCount ? styles.doorFilled : ""}`} />)}
-        </span>
+      <span className={styles.outCardTrack} aria-label={`${player.doorCount} / 3 ${locale === "vi" ? "lá Mời ra khỏi nhà" : "Out You Go cards"}`}>
+        {Array.from({ length: Math.max(0, Math.min(3, player.doorCount)) }, (_, index) => (
+          <img key={index} src={NOT_IN_MY_POT_ASSETS.cards.outOfHouse} alt="" aria-hidden="true" />
+        ))}
       </span>
+      {player.expelled && player.role ? (
+        <span className={styles.expelledRoleReveal}>
+          <img src={roleArt(player.role)} alt={roleLabel(player.role, locale)} />
+          <small>{roleLabel(player.role, locale)}</small>
+        </span>
+      ) : null}
       <span className={styles.seatStatus}>
         {player.expelled ? (locale === "vi" ? "Ngoài nhà" : "Out of house") : !player.connected ? (locale === "vi" ? "Mất kết nối" : "Disconnected") : ""}
       </span>
@@ -580,6 +583,13 @@ function ResultModal({
   const won = view.winnerPlayerIds.includes(view.you);
   const winners = view.players.filter((player) => view.winnerPlayerIds.includes(player.playerId));
   const winnerRole = roleLabel(view.winnerFaction, locale);
+  const gameEndedEvent = [...view.publicEvents].reverse().find((event) => event.type === "GAME_ENDED");
+  const endReason = typeof gameEndedEvent?.payload.reason === "string" ? gameEndedEvent.payload.reason : null;
+  const automaticMeatWin = view.finalPotScore === null
+    && (endReason === "FACTIONS_EQUAL" || endReason === "DRAW_PILE_EMPTY");
+  const automaticReasonText = endReason === "FACTIONS_EQUAL"
+    ? (locale === "vi" ? "Số Người Ăn Thịt còn lại bằng số Người Ăn Chay còn lại." : "The remaining Meat Eaters equal the remaining Vegetarians.")
+    : (locale === "vi" ? "Chồng bài rút đã hết." : "The draw pile is empty.");
   return (
     <div className={styles.resultLayer} role="dialog" aria-modal="true" aria-labelledby="nimp-result-title">
       <div className={styles.resultBackdrop} />
@@ -589,11 +599,20 @@ function ResultModal({
           <span className={styles.resultIcon}>{won ? <ShieldCheck size={30} /> : <CircleAlert size={30} />}</span>
           <p className={styles.modalEyebrow}>{won ? (locale === "vi" ? "PHE CỦA BẠN THẮNG" : "YOUR FACTION WON") : (locale === "vi" ? "PHE ĐỐI THỦ THẮNG" : "THE OTHER FACTION WON")}</p>
           <h2 id="nimp-result-title">{winnerRole}</h2>
-          <p>{locale === "vi" ? "Vai trò đã được mở. Đây là lúc kiểm tra ai đã lừa được cả bàn." : "The roles are revealed. Time to see who bluffed the table."}</p>
         </div>
         <div className={styles.resultScore}>
-          <span>{locale === "vi" ? "Điểm nồi cuối" : "Final pot score"}</span>
-          <strong>{formatScore(view.finalPotScore)} <small>/ {view.targetScore}</small></strong>
+          {automaticMeatWin ? (
+            <>
+              <span>{locale === "vi" ? "KẾT THÚC TỰ ĐỘNG" : "AUTOMATIC END"}</span>
+              <strong>{locale === "vi" ? "Không mở nồi" : "Pot not revealed"}</strong>
+              <small className={styles.automaticResultReason}>{automaticReasonText}</small>
+            </>
+          ) : (
+            <>
+              <span>{locale === "vi" ? "Điểm nồi cuối" : "Final pot score"}</span>
+              <strong>{formatScore(view.finalPotScore)} <small>/ {view.targetScore}</small></strong>
+            </>
+          )}
         </div>
         <div className={styles.resultWinners}>
           <h3>{locale === "vi" ? "Người thắng" : "Winners"}</h3>
@@ -650,10 +669,14 @@ export function NotInMyPotPlayPage({
   const [roleSeen, setRoleSeen] = useState(false);
   const [showRules, setShowRules] = useState(false);
   const [showLog, setShowLog] = useState(false);
+  const [logCollapsed, setLogCollapsed] = useState(false);
   const [selectedAction, setSelectedAction] = useState<NotInMyPotCard | null>(null);
   const [selectedActionTarget, setSelectedActionTarget] = useState<string | null>(null);
   const [showPotReady, setShowPotReady] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [selectedHandCardId, setSelectedHandCardId] = useState<string | null>(null);
+  const [movingCard, setMovingCard] = useState<NotInMyPotCard | null>(null);
+  const [revealCompletedVersion, setRevealCompletedVersion] = useState<number | null>(null);
   const [noticeHidden, setNoticeHidden] = useState(false);
   const [reorderIds, setReorderIds] = useState<string[]>([]);
   const [returnIds, setReturnIds] = useState<string[]>([]);
@@ -710,13 +733,14 @@ export function NotInMyPotPlayPage({
     return () => window.clearInterval(timer);
   }, [view?.pendingAction?.deadline]);
 
-  const submit = useCallback((command: NotInMyPotCommand) => {
+  const submit = useCallback((command: NotInMyPotCommand): boolean => {
     const requestId = sendCommand(command);
     if (!requestId) {
-      return;
+      return false;
     }
     setBusy(true);
     window.setTimeout(() => setBusy(false), 1_600);
+    return true;
   }, [sendCommand]);
 
   useEffect(() => {
@@ -724,6 +748,19 @@ export function NotInMyPotPlayPage({
       setBusy(false);
     }
   }, [view?.stateVersion]);
+
+  useEffect(() => {
+    if (!view || !selectedHandCardId || view.myHand.some((card) => card.cardId === selectedHandCardId)) {
+      return;
+    }
+    setSelectedHandCardId(null);
+  }, [selectedHandCardId, view]);
+
+  useEffect(() => {
+    if (!view?.finished) {
+      setRevealCompletedVersion(null);
+    }
+  }, [view?.finished]);
 
   const tablePlayers = useMemo(() => {
     if (!view) {
@@ -733,26 +770,41 @@ export function NotInMyPotPlayPage({
     const selfIndex = sorted.findIndex((player) => player.you || player.playerId === view.you);
     return selfIndex >= 0 ? [...sorted.slice(selfIndex), ...sorted.slice(0, selfIndex)] : sorted;
   }, [view]);
-  const avatarById = useMemo(() => new Map(room.players.map((player) => [player.playerId, player.avatarUrl])), [room.players]);
   const pending = view?.pendingAction ?? null;
   const pendingForYou = Boolean(view && pending && pending.actorPlayerId === view.you);
   const pendingTargetIds = pendingForYou && pending?.type === "SELECT_TARGET" ? new Set(pending.allowedTargetPlayerIds) : new Set<string>();
   const currentPlayer = view?.players.find((player) => player.playerId === view.currentPlayerId);
   const events = view?.publicEvents.slice(-24).reverse() ?? [];
+  const latestActionEvent = events.find((event) => event.type === "ACTION_STARTED") ?? null;
+  const latestIngredientEvent = events.find((event) => event.type === "INGREDIENT_DECLARED") ?? null;
+  const latestMotionEvent = events.find((event) => ["SCOOP_OUT_RESOLVED", "POT_REORDER_REQUIRED", "EMERGENCY_SHOPPING_RESOLVED", "TRASH_OUT_RESOLVED", "PLAYER_DOOR_UPDATED"].includes(event.type)) ?? null;
   const pendingSeconds = remainingSeconds(pending?.deadline);
   // Keep `now` in the component so the countdown updates even when the server is quiet.
   void now;
 
   const onHandCard = (card: NotInMyPotCard) => {
-    if (!view?.canAct || busy || pending) {
+    if (!view?.canAct || busy || pending || movingCard) {
       return;
     }
     if (isIngredient(card)) {
-      submit({ type: "PLAY_INGREDIENT", cardId: card.cardId, declaredType: card.type });
+      setSelectedHandCardId((current) => current === card.cardId ? null : card.cardId);
       return;
     }
+    setSelectedHandCardId(null);
     setSelectedActionTarget(null);
     setSelectedAction(card);
+  };
+
+  const playSelectedIngredient = () => {
+    const card = view?.myHand.find((item) => item.cardId === selectedHandCardId);
+    if (!card || !isIngredient(card) || busy || movingCard || !view?.canAct) {
+      return;
+    }
+    if (submit({ type: "PLAY_INGREDIENT", cardId: card.cardId, declaredType: card.type })) {
+      setMovingCard(card);
+      setSelectedHandCardId(null);
+      window.setTimeout(() => setMovingCard(null), 720);
+    }
   };
 
   const confirmAction = () => {
@@ -824,6 +876,23 @@ export function NotInMyPotPlayPage({
       : pending?.type === "RETURN_SHOPPING_CARDS"
         ? locale === "vi" ? "Trả lại 2 lá đi chợ" : "Return two shopping cards"
         : null;
+  const selectedHandCard = view.myHand.find((card) => card.cardId === selectedHandCardId) ?? null;
+  const actionType = typeof latestActionEvent?.payload.actionType === "string" ? latestActionEvent.payload.actionType : null;
+  const actionActor = latestActionEvent ? playerName(view.players, latestActionEvent.payload.playerId, locale) : null;
+  const actionCard = actionType ? {
+    cardId: `action-zone-${actionType}`,
+    category: "ACTION",
+    type: actionType,
+    score: null,
+  } satisfies NotInMyPotCard : null;
+  const latestActionKey = latestActionEvent ? JSON.stringify(latestActionEvent) : "action-empty";
+  const ingredientActorId = typeof latestIngredientEvent?.payload.playerId === "string" ? latestIngredientEvent.payload.playerId : null;
+  const latestIngredientKey = latestIngredientEvent ? JSON.stringify(latestIngredientEvent) : "ingredient-empty";
+  const showRemoteIngredientFlight = Boolean(latestIngredientEvent && ingredientActorId !== view.you);
+  const latestAnnouncement = events.find((event) => event.type === "INGREDIENT_DECLARED" || event.type === "ACTION_STARTED") ?? null;
+  const latestAnnouncementKey = latestAnnouncement ? JSON.stringify(latestAnnouncement) : "announcement-empty";
+  const latestMotionKey = latestMotionEvent ? JSON.stringify(latestMotionEvent) : "motion-empty";
+  const revealInProgress = view.finished && view.finalPot.length > 0 && revealCompletedVersion !== view.stateVersion;
 
   return (
     <main className={styles.page}>
@@ -842,7 +911,7 @@ export function NotInMyPotPlayPage({
         </div>
       </header>
 
-      <div className={styles.gameLayout}>
+      <div className={`${styles.gameLayout} ${logCollapsed ? styles.gameLayoutLogCollapsed : ""}`}>
         <section className={styles.tablePanel}>
           <div className={styles.panelHeader}>
             <div><p className={styles.modalEyebrow}>{locale === "vi" ? "BÀN BẾP" : "KITCHEN TABLE"}</p><h1>{locale === "vi" ? "Nồi của ai đây?" : "Whose pot is it?"}</h1></div>
@@ -858,7 +927,6 @@ export function NotInMyPotPlayPage({
                   player={player}
                   position={index}
                   total={tablePlayers.length}
-                  avatarUrl={avatarById.get(player.playerId)}
                   locale={locale}
                   targetable={pendingTargetIds.has(player.playerId)}
                   onTarget={() => submit({ type: "SELECT_TARGET", targetPlayerId: player.playerId })}
@@ -866,51 +934,109 @@ export function NotInMyPotPlayPage({
               ))}
             </div>
 
-            <div className={styles.potArea}>
-              <div className={styles.potGlow} />
-              <div className={styles.potStack} aria-hidden="true">
-                <img src={NOT_IN_MY_POT_ASSETS.cards.gameplayBack} alt="" className={styles.potBack} />
-                <img src={NOT_IN_MY_POT_ASSETS.cards.gameplayBack} alt="" className={`${styles.potBack} ${styles.potBackMiddle}`} />
-                <img src={NOT_IN_MY_POT_ASSETS.cards.gameplayBack} alt="" className={`${styles.potBack} ${styles.potBackFront}`} />
-              </div>
-              <div className={styles.potCopy}>
-                <span className={styles.potLock}><EyeOff size={15} /> {locale === "vi" ? "Điểm đang được giấu" : "Score stays hidden"}</span>
-                <strong>{view.potCardCount} <small>{locale === "vi" ? "lá trong nồi" : "cards in pot"}</small></strong>
-                <span>{locale === "vi" ? `Cần ${view.targetScore} điểm để mở nồi` : `Reach ${view.targetScore} points to reveal`}</span>
-              </div>
+            <div className={`${styles.turnIndicator} ${view.canAct ? styles.turnIndicatorYou : ""}`}>
+              <span className={styles.turnIcon}>{pendingForYou ? <CircleAlert size={17} /> : view.canAct ? <Flame size={17} /> : <Clock3 size={17} />}</span>
+              <span><strong>{turnText}</strong>{pendingTitle ? <small>{pendingTitle}</small> : null}</span>
+              {pendingSeconds !== null && pendingForYou ? <em>{pendingSeconds}s</em> : null}
             </div>
 
-            <div className={styles.tableStats}>
-              <span><span className={styles.statIcon}><ShoppingBasket size={14} /></span><strong>{view.drawPileCount}</strong> {locale === "vi" ? "bài úp" : "deck"}</span>
-              <span><span className={styles.statIcon}><Trash2 size={14} /></span><strong>{view.discardPileCount}</strong> {locale === "vi" ? "bỏ" : "discard"}</span>
-              <span><span className={styles.statIcon}><Users size={14} /></span><strong>{view.players.filter((player) => player.active).length}</strong> {locale === "vi" ? "đang ở bàn" : "at table"}</span>
+            <div className={styles.centerStage}>
+              <div className={styles.pileRow}>
+                <CardPile
+                  count={view.drawPileCount}
+                  label={locale === "vi" ? "CHỒNG RÚT" : "DRAW PILE"}
+                  emptyLabel={locale === "vi" ? "HẾT BÀI" : "EMPTY"}
+                  cardLabel={locale === "vi" ? "lá" : "cards"}
+                  cardBack={NOT_IN_MY_POT_ASSETS.cards.gameplayBack}
+                  className={styles.drawPile}
+                />
+
+                <div className={styles.potPlayZone}>
+                  <CardPile
+                    count={view.potCardCount}
+                    label={locale === "vi" ? "NỒI" : "POT"}
+                    emptyLabel={locale === "vi" ? "NỒI ĐANG TRỐNG" : "POT IS EMPTY"}
+                    cardLabel={locale === "vi" ? "lá" : "cards"}
+                    cardBack={NOT_IN_MY_POT_ASSETS.cards.gameplayBack}
+                    className={styles.potPile}
+                  />
+                </div>
+
+                <CardPile
+                  count={view.discardPileCount}
+                  label={locale === "vi" ? "CHỒNG BỎ" : "DISCARD"}
+                  emptyLabel={locale === "vi" ? "CHƯA CÓ BÀI" : "EMPTY"}
+                  cardLabel={locale === "vi" ? "lá" : "cards"}
+                  cardBack={NOT_IN_MY_POT_ASSETS.cards.gameplayBack}
+                  className={styles.discardPile}
+                />
+              </div>
+
+              <div className={`${styles.actionZone} ${actionCard ? styles.actionZoneActive : ""}`} key={latestActionKey}>
+                <div className={styles.actionZoneLabel}><Sparkles size={14} /><span>ACTION ZONE</span></div>
+                {actionCard ? (
+                  <div className={styles.actionZoneContent}>
+                    <NimpCard card={actionCard} locale={locale} compact interactive={false} showScore={false} />
+                    <span><strong>{cardLabel(actionCard, locale)}</strong><small>{actionActor} {locale === "vi" ? "đang xử lý hành động" : "is resolving an action"}</small></span>
+                  </div>
+                ) : <small>{locale === "vi" ? "Lá hành động sẽ xuất hiện ở đây" : "Action cards appear here"}</small>}
+              </div>
+
+              {latestAnnouncement ? <div className={styles.tableAnnouncement} key={latestAnnouncementKey}>{eventText(latestAnnouncement, view.players, locale)}</div> : null}
             </div>
+
+            {movingCard ? (
+              <div className={styles.cardFlight} aria-hidden="true">
+                <div className={styles.cardFlightInner}>
+                  <img className={styles.cardFlightFront} src={cardMeta(movingCard).art} alt="" />
+                  <img className={styles.cardFlightBack} src={NOT_IN_MY_POT_ASSETS.cards.gameplayBack} alt="" />
+                </div>
+              </div>
+            ) : null}
+            {showRemoteIngredientFlight ? <img key={latestIngredientKey} className={styles.remoteCardFlight} src={NOT_IN_MY_POT_ASSETS.cards.gameplayBack} alt="" aria-hidden="true" /> : null}
+            <TableEventAnimation key={latestMotionKey} event={latestMotionEvent} cardBack={NOT_IN_MY_POT_ASSETS.cards.gameplayBack} locale={locale} />
+
+            <section className={styles.handPanel} aria-label={locale === "vi" ? "Bài trên tay" : "Cards in hand"}>
+              <div className={styles.handTitle}>
+                <span><strong>{locale === "vi" ? "BÀI TRÊN TAY" : "MY HAND"}</strong><small>{view.myHand.length} {locale === "vi" ? "lá" : "cards"}</small></span>
+                <span>{selectedHandCard ? (locale === "vi" ? `Đã chọn: ${cardLabel(selectedHandCard, locale)}` : `Selected: ${cardLabel(selectedHandCard, locale)}`) : (locale === "vi" ? "Chọn một lá để đánh" : "Select a card to play")}</span>
+              </div>
+              <div className={styles.handGrid}>
+                {view.myHand.map((card) => <NimpCard key={card.cardId} card={card} locale={locale} selected={card.cardId === selectedHandCardId} disabled={!view.canAct || busy || Boolean(pending) || Boolean(movingCard) || revealInProgress} onClick={() => onHandCard(card)} />)}
+                {view.myHand.length === 0 ? <p className={styles.emptyHand}>{locale === "vi" ? "Bạn không còn lá trên tay." : "You have no cards in hand."}</p> : null}
+              </div>
+              {selectedHandCard || view.canDeclarePotReady ? <div className={styles.actionDock}>
+                {selectedHandCard && isIngredient(selectedHandCard) ? <button type="button" className={styles.playCardButton} disabled={busy || Boolean(movingCard)} onClick={playSelectedIngredient}><Flame size={17} /> {locale === "vi" ? "ĐÁNH LÁ NÀY" : "PLAY THIS CARD"}</button> : null}
+                {view.canDeclarePotReady ? <button type="button" className={styles.readyButton} disabled={busy || Boolean(movingCard)} onClick={() => setShowPotReady(true)}><ShieldCheck size={17} /> {locale === "vi" ? "Mở nồi tính điểm" : "Reveal Pot and Calculate Score"}</button> : null}
+              </div> : null}
+            </section>
           </div>
 
         </section>
 
-        <aside className={styles.sidePanel}>
-          <div className={`${styles.turnBanner} ${view.canAct ? styles.turnBannerYou : ""}`}>
-            <span className={styles.turnIcon}>{pendingForYou ? <CircleAlert size={17} /> : view.canAct ? <Flame size={17} /> : <Clock3 size={17} />}</span>
-            <span><strong>{turnText}</strong>{pendingTitle ? <small>{pendingTitle}</small> : !view.finished ? <small>{locale === "vi" ? "Chọn một lá trên tay hoặc tuyên bố nồi đã sẵn sàng." : "Play a card from your hand or declare the pot ready."}</small> : null}</span>
-            {pendingSeconds !== null && pendingForYou ? <em>{pendingSeconds}s</em> : null}
-          </div>
-          <div className={styles.sideSection}>
-            <div className={styles.sideHeader}><div><p className={styles.modalEyebrow}>{locale === "vi" ? "CÔNG KHAI" : "PUBLIC"}</p><h2>{locale === "vi" ? "Nhật ký bàn" : "Table log"}</h2></div><button type="button" className={styles.mobileLogButton} onClick={() => setShowLog((current) => !current)}>{showLog ? <X size={16} /> : <Info size={16} />}</button></div>
-            <div className={`${styles.logList} ${showLog ? styles.logOpen : ""}`}>
-              {events.length === 0 ? <p className={styles.emptyLog}>{locale === "vi" ? "Bàn đang chờ sự kiện đầu tiên." : "Waiting for the first table event."}</p> : events.map((event, index) => <div className={styles.logItem} key={`${event.type}-${index}`}><span className={styles.logMarker} /><div><p>{eventText(event, view.players, locale)}</p><small>{event.type.replaceAll("_", " ")}</small></div></div>)}
+        <aside className={`${styles.sidePanel} ${logCollapsed ? styles.sidePanelCollapsed : ""}`}>
+          {logCollapsed ? (
+            <button type="button" className={styles.logExpandButton} onClick={() => setLogCollapsed(false)} aria-label={locale === "vi" ? "Mở Nhật ký bàn" : "Expand table log"}>
+              <ChevronLeft size={18} />
+              <BookOpen size={17} />
+              <span>{locale === "vi" ? "Nhật ký" : "Log"}</span>
+            </button>
+          ) : (
+            <div className={styles.sideSection}>
+              <div className={styles.sideHeader}>
+                <div><p className={styles.modalEyebrow}>{locale === "vi" ? "CÔNG KHAI" : "PUBLIC"}</p><h2>{locale === "vi" ? "Nhật ký bàn" : "Table log"}</h2></div>
+                <div className={styles.logHeaderActions}>
+                  <button type="button" className={styles.mobileLogButton} onClick={() => setShowLog((current) => !current)}>{showLog ? <X size={16} /> : <Info size={16} />}</button>
+                  <button type="button" className={styles.collapseLogButton} onClick={() => setLogCollapsed(true)} aria-label={locale === "vi" ? "Thu nhỏ Nhật ký bàn" : "Collapse table log"}><ChevronRight size={17} /></button>
+                </div>
+              </div>
+              <div className={`${styles.logList} ${showLog ? styles.logOpen : ""}`}>
+                {events.length === 0 ? <p className={styles.emptyLog}>{locale === "vi" ? "Bàn đang chờ sự kiện đầu tiên." : "Waiting for the first table event."}</p> : events.map((event, index) => <div className={styles.logItem} key={`${event.type}-${index}`}><span className={styles.logMarker} /><div><p>{eventText(event, view.players, locale)}</p><small>{event.type.replaceAll("_", " ")}</small></div></div>)}
+              </div>
             </div>
-          </div>
+          )}
         </aside>
       </div>
-
-      <section className={styles.handPanel} aria-label={locale === "vi" ? "Bài trên tay" : "Cards in hand"}>
-        <div className={styles.handGrid}>
-          {view.myHand.map((card) => <NimpCard key={card.cardId} card={card} locale={locale} disabled={!view.canAct || busy || Boolean(pending)} onClick={() => onHandCard(card)} />)}
-          {view.myHand.length === 0 ? <p className={styles.emptyHand}>{locale === "vi" ? "Bạn không còn lá trên tay." : "You have no cards in hand."}</p> : null}
-        </div>
-        {view.canDeclarePotReady ? <div className={styles.actionDock}><button type="button" className={styles.readyButton} disabled={busy} onClick={() => setShowPotReady(true)}><ShieldCheck size={17} /> {locale === "vi" ? "Nồi đã sẵn sàng" : "Pot Ready"}</button></div> : null}
-      </section>
 
       {notice && !noticeHidden ? <div className={`${styles.notice} ${rejectCode ? styles.noticeError : ""}`} role="status"><CircleAlert size={15} /> <span>{notice}</span><button type="button" onClick={() => setNoticeHidden(true)} aria-label="Dismiss"><X size={14} /></button></div> : null}
 
@@ -919,8 +1045,22 @@ export function NotInMyPotPlayPage({
           <div className={styles.roleModal}>
             <img src={roleArt(view.myRole)} alt="" className={styles.roleImage} />
             <span className={styles.rolePill}><ShieldCheck size={15} /> {roleLabel(view.myRole, locale)}</span>
-            <p>{view.myRole === "MEAT_EATER" ? locale === "vi" ? "Bạn muốn nồi không đạt mục tiêu. Hãy hòa vào bàn, gieo nghi ngờ và đừng để bị mời ra ngoài." : "You want the pot to miss its target. Blend in, create doubt, and stay inside the house." : locale === "vi" ? "Bạn muốn nồi đạt mục tiêu. Đọc lời khai của mọi người và bảo vệ căn bếp khỏi thịt." : "You want the pot to reach its target. Read every claim and keep meat out of the kitchen."}</p>
-            <small><EyeOff size={13} /> {locale === "vi" ? "Đừng để lộ thẻ này cho người khác." : "Do not reveal this card to other players."}</small>
+            <div className={styles.roleConditions}>
+              <p><strong>{locale === "vi" ? "Điều kiện thắng:" : "Win conditions:"}</strong></p>
+              <ul>
+                {view.myRole === "MEAT_EATER" ? (
+                  <>
+                    <li>{locale === "vi" ? "Nồi được mở nhưng không đạt mục tiêu điểm" : "The pot is revealed but misses the target score"}</li>
+                    <li>{locale === "vi" ? "Số lượng Người Ăn Chay bị đuổi bằng với Người Ăn Thịt" : "Equal number of Vegetarians and Meat Eaters remain"}</li>
+                  </>
+                ) : (
+                  <>
+                    <li>{locale === "vi" ? "Tất cả Người Ăn Thịt đã bị đuổi khỏi nhà" : "All Meat Eaters are expelled from the house"}</li>
+                    <li>{locale === "vi" ? `Tích lũy được ${view.targetScore} điểm trong nồi` : `Accumulate ${view.targetScore} points in the pot`}</li>
+                  </>
+                )}
+              </ul>
+            </div>
           </div>
         </ModalShell>
       ) : null}
@@ -929,11 +1069,13 @@ export function NotInMyPotPlayPage({
 
       {pending && pendingForYou ? <PendingActionModal pending={pending} inspectedCards={view.privateInspectedCards} hand={view.myHand} players={view.players} locale={locale} reorderIds={reorderIds} returnIds={returnIds} onReorder={reorder} onToggleReturn={toggleReturn} onTarget={(playerId) => { submit({ type: "SELECT_TARGET", targetPlayerId: playerId }); }} onSubmitReorder={() => { submit({ type: "REORDER_POT_CARDS", cardIds: reorderIds }); }} onSubmitReturn={() => { submit({ type: "RETURN_SHOPPING_CARDS", cardIds: returnIds }); }} busy={busy} /> : null}
 
-      {showPotReady ? <ModalShell title={locale === "vi" ? "Mở nồi ngay?" : "Reveal the pot now?"} onClose={() => setShowPotReady(false)}><div className={styles.readyModal}><div className={styles.readyIcon}><ShieldCheck size={26} /></div><h3>{locale === "vi" ? "Nồi đã đủ chín?" : "Is the pot ready?"}</h3><p>{locale === "vi" ? `Máy chủ sẽ mở nồi và so sánh điểm với mục tiêu ${view.targetScore}. Hành động này kết thúc ván.` : `The server will reveal the pot and compare it with the ${view.targetScore}-point target. This ends the game.`}</p></div><div className={styles.modalFooter}><button type="button" className={styles.ghostButton} onClick={() => setShowPotReady(false)}>{locale === "vi" ? "Chưa" : "Not yet"}</button><button type="button" className={styles.primaryButton} disabled={busy} onClick={() => { submit({ type: "DECLARE_POT_READY" }); setShowPotReady(false); }}><Check size={16} /> {locale === "vi" ? "Mở nồi" : "Reveal pot"}</button></div></ModalShell> : null}
+      {showPotReady ? <ModalShell title={locale === "vi" ? "Mở nồi tính điểm?" : "Reveal Pot and Calculate Score?"} onClose={() => setShowPotReady(false)}><div className={styles.readyModal}><div className={styles.readyIcon}><ShieldCheck size={26} /></div><h3>{locale === "vi" ? "Mở nồi và tính điểm ngay?" : "Reveal the pot and calculate its score now?"}</h3><p>{locale === "vi" ? `Máy chủ sẽ mở nồi và so sánh điểm với mục tiêu ${view.targetScore}. Hành động này kết thúc ván.` : `The server will reveal the pot and compare it with the ${view.targetScore}-point target. This ends the game.`}</p></div><div className={styles.modalFooter}><button type="button" className={styles.ghostButton} onClick={() => setShowPotReady(false)}>{locale === "vi" ? "Chưa" : "Not yet"}</button><button type="button" className={styles.primaryButton} disabled={busy} onClick={() => { submit({ type: "DECLARE_POT_READY" }); setShowPotReady(false); }}><Check size={16} /> {locale === "vi" ? "Mở nồi tính điểm" : "Reveal Pot and Calculate Score"}</button></div></ModalShell> : null}
 
-      {showRules ? <ModalShell title={locale === "vi" ? "Luật nhanh — Not In My Pot!" : "Quick rules — Not In My Pot!"} onClose={() => setShowRules(false)} wide><div className={styles.rulesGrid}><div><span className={styles.rulesNumber}>01</span><h3>{locale === "vi" ? "Bỏ nguyên liệu" : "Play an ingredient"}</h3><p>{locale === "vi" ? "Mỗi lá nguyên liệu có loại và điểm cố định: Rau củ +1, Muối 0, Thịt −2. Máy chủ lấy đúng giá trị trên lá." : "Every ingredient has a fixed type and score: Vegetable +1, Salt 0, Meat −2. The server uses the card's actual value."}</p></div><div><span className={styles.rulesNumber}>02</span><h3>{locale === "vi" ? "Dùng action" : "Use actions"}</h3><p>{locale === "vi" ? "Đuổi người, vớt nồi, xem lại bài, đi chợ gấp hoặc đổ rác để phá kế hoạch." : "Send someone out, scoop the pot, inspect cards, shop in an emergency, or trash a hand."}</p></div><div><span className={styles.rulesNumber}>03</span><h3>{locale === "vi" ? "Nồi đạt mục tiêu" : "Hit the target"}</h3><p>{locale === "vi" ? "Người ăn chay có thể bấm Nồi đã sẵn sàng đầu lượt để mở điểm thật." : "A Vegetarian may press Pot Ready at the start of their turn to reveal the true score."}</p></div><div><span className={styles.rulesNumber}>04</span><h3>{locale === "vi" ? "Cửa nhà" : "Door marks"}</h3><p>{locale === "vi" ? "Một người bị mời ra 3 lần sẽ bị loại và lộ vai. Suy luận cẩn thận." : "A player sent out three times is expelled and reveals their role. Deduce carefully."}</p></div></div><div className={styles.rulesPrivacy}><EyeOff size={17} /><span>{locale === "vi" ? "Thông tin riêng: vai, bài trên tay và các lá bạn xem chỉ được gửi cho chính bạn." : "Private data: your role, hand, and inspected cards are only projected to you."}</span></div></ModalShell> : null}
+      {showRules ? <ModalShell title={locale === "vi" ? "Luật nhanh — Not In My Pot!" : "Quick rules — Not In My Pot!"} onClose={() => setShowRules(false)} wide><div className={styles.rulesGrid}><div><span className={styles.rulesNumber}>01</span><h3>{locale === "vi" ? "Bỏ nguyên liệu" : "Play an ingredient"}</h3><p>{locale === "vi" ? "Mỗi lá nguyên liệu có loại và điểm cố định: Rau củ +1, Đậu phụ 0, Thịt −2. Máy chủ lấy đúng giá trị trên lá." : "Every ingredient has a fixed type and score: Vegetable +1, Tofu 0, Meat −2. The server uses the card's actual value."}</p></div><div><span className={styles.rulesNumber}>02</span><h3>{locale === "vi" ? "Dùng action" : "Use actions"}</h3><p>{locale === "vi" ? "Đuổi người, vớt nồi, xem lại bài, đi chợ gấp hoặc đổ rác để phá kế hoạch." : "Send someone out, scoop the pot, inspect cards, shop in an emergency, or trash a hand."}</p></div><div><span className={styles.rulesNumber}>03</span><h3>{locale === "vi" ? "Nồi đạt mục tiêu" : "Hit the target"}</h3><p>{locale === "vi" ? "Người ăn chay có thể bấm Mở nồi tính điểm ở đầu lượt để mở điểm thật." : "A Vegetarian may press Reveal Pot and Calculate Score at the start of their turn to reveal the true score."}</p></div><div><span className={styles.rulesNumber}>04</span><h3>{locale === "vi" ? "Cửa nhà" : "Door marks"}</h3><p>{locale === "vi" ? "Một người bị mời ra 3 lần sẽ bị loại và lộ vai. Suy luận cẩn thận." : "A player sent out three times is expelled and reveals their role. Deduce carefully."}</p></div></div><div className={styles.rulesPrivacy}><EyeOff size={17} /><span>{locale === "vi" ? "Thông tin riêng: vai, bài trên tay và các lá bạn xem chỉ được gửi cho chính bạn." : "Private data: your role, hand, and inspected cards are only projected to you."}</span></div></ModalShell> : null}
 
-      {view.finished ? <ResultModal view={view} room={room} locale={locale} onPlayAgain={() => navigate(`/rooms/${room.id}`)} onReturnRoom={() => navigate(`/rooms/${room.id}`)} onLeave={() => leave.mutate(room.id)} /> : null}
+      {revealInProgress ? <PotRevealSequence cards={view.finalPot} targetScore={view.targetScore} locale={locale} onComplete={() => setRevealCompletedVersion(view.stateVersion)} /> : null}
+
+      {view.finished && !revealInProgress ? <ResultModal view={view} room={room} locale={locale} onPlayAgain={() => navigate(`/rooms/${room.id}`)} onReturnRoom={() => navigate(`/rooms/${room.id}`)} onLeave={() => leave.mutate(room.id)} /> : null}
     </main>
   );
 }

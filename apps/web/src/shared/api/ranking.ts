@@ -2,6 +2,7 @@ import { api } from "./http";
 
 export type RankingSort = "highestElo" | "wins" | "bloodlineWins";
 export type RankingBloodline = "VAMPIRE" | "WEREWOLF" | "HALFBLOOD" | null;
+export type RankingGameId = "night-of-bloodlines" | "not-in-my-pot";
 
 export interface RankingEntryDto {
   rank: number;
@@ -30,15 +31,16 @@ export interface RankingDto {
 }
 
 interface RankingQuery {
+  gameId: RankingGameId;
   sort: RankingSort;
   bloodline: RankingBloodline;
   page?: number;
   size?: number;
 }
 
-export async function fetchRanking({ sort, bloodline, page = 0, size = 7 }: RankingQuery): Promise<RankingDto> {
+export async function fetchRanking({ gameId, sort, bloodline, page = 0, size = 7 }: RankingQuery): Promise<RankingDto> {
   const params = new URLSearchParams({
-    gameId: "night-of-bloodlines",
+    gameId,
     sort,
     page: String(page),
     size: String(size),

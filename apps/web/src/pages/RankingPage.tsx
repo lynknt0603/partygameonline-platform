@@ -2,7 +2,13 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronRight, Crown, Shield, Swords, Trophy } from "lucide-react";
 import { Link } from "react-router-dom";
-import { fetchRanking, type RankingBloodline, type RankingEntryDto, type RankingSort } from "@/shared/api/ranking";
+import {
+  fetchRanking,
+  type RankingBloodline,
+  type RankingEntryDto,
+  type RankingGameId,
+  type RankingSort,
+} from "@/shared/api/ranking";
 import { PlayerAvatar } from "@/shared/components/PlayerAvatar/PlayerAvatar";
 import { useSessionStore } from "@/shared/state/sessionStore";
 import styles from "./RankingPage.module.css";
@@ -37,6 +43,11 @@ const SORT_OPTIONS: Array<{ id: RankingSort; label: string; icon: typeof Crown }
   { id: "highestElo", label: "ELO CAO NHẤT", icon: Crown },
   { id: "wins", label: "SỐ TRẬN THẮNG", icon: Trophy },
   { id: "bloodlineWins", label: "ROLE NHIỀU ROUND THẮNG", icon: Shield },
+];
+
+const RANKING_GAMES: Array<{ id: RankingGameId; label: string }> = [
+  { id: "night-of-bloodlines", label: "Night of Bloodlines" },
+  { id: "not-in-my-pot", label: "Not In My Pot" },
 ];
 
 function formatNumber(value: number): string {
@@ -139,7 +150,15 @@ function PodiumCard({
   );
 }
 
-function RankingTableRow({ entry, sort }: { entry: RankingEntryDto; sort: RankingSort }) {
+function RankingTableRow({
+  entry,
+  sort,
+  isNob,
+}: {
+  entry: RankingEntryDto;
+  sort: RankingSort;
+  isNob: boolean;
+}) {
   const image = bloodlineImage(entry.favoriteBloodline);
   return (
     <div className={styles.tableRow}>
@@ -158,11 +177,15 @@ function RankingTableRow({ entry, sort }: { entry: RankingEntryDto; sort: Rankin
       <div className={`${styles.numberCell} ${sort === "wins" ? styles.activeCell : ""}`}>
         {formatNumber(entry.totalWins)}
       </div>
-      <div className={`${styles.bloodlineCell} ${sort === "bloodlineWins" ? styles.activeCell : ""}`}>
-        <img src={image} alt="" className={styles.bloodlineThumb} aria-hidden="true" />
-        <span className={styles.bloodlineName}>{bloodlineLabel(entry.favoriteBloodline)}</span>
-        <strong className={styles.bloodlineScore}>{entry.bloodlineWins}</strong>
-      </div>
+      {isNob ? (
+        <div className={`${styles.bloodlineCell} ${sort === "bloodlineWins" ? styles.activeCell : ""}`}>
+          <img src={image} alt="" className={styles.bloodlineThumb} aria-hidden="true" />
+          <span className={styles.bloodlineName}>{bloodlineLabel(entry.favoriteBloodline)}</span>
+          <strong className={styles.bloodlineScore}>{entry.bloodlineWins}</strong>
+        </div>
+      ) : (
+        <div className={styles.numberCell}>{formatNumber(entry.elo)}</div>
+      )}
     </div>
   );
 }
@@ -170,13 +193,19 @@ function RankingTableRow({ entry, sort }: { entry: RankingEntryDto; sort: Rankin
 export function RankingPage() {
   const currentDisplayName = useSessionStore((state) => state.session?.displayName) || "You";
 
+  const [gameId, setGameId] = useState<RankingGameId>("night-of-bloodlines");
   const [sort, setSort] = useState<RankingSort>("highestElo");
   const [bloodline, setBloodline] = useState<RankingBloodline>(null);
   const [page, setPage] = useState(0);
 
+  const isNob = gameId === "night-of-bloodlines";
+  const visibleSortOptions = isNob
+    ? SORT_OPTIONS
+    : SORT_OPTIONS.filter((option) => option.id !== "bloodlineWins");
+
   const ranking = useQuery({
-    queryKey: ["ranking", sort, bloodline, page],
-    queryFn: () => fetchRanking({ sort, bloodline, page, size: 7 }),
+    queryKey: ["ranking", gameId, sort, bloodline, page],
+    queryFn: () => fetchRanking({ gameId, sort, bloodline: isNob ? bloodline : null, page, size: 7 }),
   });
 
   const podium = ranking.data?.podium ?? [];
@@ -195,6 +224,13 @@ export function RankingPage() {
     setPage(0);
   };
 
+  const selectGame = (nextGameId: RankingGameId) => {
+    setGameId(nextGameId);
+    setBloodline(null);
+    setSort("highestElo");
+    setPage(0);
+  };
+
   // Find top 1, 2, 3
   const top1 = podium.find((p) => p.rank === 1);
   const top2 = podium.find((p) => p.rank === 2);
@@ -209,8 +245,23 @@ export function RankingPage() {
             <strong>RANKING</strong>
           </div>
 
+          <label className={styles.gameSelector}>
+            <span>TRÒ CHƠI</span>
+            <select
+              value={gameId}
+              onChange={(event) => selectGame(event.target.value as RankingGameId)}
+              aria-label="Chọn bảng xếp hạng theo trò chơi"
+            >
+              {RANKING_GAMES.map((game) => (
+                <option key={game.id} value={game.id}>
+                  {game.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
           <div className={styles.filterList} role="tablist" aria-label="Ranking sort">
-            {SORT_OPTIONS.map(({ id, label, icon: Icon }) => (
+            {visibleSortOptions.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
                 type="button"
@@ -228,8 +279,9 @@ export function RankingPage() {
             ))}
           </div>
 
-          <div className={styles.bloodlineFilters}>
-            {BLOODLINES.map((item) => (
+          {isNob ? (
+            <div className={styles.bloodlineFilters}>
+              {BLOODLINES.map((item) => (
               <button
                 type="button"
                 key={item.id}
@@ -242,14 +294,25 @@ export function RankingPage() {
                 <span className={styles.bloodlineFilterLabel}>{item.label}</span>
                 <ChevronRight size={16} className={styles.bloodlineChevron} aria-hidden="true" />
               </button>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className={styles.notInMyPotSidebarNote}>
+              <span>NOT IN MY POT</span>
+              <p>ELO và thành tích được tính độc lập với Night of Bloodlines.</p>
+            </div>
+          )}
         </aside>
 
         {/* Right Main Content */}
         <main className={styles.content}>
           <header className={styles.header}>
-            <h2 className={styles.headerTitle}>BẢNG XẾP HẠNG</h2>
+            <div>
+              <h2 className={styles.headerTitle}>BẢNG XẾP HẠNG</h2>
+              <p className={styles.headerGameName}>
+                {isNob ? "Night of Bloodlines" : "Not In My Pot"}
+              </p>
+            </div>
           </header>
 
           {ranking.isLoading ? (
@@ -258,7 +321,7 @@ export function RankingPage() {
             </div>
           ) : isEmpty ? (
             <div className={styles.emptyNotice}>
-              <p>Chưa có người chơi hoàn tất trận NOB nào.</p>
+              <p>Chưa có người chơi hoàn tất trận {isNob ? "NOB" : "Not In My Pot"} nào.</p>
               <span>Hãy vào phòng và chơi ván đầu tiên để bắt đầu ghi danh lên bảng xếp hạng!</span>
             </div>
           ) : (
@@ -280,12 +343,14 @@ export function RankingPage() {
                     <span>NGƯỜI CHƠI</span>
                     <span className={sort === "highestElo" ? styles.activeHeader : ""}>ELO CAO NHẤT</span>
                     <span className={sort === "wins" ? styles.activeHeader : ""}>SỐ TRẬN THẮNG</span>
-                    <span className={sort === "bloodlineWins" ? styles.activeHeader : ""}>ROLE NHIỀU ROUND THẮNG</span>
+                    <span className={sort === "bloodlineWins" ? styles.activeHeader : ""}>
+                      {isNob ? "ROLE NHIỀU ROUND THẮNG" : "ELO HIỆN TẠI"}
+                    </span>
                   </div>
 
                   <div className={styles.tableBody}>
                     {entries.map((entry) => (
-                      <RankingTableRow key={entry.playerId} entry={entry} sort={sort} />
+                      <RankingTableRow key={entry.playerId} entry={entry} sort={sort} isNob={isNob} />
                     ))}
                   </div>
                 </section>
@@ -316,16 +381,20 @@ export function RankingPage() {
                     {formatNumber(me.totalWins)}
                   </div>
 
-                  <div className={`${styles.meBloodlineCol} ${sort === "bloodlineWins" ? styles.activeMeNumber : ""}`}>
-                    <img
-                      src={bloodlineImage(me.favoriteBloodline)}
-                      alt=""
-                      className={styles.bloodlineThumb}
-                      aria-hidden="true"
-                    />
-                    <span className={styles.bloodlineName}>{bloodlineLabel(me.favoriteBloodline)}</span>
-                    <strong className={styles.bloodlineScore}>{me.bloodlineWins}</strong>
-                  </div>
+                  {isNob ? (
+                    <div className={`${styles.meBloodlineCol} ${sort === "bloodlineWins" ? styles.activeMeNumber : ""}`}>
+                      <img
+                        src={bloodlineImage(me.favoriteBloodline)}
+                        alt=""
+                        className={styles.bloodlineThumb}
+                        aria-hidden="true"
+                      />
+                      <span className={styles.bloodlineName}>{bloodlineLabel(me.favoriteBloodline)}</span>
+                      <strong className={styles.bloodlineScore}>{me.bloodlineWins}</strong>
+                    </div>
+                  ) : (
+                    <div className={styles.meEloCol}>{formatNumber(me.elo)}</div>
+                  )}
                 </section>
               ) : null}
 
