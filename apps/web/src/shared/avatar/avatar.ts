@@ -1,6 +1,8 @@
 export interface AvatarAsset {
-  id: string;
+  key: string;
   src: string;
+  free: boolean;
+  achievementCode?: string;
 }
 
 /**
@@ -8,34 +10,34 @@ export interface AvatarAsset {
  * changing any of the lobby, table, or result views.
  */
 export const AVATAR_ASSETS: AvatarAsset[] = [
-  { id: "halfblood", src: "/assets/avatars/halfblood.png" },
-  { id: "halfblood-2", src: "/assets/avatars/halfblood_2.png" },
-  { id: "vampire", src: "/assets/avatars/vampire.png" },
-  { id: "vampire-2", src: "/assets/avatars/vampire_2.png" },
-  { id: "werewolf", src: "/assets/avatars/werewolf.png" },
-  { id: "werewolf-2", src: "/assets/avatars/werewolf_2.png" },
+  { key: "default.png", src: "/assets/avatars/default.png", free: true },
+  { key: "09_happy_dog.png", src: "/assets/avatars/09_happy_dog.png", free: true },
+  { key: "10_black_cat.png", src: "/assets/avatars/10_black_cat.png", free: true },
+  { key: "11_calm_panda.png", src: "/assets/avatars/11_calm_panda.png", free: true },
+  { key: "15_rabbit.png", src: "/assets/avatars/15_rabbit.png", free: true },
+  { key: "16_frog.png", src: "/assets/avatars/16_frog.png", free: true },
+  { key: "23_pot.png", src: "/assets/avatars/23_pot.png", free: false, achievementCode: "NIMP_POT_REVEALED" },
+  { key: "20_tofu.png", src: "/assets/avatars/20_tofu.png", free: false, achievementCode: "NIMP_TOFU_PLAYED" },
+  { key: "21_meat.png", src: "/assets/avatars/21_meat.png", free: false, achievementCode: "NIMP_MEAT_PLAYED" },
+  { key: "17_broccoli.png", src: "/assets/avatars/17_broccoli.png", free: false, achievementCode: "NIMP_VEGETABLE_PLAYED" },
+  { key: "01_chef_girl.png", src: "/assets/avatars/01_chef_girl.png", free: false, achievementCode: "NIMP_VEGETARIAN_WINS" },
+  { key: "03_smirking_guy.png", src: "/assets/avatars/03_smirking_guy.png", free: false, achievementCode: "NIMP_MEAT_EATER_WINS" },
+  { key: "halfblood_2.png", src: "/assets/avatars/halfblood_2.png", free: false, achievementCode: "NOB_HALFBLOOD_PLAYED" },
+  { key: "vampire_2.png", src: "/assets/avatars/vampire_2.png", free: false, achievementCode: "NOB_VAMPIRE_PLAYED" },
+  { key: "werewolf_2.png", src: "/assets/avatars/werewolf_2.png", free: false, achievementCode: "NOB_WEREWOLF_PLAYED" },
+  { key: "halfblood.png", src: "/assets/avatars/halfblood.png", free: false, achievementCode: "NOB_HALFBLOOD_WINS" },
+  { key: "vampire.png", src: "/assets/avatars/vampire.png", free: false, achievementCode: "NOB_VAMPIRE_WINS" },
+  { key: "werewolf.png", src: "/assets/avatars/werewolf.png", free: false, achievementCode: "NOB_WEREWOLF_WINS" },
+  { key: "top1.png", src: "/assets/avatars/top1.png", free: false, achievementCode: "RANKING_TOP_ONE" },
+  { key: "master.png", src: "/assets/avatars/master.png", free: false, achievementCode: "ACHIEVEMENT_MASTER" },
+  { key: "master_girl.png", src: "/assets/avatars/master_girl.png", free: false, achievementCode: "ACHIEVEMENT_MASTER" },
 ];
 
-const DEFAULT_AVATAR = "/assets/avatar-default.png";
+export const DEFAULT_AVATAR = "/assets/avatars/default.png";
 
-/**
- * When no explicit avatar is available, assign one deterministically from the
- * player id. This keeps every player consistent across screens and reconnects.
- */
-export function avatarUrlForPlayer(playerId: string | undefined | null, explicitUrl?: string | null): string {
-  if (explicitUrl && explicitUrl !== DEFAULT_AVATAR) {
-    return explicitUrl;
-  }
-  if (AVATAR_ASSETS.length === 0 || !playerId) {
-    return DEFAULT_AVATAR;
-  }
-
-  let hash = 2166136261;
-  for (const character of playerId) {
-    hash ^= character.charCodeAt(0);
-    hash = Math.imul(hash, 16777619);
-  }
-  return AVATAR_ASSETS[(hash >>> 0) % AVATAR_ASSETS.length]?.src ?? DEFAULT_AVATAR;
+/** Use the server-selected avatar and keep a stable default for new/guest users. */
+export function avatarUrlForPlayer(_playerId: string | undefined | null, explicitUrl?: string | null): string {
+  return explicitUrl?.trim() || DEFAULT_AVATAR;
 }
 
 export function initialsForAvatar(name: string): string {

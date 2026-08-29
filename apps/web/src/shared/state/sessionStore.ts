@@ -8,6 +8,7 @@ import {
   loginUser,
   registerUser,
   updateDisplayName as updateDisplayNameRequest,
+  updateAvatar as updateAvatarRequest,
 } from "@/shared/api/session";
 import type { AuthPayload, SessionDto } from "@/shared/api/types";
 
@@ -18,8 +19,8 @@ interface SessionState {
   bootstrap: () => Promise<void>;
   refresh: () => Promise<void>;
   startGuest: (displayName: string) => Promise<SessionDto>;
-  updateDisplayName: (displayName: string) => Promise<void>;
-  setAvatar: (avatarUrl: string) => void;
+  updateDisplayName: (displayName: string, hideGameStats?: boolean) => Promise<void>;
+  setAvatar: (avatarKey: string) => Promise<void>;
   login: (payload: AuthPayload) => Promise<SessionDto>;
   register: (payload: AuthPayload) => Promise<SessionDto>;
   logout: () => Promise<void>;
@@ -52,14 +53,14 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     set({ session, ready: true, error: null });
     return session;
   },
-  updateDisplayName: async (displayName: string) => {
+  updateDisplayName: async (displayName: string, hideGameStats?: boolean) => {
     const current = get().session;
     if (!current) {
       const session = await createGuest(displayName);
       set({ session, ready: true, error: null });
       return;
     }
-    const updated = await updateDisplayNameRequest(displayName);
+    const updated = await updateDisplayNameRequest(displayName, hideGameStats);
     const session = {
       ...current,
       ...updated,
@@ -68,12 +69,13 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     cacheSession(session);
     set({ session, ready: true, error: null });
   },
-  setAvatar: (avatarUrl: string) => {
+  setAvatar: async (avatarKey: string) => {
     const current = get().session;
     if (!current) {
       return;
     }
-    const session = { ...current, avatarUrl };
+    const updated = await updateAvatarRequest(avatarKey);
+    const session = { ...current, ...updated };
     cacheSession(session);
     set({ session });
   },

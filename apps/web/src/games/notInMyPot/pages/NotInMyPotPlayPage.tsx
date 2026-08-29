@@ -217,8 +217,10 @@ function eventText(event: NotInMyPotEvent, players: NotInMyPotPlayer[], locale: 
   const payload = event.payload;
   const actor = playerName(players, payload.playerId, locale);
   const target = playerName(players, payload.targetPlayerId, locale);
+  const initiator = playerName(players, payload.actorPlayerId, locale);
   const actionType = typeof payload.actionType === "string" ? payload.actionType : "";
   const role = typeof payload.role === "string" ? payload.role : null;
+  const doorCount = typeof payload.doorCount === "number" ? Math.max(0, Math.floor(payload.doorCount)) : null;
   switch (event.type) {
     case "NOT_IN_MY_POT_GAME_STARTED":
       return locale === "vi" ? "Bếp đã mở cửa. Giữ bí mật vai của bạn." : "The kitchen is open. Keep your role secret.";
@@ -231,6 +233,11 @@ function eventText(event: NotInMyPotEvent, players: NotInMyPotPlayer[], locale: 
     case "TARGET_SELECTION_REQUIRED":
       return locale === "vi" ? `${actor} đang chọn mục tiêu.` : `${actor} is choosing a target.`;
     case "PLAYER_DOOR_UPDATED":
+      if (typeof payload.actorPlayerId === "string" && doorCount !== null) {
+        return locale === "vi"
+          ? `${initiator} mời ${target} ra khỏi nhà ${doorCount}/3.`
+          : `${initiator} sent ${target} out ${doorCount}/3.`;
+      }
       return locale === "vi" ? `${actor} nhận thêm một dấu cửa.` : `${actor} received another door mark.`;
     case "PLAYER_EXPELLED":
       return locale === "vi" ? `${actor} bị mời ra khỏi nhà${role ? ` — ${roleLabel(role, locale)}` : ""}.` : `${actor} was sent out${role ? ` — ${roleLabel(role, locale)}` : ""}.`;
@@ -241,7 +248,7 @@ function eventText(event: NotInMyPotEvent, players: NotInMyPotPlayer[], locale: 
     case "SLOTTED_SPOON_RESOLVED":
       return locale === "vi" ? "Ba lá trên cùng đã được xáo ngẫu nhiên." : "The top three cards were shuffled at random.";
     case "EMERGENCY_SHOPPING_RESOLVED":
-      return locale === "vi" ? `${actor} vừa đi chợ gấp.` : `${actor} went emergency shopping.`;
+      return locale === "vi" ? `${actor} vừa dùng lá đi chợ gấp.` : `${actor} just used the Emergency Shopping card.`;
     case "SHOPPING_RETURN_REQUIRED":
       return locale === "vi" ? `${actor} phải trả lại 2 lá.` : `${actor} must return two cards.`;
     case "TRASH_OUT_RESOLVED":
@@ -662,14 +669,14 @@ function ResultModal({
       : locale === "vi" ? "Ván đấu đã kết thúc theo luật của trò chơi." : "The match ended according to the game rules.";
   const renderPlayerRows = (players: NotInMyPotPlayer[], variant: "winner" | "other") => players.map((player, index) => {
     const isYou = player.playerId === view.you;
-    const avatarUrl = isYou ? room.players.find((item) => item.playerId === player.playerId)?.avatarUrl : undefined;
+    const avatarUrl = room.players.find((item) => item.playerId === player.playerId)?.avatarUrl;
     const delta = player.eloDelta;
     const eloText = formatPlayerElo(player);
     return (
       <div className={`${styles.resultPlayerRow} ${isYou ? styles.resultPlayerYou : ""}`} key={player.playerId}>
         <span className={`${styles.resultRank} ${variant === "winner" ? styles.resultRankWinner : styles.resultRankOther}`}>{index + 1}</span>
         <span className={styles.resultAvatarSlot}>
-          {isYou ? <PlayerAvatar playerId={player.playerId} displayName={player.displayName} avatarUrl={avatarUrl} size={38} decorative /> : null}
+          <PlayerAvatar playerId={player.playerId} displayName={player.displayName} avatarUrl={avatarUrl} size={38} decorative />
         </span>
         <span className={styles.resultPlayerInfo}>
           <strong>{player.displayName}{isYou ? (locale === "vi" ? " (Bạn)" : " (You)") : ""}</strong>
@@ -838,6 +845,12 @@ export function NotInMyPotPlayPage({
   const visiblePublicEvents = view?.actionHistoryVisible === false ? [] : view?.publicEvents ?? [];
   const events = visiblePublicEvents
     .filter((event) => !HIDDEN_ACTIVITY_EVENT_TYPES.has(event.type))
+    .filter((event) => {
+      if (event.type === "ACTION_STARTED") {
+        return event.payload.actionType !== "OUT_OF_HOUSE" && event.payload.actionType !== "EMERGENCY_SHOPPING";
+      }
+      return event.type !== "SHOPPING_RETURN_REQUIRED" && event.type !== "SHOPPING_CARDS_RETURNED";
+    })
     .slice(-24)
     .reverse();
   const latestActionEventIndex = visiblePublicEvents.map((event) => event.type).lastIndexOf("ACTION_STARTED");

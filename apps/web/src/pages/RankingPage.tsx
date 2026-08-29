@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronRight, Crown, Shield, Swords, Trophy } from "lucide-react";
+import { ChevronRight, Crown, Leaf, Shield, Swords, Trophy, Utensils } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
   fetchRanking,
@@ -43,6 +43,8 @@ const SORT_OPTIONS: Array<{ id: RankingSort; label: string; icon: typeof Crown }
   { id: "highestElo", label: "ELO CAO NHẤT", icon: Crown },
   { id: "wins", label: "SỐ TRẬN THẮNG", icon: Trophy },
   { id: "bloodlineWins", label: "ROLE NHIỀU ROUND THẮNG", icon: Shield },
+  { id: "vegetarianWinRate", label: "TOP TỶ LỆ THẮNG ĂN CHAY", icon: Leaf },
+  { id: "meatEaterWinRate", label: "TOP TỶ LỆ THẮNG ĂN THỊT", icon: Utensils },
 ];
 
 const RANKING_GAMES: Array<{ id: RankingGameId; label: string }> = [
@@ -52,6 +54,14 @@ const RANKING_GAMES: Array<{ id: RankingGameId; label: string }> = [
 
 function formatNumber(value: number): string {
   return value.toLocaleString("en-US");
+}
+
+function rankingScore(entry: RankingEntryDto, sort: RankingSort): number {
+  if (sort === "wins") return entry.totalWins;
+  if (sort === "bloodlineWins") return entry.bloodlineWins;
+  if (sort === "vegetarianWinRate") return entry.vegetarianWinRate ?? 0;
+  if (sort === "meatEaterWinRate") return entry.meatEaterWinRate ?? 0;
+  return entry.highestElo;
 }
 
 function profilePath(entry: RankingEntryDto): string {
@@ -99,14 +109,17 @@ function PodiumCard({
   const isSecond = position === 2;
 
   let subtitle = "ELO CAO NHẤT";
-  let scoreValue = entry.highestElo;
+  let scoreValue = rankingScore(entry, sort);
 
   if (sort === "wins") {
     subtitle = "SỐ TRẬN THẮNG";
     scoreValue = entry.totalWins;
   } else if (sort === "bloodlineWins") {
     subtitle = bloodline ? `ROUND THẮNG ${bloodline}` : "ROLE NHIỀU ROUND THẮNG";
-    scoreValue = entry.bloodlineWins;
+  } else if (sort === "vegetarianWinRate") {
+    subtitle = "TỶ LỆ THẮNG ĂN CHAY";
+  } else if (sort === "meatEaterWinRate") {
+    subtitle = "TỶ LỆ THẮNG ĂN THỊT";
   }
 
   return (
@@ -120,7 +133,7 @@ function PodiumCard({
 
       {/* Avatar */}
       <div className={styles.podiumAvatarWrapper}>
-        <PlayerAvatar playerId={entry.playerId} displayName={entry.displayName} size={64} />
+        <PlayerAvatar playerId={entry.playerId} displayName={entry.displayName} avatarUrl={entry.avatarUrl} size={64} />
       </div>
 
       {/* Name & Title */}
@@ -144,7 +157,7 @@ function PodiumCard({
         ) : (
           <Trophy size={16} className={styles.bronzeCup} aria-hidden="true" />
         )}
-        <strong className={styles.podiumScore}>{formatNumber(scoreValue)}</strong>
+        <strong className={styles.podiumScore}>{formatNumber(scoreValue)}{sort.endsWith("WinRate") ? "%" : ""}</strong>
       </div>
     </article>
   );
@@ -167,7 +180,7 @@ function RankingTableRow({
       </div>
       <div className={styles.nameCell}>
         <Link className={styles.playerProfileLink} to={profilePath(entry)}>
-          <PlayerAvatar playerId={entry.playerId} displayName={entry.displayName} size={36} />
+          <PlayerAvatar playerId={entry.playerId} displayName={entry.displayName} avatarUrl={entry.avatarUrl} size={36} />
           <span className={styles.playerName}>{entry.displayName}</span>
         </Link>
       </div>
@@ -184,7 +197,13 @@ function RankingTableRow({
           <strong className={styles.bloodlineScore}>{entry.bloodlineWins}</strong>
         </div>
       ) : (
-        <div className={styles.numberCell}>{formatNumber(entry.elo)}</div>
+        <div className={`${styles.numberCell} ${sort === "vegetarianWinRate" || sort === "meatEaterWinRate" ? styles.activeCell : ""}`}>
+          {sort === "vegetarianWinRate"
+            ? `${entry.vegetarianWinRate ?? 0}%`
+            : sort === "meatEaterWinRate"
+              ? `${entry.meatEaterWinRate ?? 0}%`
+              : formatNumber(entry.elo)}
+        </div>
       )}
     </div>
   );
@@ -199,9 +218,11 @@ export function RankingPage() {
   const [page, setPage] = useState(0);
 
   const isNob = gameId === "night-of-bloodlines";
-  const visibleSortOptions = isNob
-    ? SORT_OPTIONS
-    : SORT_OPTIONS.filter((option) => option.id !== "bloodlineWins");
+  const visibleSortOptions = SORT_OPTIONS.filter((option) =>
+    isNob
+      ? option.id !== "vegetarianWinRate" && option.id !== "meatEaterWinRate"
+      : option.id !== "bloodlineWins"
+  );
 
   const ranking = useQuery({
     queryKey: ["ranking", gameId, sort, bloodline, page],
@@ -343,8 +364,14 @@ export function RankingPage() {
                     <span>NGƯỜI CHƠI</span>
                     <span className={sort === "highestElo" ? styles.activeHeader : ""}>ELO CAO NHẤT</span>
                     <span className={sort === "wins" ? styles.activeHeader : ""}>SỐ TRẬN THẮNG</span>
-                    <span className={sort === "bloodlineWins" ? styles.activeHeader : ""}>
-                      {isNob ? "ROLE NHIỀU ROUND THẮNG" : "ELO HIỆN TẠI"}
+                    <span className={sort === "bloodlineWins" || sort === "vegetarianWinRate" || sort === "meatEaterWinRate" ? styles.activeHeader : ""}>
+                      {isNob
+                        ? "ROLE NHIỀU ROUND THẮNG"
+                        : sort === "vegetarianWinRate"
+                          ? "TỶ LỆ THẮNG ĂN CHAY"
+                          : sort === "meatEaterWinRate"
+                            ? "TỶ LỆ THẮNG ĂN THỊT"
+                            : "ELO HIỆN TẠI"}
                     </span>
                   </div>
 
@@ -369,7 +396,7 @@ export function RankingPage() {
 
                   <div className={styles.meNameCol}>
                     <Link className={styles.meNameLink} to={profilePath(me)}>
-                      <PlayerAvatar playerId={me.playerId} displayName={me.displayName || currentDisplayName} size={38} />
+                      <PlayerAvatar playerId={me.playerId} displayName={me.displayName || currentDisplayName} avatarUrl={me.avatarUrl} size={38} />
                       <span className={styles.meNameText}>{me.displayName || "You"}</span>
                     </Link>
                   </div>
@@ -393,7 +420,13 @@ export function RankingPage() {
                       <strong className={styles.bloodlineScore}>{me.bloodlineWins}</strong>
                     </div>
                   ) : (
-                    <div className={styles.meEloCol}>{formatNumber(me.elo)}</div>
+                    <div className={`${styles.meEloCol} ${sort === "vegetarianWinRate" || sort === "meatEaterWinRate" ? styles.activeMeNumber : ""}`}>
+                      {sort === "vegetarianWinRate"
+                        ? `${me.vegetarianWinRate ?? 0}%`
+                        : sort === "meatEaterWinRate"
+                          ? `${me.meatEaterWinRate ?? 0}%`
+                          : formatNumber(me.elo)}
+                    </div>
                   )}
                 </section>
               ) : null}
