@@ -1367,6 +1367,65 @@ button.gameCard:hover:not(:disabled) {
   font-weight: 750;
 }
 
+.spoonInspection {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(92px, 124px));
+  justify-content: center;
+  gap: clamp(10px, 2vw, 18px);
+  padding: clamp(16px, 3vw, 24px);
+  border: 1px solid rgba(156, 105, 42, 0.24);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 50% 15%, rgba(225, 177, 81, 0.18), transparent 48%),
+    rgba(255, 249, 231, 0.62);
+  perspective: 900px;
+}
+
+.spoonInspectionCard {
+  min-width: 0;
+  /* Keep the card visible if the reveal animation is disabled (for example
+     by prefers-reduced-motion or an older browser). The keyframe still
+     supplies the initial fade when animations are available. */
+  opacity: 1;
+  transform-origin: center bottom;
+  animation: nimpSpoonReveal 680ms cubic-bezier(0.18, 0.82, 0.24, 1.12) forwards;
+}
+
+.spoonInspectionCard .compactCard {
+  width: 100%;
+  max-width: 124px;
+  margin: 0 auto;
+  flex-basis: auto;
+  box-shadow: 0 13px 25px rgba(78, 43, 16, 0.2);
+}
+
+.spoonPrivacy {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 10px 2px 0;
+  color: #846845;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.spoonPrivacy svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+@media (max-width: 560px) {
+  .spoonInspection {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+    padding: 12px 8px;
+  }
+
+  .spoonInspectionCard .compactCard {
+    max-width: 104px;
+  }
+}
+
 .pendingHand {
   display: flex;
   align-items: flex-end;
@@ -1454,10 +1513,12 @@ button.gameCard:hover:not(:disabled) {
   position: relative;
   z-index: 1;
   display: grid;
-  gap: 14px;
-  width: min(620px, 100%);
-  padding: 24px;
+  gap: 10px;
+  width: min(780px, calc(100vw - 24px));
+  max-height: calc(100dvh - 28px);
+  padding: clamp(14px, 2.5vw, 24px);
   overflow: hidden;
+  overflow-y: auto;
   border: 1px solid rgba(241, 196, 92, 0.54);
   border-radius: 22px;
   background: linear-gradient(180deg, #fff6df, #ebd5a6);
@@ -1476,6 +1537,326 @@ button.gameCard:hover:not(:disabled) {
   border-radius: 50%;
   content: "";
   pointer-events: none;
+}
+
+.resultKitchenPill {
+  display: inline-flex;
+  align-items: center;
+  justify-self: center;
+  gap: 7px;
+  padding: 6px 17px;
+  border: 1px solid rgba(181, 126, 43, 0.18);
+  border-radius: 999px;
+  background: rgba(181, 126, 43, 0.12);
+  color: #9c6423;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.1em;
+}
+
+.resultHero {
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  padding: 2px 0 3px;
+  text-align: center;
+}
+
+.resultHeroBadge {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  box-shadow: 0 8px 18px rgba(69, 43, 17, 0.15);
+}
+
+.resultHeroBadgeWin {
+  background: #f7bf38;
+  color: #fff9db;
+}
+
+.resultHeroBadgeLose {
+  background: #e28c74;
+  color: #fff5e9;
+}
+
+.resultHeroTitle {
+  position: relative;
+  width: min(580px, 100%);
+  padding: 10px 20px 12px;
+  border-radius: 15px;
+  box-shadow: 0 9px 0 rgba(75, 52, 24, 0.12), 0 15px 28px rgba(75, 52, 24, 0.14);
+}
+
+.resultHeroTitle::before,
+.resultHeroTitle::after {
+  position: absolute;
+  top: 50%;
+  width: 22px;
+  height: 25px;
+  background: inherit;
+  content: "";
+  transform: translateY(-50%);
+  z-index: -1;
+}
+
+.resultHeroTitle::before {
+  left: -12px;
+  clip-path: polygon(100% 0, 0 50%, 100% 100%);
+}
+
+.resultHeroTitle::after {
+  right: -12px;
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+
+.resultHeroTitleWin {
+  background: linear-gradient(180deg, #a8ce56, #79ad38);
+  color: #fffef3;
+}
+
+.resultHeroTitleLose {
+  background: linear-gradient(180deg, #e9937c, #cf6f5d);
+  color: #fffaf1;
+}
+
+.resultHeroTitle h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 5vw, 3.15rem);
+  line-height: 1;
+  text-shadow: 0 2px 0 rgba(87, 54, 25, 0.16);
+}
+
+.resultTeamOutcome {
+  margin: 0;
+  color: #775536;
+  font-family: var(--font-display);
+  font-size: clamp(0.95rem, 2vw, 1.25rem);
+  font-weight: 800;
+}
+
+.resultMessage {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  align-items: center;
+  gap: 11px;
+  padding: 12px 14px;
+  border: 1px solid;
+  border-radius: 16px;
+}
+
+.resultMessageWin {
+  border-color: rgba(113, 158, 49, 0.4);
+  background: rgba(229, 242, 192, 0.62);
+}
+
+.resultMessageLose {
+  border-color: rgba(220, 127, 100, 0.42);
+  background: rgba(255, 230, 213, 0.7);
+}
+
+.resultMessageIcon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.resultMessageWin .resultMessageIcon {
+  color: var(--nimp-green-dark);
+}
+
+.resultMessageLose .resultMessageIcon {
+  color: #bf5a3e;
+}
+
+.resultMessage > span:last-child {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.resultMessage strong {
+  color: #5a4127;
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+.resultMessage small {
+  overflow: hidden;
+  color: #886d4e;
+  font-size: 10px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+}
+
+.resultTeamBlock {
+  display: grid;
+  gap: 5px;
+}
+
+.resultWinnersBlock {
+  padding: 10px;
+  border: 1px solid rgba(112, 157, 50, 0.36);
+  border-radius: 16px;
+  background: rgba(234, 244, 205, 0.44);
+}
+
+.resultOthersBlock {
+  padding: 10px;
+  border: 1px solid rgba(213, 117, 89, 0.3);
+  border-radius: 16px;
+  background: rgba(255, 234, 218, 0.48);
+}
+
+.resultTeamHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 3px 2px;
+}
+
+.resultTeamHeading h3 {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  color: #587d2f;
+  font-size: 15px;
+}
+
+.resultOthersBlock .resultTeamHeading h3 {
+  color: #bd5d43;
+}
+
+.resultTeamHeading > span {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(120, 170, 58, 0.13);
+  color: #67833f;
+  font-size: 9px;
+  font-weight: 850;
+}
+
+.resultOthersBlock .resultTeamHeading > span {
+  background: rgba(216, 119, 86, 0.12);
+  color: #b46349;
+}
+
+.resultPlayerList {
+  display: grid;
+  overflow: hidden;
+  border: 1px solid rgba(111, 143, 65, 0.22);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.resultOthersBlock .resultPlayerList {
+  border-color: rgba(213, 117, 89, 0.22);
+}
+
+.resultPlayerRow {
+  display: grid;
+  grid-template-columns: 27px 38px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 43px;
+  padding: 4px 9px;
+  color: #4e3a26;
+}
+
+.resultPlayerRow + .resultPlayerRow {
+  border-top: 1px solid rgba(106, 122, 70, 0.14);
+}
+
+.resultOthersBlock .resultPlayerRow + .resultPlayerRow {
+  border-top-color: rgba(213, 117, 89, 0.15);
+}
+
+.resultPlayerYou {
+  background: rgba(255, 255, 255, 0.46);
+}
+
+.resultRank {
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.resultRankWinner {
+  background: #f5bd3e;
+  color: #fffdf0;
+  box-shadow: inset 0 -2px 0 rgba(150, 92, 24, 0.18);
+}
+
+.resultRankOther {
+  background: rgba(207, 133, 106, 0.18);
+  color: #b4674d;
+}
+
+.resultAvatarSlot {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+}
+
+.resultAvatarSlot:empty::after {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(144, 117, 84, 0.18);
+  content: "";
+}
+
+.resultPlayerInfo {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+}
+
+.resultPlayerInfo strong {
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.resultPlayerYou .resultPlayerInfo strong {
+  color: #9c6423;
+}
+
+.resultPlayerInfo small {
+  overflow: hidden;
+  color: #72834f;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.resultOthersBlock .resultPlayerInfo small {
+  color: #a46d56;
+}
+
+.resultPlayerRow em {
+  padding: 5px 11px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 850;
+  white-space: nowrap;
 }
 
 .resultWin {
@@ -2017,11 +2398,11 @@ button.gameCard:hover:not(:disabled) {
   }
 
   .mobileLogButton {
-    display: grid;
+    display: none;
   }
 
   .logList {
-    display: none;
+    display: flex;
     max-height: 200px;
   }
 
@@ -2091,14 +2472,24 @@ button.gameCard:hover:not(:disabled) {
     font-size: 1.8rem;
   }
 
-  .modalLayer,
+  .modalLayer {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: max(8px, env(safe-area-inset-top)) 8px 12px;
+    overflow-y: auto;
+  }
+
   .resultLayer {
     padding: 10px;
   }
 
   .modalCard {
+    margin-top: 4px;
+    width: min(480px, 100%);
     max-height: calc(100dvh - 20px);
-    border-radius: 15px;
+    border-radius: 16px;
+    box-shadow: 0 16px 48px rgba(28, 18, 8, 0.42);
   }
 
   .modalHeader {
@@ -2154,8 +2545,88 @@ button.gameCard:hover:not(:disabled) {
   }
 
   .resultCard {
+    width: 100%;
+    max-height: calc(100dvh - 20px);
     padding: 17px 13px;
     border-radius: 17px;
+  }
+
+  .resultKitchenPill {
+    padding: 5px 13px;
+    font-size: 9px;
+  }
+
+  .resultHeroBadge {
+    width: 44px;
+    height: 44px;
+  }
+
+  .resultHeroTitle {
+    padding: 9px 15px 10px;
+  }
+
+  .resultMessage {
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 8px;
+    padding: 9px 10px;
+  }
+
+  .resultMessageIcon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .resultMessage strong {
+    font-size: 11px;
+  }
+
+  .resultMessage small {
+    font-size: 8px;
+  }
+
+  .resultWinnersBlock,
+  .resultOthersBlock {
+    padding: 7px;
+  }
+
+  .resultTeamHeading h3 {
+    font-size: 12px;
+  }
+
+  .resultTeamHeading > span {
+    padding: 3px 7px;
+    font-size: 8px;
+  }
+
+  .resultPlayerRow {
+    grid-template-columns: 23px 34px minmax(0, 1fr) auto;
+    gap: 6px;
+    min-height: 38px;
+    padding: 3px 6px;
+  }
+
+  .resultRank {
+    width: 22px;
+    height: 22px;
+    font-size: 11px;
+  }
+
+  .resultAvatarSlot {
+    width: 34px;
+    height: 34px;
+  }
+
+  .resultPlayerInfo strong {
+    font-size: 10px;
+  }
+
+  .resultPlayerInfo small {
+    font-size: 8px;
+  }
+
+  .resultPlayerRow em {
+    padding: 4px 7px;
+    font-size: 8px;
   }
 
   .resultActions {
@@ -2813,6 +3284,55 @@ button.gameCard:hover:not(:disabled) {
   letter-spacing: 0.1em;
 }
 
+.shoppingReturnPrompt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  margin: 0 6px 2px;
+  padding: 6px 10px;
+  border: 1px solid rgba(181, 126, 43, 0.28);
+  border-radius: 10px;
+  background: rgba(255, 249, 231, 0.78);
+  color: #966227;
+}
+
+.shoppingReturnPrompt > span {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.shoppingReturnPrompt strong {
+  overflow: hidden;
+  color: #684321;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shoppingReturnPrompt small {
+  overflow: hidden;
+  color: #8a6e4b;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shoppingReturnPrompt em {
+  margin-left: auto;
+  color: var(--nimp-green-dark);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 850;
+}
+
+.shoppingReturnTimer {
+  color: #a35f22;
+  font-size: 10px;
+  font-weight: 850;
+}
+
 .handGrid {
   align-items: flex-end;
   gap: clamp(10px, 1.4vw, 18px);
@@ -3144,6 +3664,12 @@ button.gameCard.cardSelected:hover:not(:disabled) {
   100% { transform: translateX(100px) scale(0.76); opacity: 0; }
 }
 
+@keyframes nimpSpoonReveal {
+  0% { transform: translateY(-34px) rotateY(90deg) scale(0.82); opacity: 0; }
+  62% { transform: translateY(4px) rotateY(-7deg) scale(1.04); opacity: 1; }
+  100% { transform: translateY(0) rotateY(0) scale(1); opacity: 1; }
+}
+
 @keyframes nimpPotToDiscard {
   0% { transform: translate(-50%, -50%) rotate(-2deg) scale(0.72); opacity: 0; }
   18% { transform: translate(-50%, -85%) rotate(3deg) scale(0.8); opacity: 1; }
@@ -3266,7 +3792,50 @@ button.gameCard.cardSelected:hover:not(:disabled) {
   }
 
   .panelHeader {
-    justify-content: flex-end;
+    position: absolute;
+    top: 120px;
+    right: 0;
+    left: 0;
+    z-index: 8;
+    display: flex;
+    justify-content: center;
+    padding: 0;
+    pointer-events: none;
+  }
+
+  .scoreTarget {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 14px;
+    border-radius: 999px;
+    background: rgba(255, 248, 230, 0.94);
+    border: 1.5px solid rgba(139, 83, 37, 0.32);
+    box-shadow: 0 4px 12px rgba(82, 47, 20, 0.12);
+    backdrop-filter: blur(6px);
+  }
+
+  .scoreTarget span {
+    color: #795331;
+    font-size: 8.5px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .scoreTarget strong {
+    color: #a6532f;
+    font-size: 13px;
+    font-weight: 900;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 3px;
+  }
+
+  .scoreTarget small {
+    color: #8b6842;
+    font-size: 8.5px;
+    font-weight: 750;
   }
 
   .tablePanel,
@@ -3280,25 +3849,32 @@ button.gameCard.cardSelected:hover:not(:disabled) {
   }
 
   .seatRing {
-    top: 62px;
-    right: 9px;
+    top: 8px;
+    right: 8px;
     bottom: auto;
-    left: 9px;
+    left: 8px;
     z-index: 7;
     display: flex;
-    height: 88px;
-    gap: 7px;
+    height: auto;
+    min-height: 104px;
+    gap: 8px;
     overflow-x: auto;
-    padding: 4px;
+    padding: 4px 6px 8px;
   }
 
   .seat {
     position: relative;
     top: auto !important;
     left: auto !important;
-    flex: 0 0 110px;
-    width: 110px;
-    min-height: 76px;
+    flex: 0 0 118px;
+    width: 118px;
+    min-height: 94px;
+    padding: 6px 7px;
+    gap: 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
     transform: none;
   }
 
@@ -3477,12 +4053,18 @@ button.gameCard.cardSelected:hover:not(:disabled) {
   .eventCardMotion img,
   .inspectionMotion,
   .inspectionCards img,
+  .spoonInspectionCard,
   .doorMarkerMotion,
   .actionZoneContent,
   .tableAnnouncement,
   .revealCard,
   .revealScoreboard strong {
     animation: none;
+  }
+
+  .spoonInspectionCard {
+    opacity: 1;
+    transform: none;
   }
 
   .revealCardInner {
@@ -3630,37 +4212,48 @@ button.gameCard.cardSelected:hover:not(:disabled) {
     min-height: 710px;
   }
 
+  .panelHeader {
+    position: absolute;
+    top: 118px;
+    right: 0;
+    left: 0;
+    z-index: 8;
+    display: flex;
+    justify-content: center;
+    padding: 0;
+    pointer-events: none;
+  }
+
   .seatRing {
-    top: 62px;
-    right: 9px;
+    top: 7px;
+    right: 7px;
     bottom: auto;
-    left: 9px;
-    height: 82px;
+    left: 7px;
+    height: auto;
+    min-height: 104px;
+    padding: 4px 6px 6px;
+    gap: 7px;
   }
 
   .seat {
-    flex-basis: 108px;
-    width: 108px;
-    min-height: 72px;
+    flex-basis: 116px;
+    width: 116px;
+    min-height: 94px;
     padding: 6px 7px;
-    gap: 3px;
+    gap: 4px;
   }
 
   .outCardTrack {
-    min-height: 27px;
+    min-height: 30px;
   }
 
   .outCardTrack img {
-    width: 19px;
-    height: 28px;
-  }
-
-  .turnIndicator {
-    top: 12px;
+    width: 20px;
+    height: 30px;
   }
 
   .centerStage {
-    top: 42%;
+    top: 46%;
   }
 
   .tableSurface .handPanel {
@@ -3987,5 +4580,167 @@ button.gameCard.cardSelected:hover:not(:disabled) {
 @media (prefers-reduced-motion: reduce) {
   .expelledRoleReveal img {
     animation: none;
+  }
+}
+
+.seatActiveOther {
+  z-index: 5 !important;
+  border: 2px solid #ea580c !important;
+  background: rgba(255, 246, 235, 0.98) !important;
+  box-shadow: 0 0 0 3.5px rgba(234, 88, 12, 0.7), 0 0 20px rgba(234, 88, 12, 0.5), 0 8px 18px rgba(82, 47, 20, 0.22) !important;
+  animation: seatPulseOther 2s ease-in-out infinite !important;
+}
+
+.seatActiveSelf {
+  z-index: 5 !important;
+  border: 2px solid #16a34a !important;
+  background: rgba(240, 253, 244, 0.98) !important;
+  box-shadow: 0 0 0 3.5px rgba(22, 163, 74, 0.7), 0 0 20px rgba(22, 163, 74, 0.5), 0 8px 18px rgba(82, 47, 20, 0.22) !important;
+  animation: seatPulseSelf 2s ease-in-out infinite !important;
+}
+
+@keyframes seatPulseOther {
+  0%, 100% {
+    box-shadow: 0 0 0 2.5px rgba(234, 88, 12, 0.65), 0 0 10px rgba(234, 88, 12, 0.4), 0 6px 16px rgba(82, 47, 20, 0.18);
+  }
+  50% {
+    box-shadow: 0 0 0 4.5px #ea580c, 0 0 24px rgba(234, 88, 12, 0.8), 0 10px 24px rgba(82, 47, 20, 0.26);
+  }
+}
+
+@keyframes seatPulseSelf {
+  0%, 100% {
+    box-shadow: 0 0 0 2.5px rgba(22, 163, 74, 0.65), 0 0 10px rgba(22, 163, 74, 0.4), 0 6px 16px rgba(82, 47, 20, 0.18);
+  }
+  50% {
+    box-shadow: 0 0 0 4.5px #16a34a, 0 0 24px rgba(22, 163, 74, 0.8), 0 10px 24px rgba(82, 47, 20, 0.26);
+  }
+}
+
+.otherTurnBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #ea580c;
+  color: #ffffff !important;
+  font-size: 7.5px;
+  font-style: normal;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  box-shadow: 0 2px 5px rgba(234, 88, 12, 0.4);
+  white-space: nowrap;
+  animation: turnBadgePulse 1.8s ease-in-out infinite;
+}
+
+.selfTurnBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #16a34a;
+  color: #ffffff !important;
+  font-size: 7.5px;
+  font-style: normal;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  box-shadow: 0 2px 5px rgba(22, 163, 74, 0.4);
+  white-space: nowrap;
+  animation: turnBadgePulse 1.8s ease-in-out infinite;
+}
+
+.selfBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1.5px 5px;
+  border-radius: 4px;
+  background: #eab308;
+  color: #422006 !important;
+  font-size: 7px;
+  font-style: normal;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
+@keyframes turnBadgePulse {
+  0%, 100% { opacity: 0.92; transform: scale(0.97); }
+  50% { opacity: 1; transform: scale(1.03); }
+}
+
+/* The host can hide the activity history for a cleaner, private table. */
+.gameLayoutLogHidden {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.turnTimer {
+  min-width: 42px;
+  padding: 5px 9px;
+  border: 1px solid rgba(181, 77, 50, 0.28);
+  border-radius: 999px;
+  background: rgba(181, 77, 50, 0.1);
+  color: #8e3d28;
+  font-size: 11px;
+  font-weight: 850;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.potTargetBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin-bottom: 2px;
+  padding: 2px 10px;
+  border: 1px solid rgba(139, 83, 37, 0.35);
+  border-radius: 999px;
+  background: rgba(255, 248, 228, 0.95);
+  box-shadow: 0 2px 8px rgba(82, 47, 20, 0.14);
+  white-space: nowrap;
+  z-index: 5;
+}
+
+.potTargetBadge span {
+  color: #795331;
+  font-size: 8.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.potTargetBadge strong {
+  color: #a6532f;
+  font-size: 11.5px;
+  font-weight: 900;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.potTargetBadge small {
+  color: #8b6842;
+  font-size: 8px;
+  font-weight: 750;
+}
+
+@media (max-width: 620px) {
+  .potTargetBadge {
+    padding: 1.5px 8px;
+    gap: 4px;
+    margin-bottom: 1px;
+  }
+
+  .potTargetBadge span {
+    font-size: 7.5px;
+  }
+
+  .potTargetBadge strong {
+    font-size: 10.5px;
+  }
+
+  .potTargetBadge small {
+    font-size: 7.5px;
   }
 }

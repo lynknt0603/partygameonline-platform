@@ -132,8 +132,7 @@ export function LobbyPage() {
         <div className={styles.heading}>
           <h1>{room.name}</h1>
           <p>
-            {gameTitle} · {room.visibility === "public" ? t("publicRoom") : t("privateRoom")} · {occupied.length}/
-            {room.capacity} {t("players")}
+            {gameTitle} · {room.visibility === "public" ? t("publicRoom") : t("privateRoom")}
           </p>
         </div>
         <div className={styles.tools}>

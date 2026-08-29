@@ -8,7 +8,7 @@ export interface NotInMyPotCommand {
     | "PLAY_INGREDIENT"
     | "PLAY_ACTION"
     | "SELECT_TARGET"
-    | "REORDER_POT_CARDS"
+    | "ACKNOWLEDGE_SLOTTED_SPOON"
     | "RETURN_SHOPPING_CARDS"
     | "DECLARE_POT_READY";
   cardId?: string;

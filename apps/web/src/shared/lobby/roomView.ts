@@ -1,5 +1,6 @@
 import type { RoomDto, RoomPlayerDto } from "@/shared/api/types";
 import { nobSettingsFromUnknown, type NobTiming } from "@/games/nob/model/nobTiming";
+import { notInMyPotSettingsFromUnknown, type NotInMyPotSettings } from "@/games/notInMyPot/model/notInMyPotSettings";
 import type { SeatState } from "@/shared/types/status";
 
 export interface LobbySeat {
@@ -26,6 +27,8 @@ export interface RoomView {
   players: RoomPlayerDto[];
   serverSequence: number;
   nobTiming: NobTiming | null;
+  notInMyPotSettings: NotInMyPotSettings | null;
+  locked: boolean;
 }
 
 export function toRoomView(room: RoomDto): RoomView {
@@ -44,6 +47,8 @@ export function toRoomView(room: RoomDto): RoomView {
     players: room.players,
     serverSequence: room.serverSequence,
     nobTiming: nobSettingsFromUnknown(room.settings),
+    notInMyPotSettings: notInMyPotSettingsFromUnknown(room.settings),
+    locked: roomLockedFromUnknown(room.settings),
   };
 }
 
@@ -89,4 +94,12 @@ function initials(name: string): string {
     .join("")
     .slice(0, 2)
     .toUpperCase();
+}
+
+function roomLockedFromUnknown(value: unknown): boolean {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  const locked = (value as Record<string, unknown>).locked;
+  return locked === true;
 }
