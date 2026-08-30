@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { ApiError } from "@/shared/api/types";
 import { closeRoom, createRoom, fetchRoom, fetchRooms, joinRoom, leaveRoom, setReady, startRoom, updateRoomSettings } from "@/shared/api/rooms";
 import type { NobTiming } from "@/games/nob/model/nobTiming";
+import type { NotInMyPotSettings } from "@/games/notInMyPot/model/notInMyPotSettings";
+import type { WheresTheBoneSettings } from "@/games/wheresTheBone/model/wheresTheBoneSettings";
 import { toRoomView } from "@/shared/lobby/roomView";
 import { useSessionStore } from "@/shared/state/sessionStore";
 import { memberLoginPath } from "@/shared/auth/memberAccess";
@@ -218,10 +220,11 @@ export function useCloseRoom() {
 export function useUpdateRoomSettings(roomId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (nob: NobTiming) => updateRoomSettings(roomId.toUpperCase(), { nob }),
+    mutationFn: (settings: { nob?: NobTiming; notInMyPot?: NotInMyPotSettings; wheresTheBone?: WheresTheBoneSettings; locked?: boolean }) => updateRoomSettings(roomId.toUpperCase(), settings),
     onSuccess: (room) => {
       queryClient.setQueryData(["room", roomId.toUpperCase()], room);
       queryClient.setQueryData(["room", room.id], room);
+      void queryClient.invalidateQueries({ queryKey: ["rooms"] });
     },
   });
 }

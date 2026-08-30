@@ -7,6 +7,8 @@ export interface FactionStats {
 }
 
 export interface PlayerStatsDto {
+  /** True when this player's game statistics are intentionally private. */
+  gameStatsHidden?: boolean;
   player: {
     playerId: string;
     username?: string | null;
@@ -16,7 +18,7 @@ export interface PlayerStatsDto {
     role?: string;
     platform?: string;
   };
-  nobStats: {
+  nobStats?: {
     totalMatches: number;
     matchesWon: number;
     winRate: number;
@@ -26,40 +28,103 @@ export interface PlayerStatsDto {
     elo?: number;
     highestElo?: number;
   };
+  notInMyPotStats?: {
+    totalMatches: number;
+    matchesWon: number;
+    winRate: number;
+    vegetarian: FactionStats;
+    meatEater: FactionStats;
+    elo: number;
+    highestElo: number;
+  };
+  wheresTheBoneStats?: {
+    totalMatches: number;
+    matchesWon: number;
+    winRate: number;
+    boneThief: FactionStats;
+    yardDog: FactionStats;
+    whiteDog: FactionStats;
+    packmate: FactionStats;
+    elo: number;
+    highestElo: number;
+  };
+  achievements: AchievementDto[];
+  avatars: AvatarDto[];
+}
+
+export interface AchievementDto {
+  code: string;
+  progress: number;
+  target: number;
+  unlocked: boolean;
+  unlockedAt?: string | null;
+  rewardAvatarUrls: string[];
+}
+
+export interface AvatarDto {
+  key: string;
+  url: string;
+  unlocked: boolean;
+  selected: boolean;
+  source: string;
+  achievementCode?: string | null;
 }
 
 export const DEFAULT_PLAYER_STATS: PlayerStatsDto = {
+  gameStatsHidden: false,
   player: {
     playerId: "NB-7X9X2M",
     username: "bloodmoon",
     displayName: "BloodMoon",
-    avatarUrl: "/assets/avatar-default.png",
+    avatarUrl: "/assets/avatars/default.png",
     joinedAt: "12/02/2025",
     role: "Member",
     platform: "Web",
   },
   nobStats: {
-    totalMatches: 256,
-    matchesWon: 164,
-    winRate: 64.1,
+    totalMatches: 0,
+    matchesWon: 0,
+    winRate: 0,
     vampire: {
-      matchesPlayed: 112,
-      matchesWon: 72,
-      winRate: 64.3,
+      matchesPlayed: 0,
+      matchesWon: 0,
+      winRate: 0,
     },
     werewolf: {
-      matchesPlayed: 98,
-      matchesWon: 59,
-      winRate: 60.2,
+      matchesPlayed: 0,
+      matchesWon: 0,
+      winRate: 0,
     },
     halfblood: {
-      matchesPlayed: 46,
-      matchesWon: 33,
-      winRate: 71.7,
+      matchesPlayed: 0,
+      matchesWon: 0,
+      winRate: 0,
     },
     elo: 5000,
     highestElo: 5000,
   },
+  notInMyPotStats: {
+    totalMatches: 0,
+    matchesWon: 0,
+    winRate: 0,
+    vegetarian: { matchesPlayed: 0, matchesWon: 0, winRate: 0 },
+    meatEater: { matchesPlayed: 0, matchesWon: 0, winRate: 0 },
+    elo: 5000,
+    highestElo: 5000,
+  },
+  wheresTheBoneStats: {
+    totalMatches: 0,
+    matchesWon: 0,
+    winRate: 0,
+    boneThief: { matchesPlayed: 0, matchesWon: 0, winRate: 0 },
+    yardDog: { matchesPlayed: 0, matchesWon: 0, winRate: 0 },
+    whiteDog: { matchesPlayed: 0, matchesWon: 0, winRate: 0 },
+    packmate: { matchesPlayed: 0, matchesWon: 0, winRate: 0 },
+    elo: 5000,
+    highestElo: 5000,
+  },
+  achievements: [],
+  avatars: [],
 };
 
 export async function fetchPlayerStats(): Promise<PlayerStatsDto> {

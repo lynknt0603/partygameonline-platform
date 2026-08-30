@@ -3,37 +3,9 @@ import type { AuthPayload, SessionDto } from "./types";
 
 const NAME_KEY = "pgo.displayName";
 const SESSION_KEY = "pgo.session";
-const AVATAR_KEY_PREFIX = "pgo.avatarUrl.";
-
-function avatarKey(playerId: string): string {
-  return `${AVATAR_KEY_PREFIX}${playerId}`;
-}
-
-export function storedAvatarUrl(playerId: string): string | null {
-  try {
-    const value = localStorage.getItem(avatarKey(playerId))?.trim();
-    return value && value.length > 0 ? value : null;
-  } catch {
-    return null;
-  }
-}
-
-export function storeAvatarUrl(playerId: string, avatarUrl: string): void {
-  try {
-    localStorage.setItem(avatarKey(playerId), avatarUrl);
-  } catch {
-    /* ignore quota */
-  }
-}
-
 export function cacheSession(session: SessionDto): void {
   try {
-    const avatarUrl = session.avatarUrl ?? storedAvatarUrl(session.playerId);
-    const nextSession = avatarUrl ? { ...session, avatarUrl } : session;
-    localStorage.setItem(SESSION_KEY, JSON.stringify(nextSession));
-    if (avatarUrl) {
-      storeAvatarUrl(session.playerId, avatarUrl);
-    }
+    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
     storeDisplayName(session.displayName);
   } catch {
     /* ignore quota */
@@ -54,8 +26,7 @@ export function cachedSession(): SessionDto | null {
       playerId: parsed.playerId,
       displayName: parsed.displayName,
       kind: typeof parsed.kind === "string" ? parsed.kind : "GUEST",
-      avatarUrl:
-        typeof parsed.avatarUrl === "string" ? parsed.avatarUrl : storedAvatarUrl(parsed.playerId),
+      avatarUrl: typeof parsed.avatarUrl === "string" ? parsed.avatarUrl : null,
       currentRoomId: typeof parsed.currentRoomId === "string" ? parsed.currentRoomId : null,
     };
   } catch {
@@ -95,10 +66,22 @@ export async function createGuest(displayName: string): Promise<SessionDto> {
   return session;
 }
 
-export async function updateDisplayName(displayName: string): Promise<SessionDto> {
+export async function updateDisplayName(displayName: string, hideGameStats?: boolean): Promise<SessionDto> {
   const session = await api<SessionDto>("/api/v1/profile/me", {
     method: "PATCH",
-    body: JSON.stringify({ displayName: displayName.trim().slice(0, 32) }),
+    body: JSON.stringify({
+      displayName: displayName.trim().slice(0, 32),
+      ...(hideGameStats === undefined ? {} : { hideGameStats }),
+    }),
+  });
+  cacheSession(session);
+  return session;
+}
+
+export async function updateAvatar(avatarKey: string): Promise<SessionDto> {
+  const session = await api<SessionDto>("/api/v1/profile/me/avatar", {
+    method: "PATCH",
+    body: JSON.stringify({ avatarKey }),
   });
   cacheSession(session);
   return session;
@@ -137,7 +120,7 @@ export async function bootstrapSession(): Promise<SessionDto> {
     const fetchedSession = await fetchSession();
     const session = fetchedSession.kind === "MEMBER"
       ? fetchedSession
-      : { ...fetchedSession, displayName: "Player", avatarUrl: null };
+      : { ...fetchedSession, displayName: "Player" };
     if (fetchedSession.kind !== "MEMBER") {
       clearStoredIdentity();
     }

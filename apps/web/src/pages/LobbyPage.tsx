@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Copy, Link2, MessageCircle, Settings } from "lucide-react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
+import { WHERES_THE_BONE_ID } from "@/games/wheresTheBone";
 import { PlayerSeat } from "@/shared/components/PlayerSeat/PlayerSeat";
 import { useGame } from "@/shared/hooks/useGames";
 import { useCloseRoom, useJoinRoom, useLeaveRoom, useReadyRoom, useRoom, useStartRoom } from "@/shared/hooks/useRooms";
@@ -90,7 +91,9 @@ export function LobbyPage() {
   const isHost = Boolean(you?.isHost);
   const occupied = seats.filter((seat) => seat.state !== "empty");
   const waiting = occupied.filter((seat) => !seat.isHost && seat.state !== "ready");
-  const canStart = occupied.length >= (game?.minPlayers ?? 2) && waiting.length === 0;
+  const requiresFullTable = room?.gameId === WHERES_THE_BONE_ID;
+  const requiredPlayers = requiresFullTable ? (room?.capacity ?? game?.maxPlayers ?? 4) : (game?.minPlayers ?? 2);
+  const canStart = occupied.length >= requiredPlayers && waiting.length === 0;
   const gameTitle = locale === "vi" ? game?.displayNameVi : game?.displayName;
 
   if (roomQuery.isError) {
@@ -118,7 +121,9 @@ export function LobbyPage() {
   };
 
   const waitLabel =
-    waiting.length === 0
+    occupied.length < requiredPlayers
+      ? t("waitingForPlayers").replace("{count}", String(requiredPlayers - occupied.length))
+      : waiting.length === 0
       ? t("allReady")
       : t("waitingFor").replace("{name}", waiting.map((seat) => (seat.isYou ? t("you") : seat.name)).join(", "));
 
@@ -132,8 +137,7 @@ export function LobbyPage() {
         <div className={styles.heading}>
           <h1>{room.name}</h1>
           <p>
-            {gameTitle} · {room.visibility === "public" ? t("publicRoom") : t("privateRoom")} · {occupied.length}/
-            {room.capacity} {t("players")}
+            {gameTitle} · {room.visibility === "public" ? t("publicRoom") : t("privateRoom")}
           </p>
         </div>
         <div className={styles.tools}>

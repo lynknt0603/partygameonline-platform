@@ -213,7 +213,12 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
 
   const seats = useMemo<NobPlayerPublic[]>(() => {
     if (view?.players?.length) {
-      return [...view.players].sort((left, right) => left.seat - right.seat);
+      return view.players
+        .map((player) => ({
+          ...player,
+          avatarUrl: room.players.find((roomPlayer) => roomPlayer.playerId === player.playerId)?.avatarUrl ?? player.avatarUrl,
+        }))
+        .sort((left, right) => left.seat - right.seat);
     }
     return room.players.map((player, index) => ({
       playerId: player.playerId,

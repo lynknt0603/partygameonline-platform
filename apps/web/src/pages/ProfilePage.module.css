@@ -464,29 +464,79 @@
 }
 
 .avatarPickerModal {
-  max-width: 520px;
+  max-width: 480px;
+  width: min(480px, calc(100vw - 32px));
 }
 
 .avatarGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
-  gap: 10px;
-  margin-bottom: var(--space-5);
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  max-height: 410px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 5px;
+  margin-bottom: var(--space-4);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.28) rgba(255, 255, 255, 0.05);
+}
+
+.avatarGrid::-webkit-scrollbar {
+  width: 6px;
+}
+
+.avatarGrid::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 999px;
+}
+
+.avatarGrid::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+}
+
+.avatarGrid::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.45);
 }
 
 .avatarOption {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   min-width: 0;
-  padding: 8px 6px;
+  padding: 8px 4px;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: var(--surface-secondary);
   color: var(--text-secondary);
   cursor: pointer;
   transition: border-color 150ms ease, background-color 150ms ease, transform 150ms ease;
+}
+
+.avatarOptionLocked {
+  cursor: not-allowed;
+  filter: grayscale(0.78);
+  opacity: 0.58;
+}
+
+.avatarOptionLocked:hover {
+  border-color: var(--border);
+  background: var(--surface-secondary);
+  transform: none;
+}
+
+.avatarLock {
+  position: absolute;
+  top: 36px;
+  left: 50%;
+  translate: -50% -50%;
+  padding: 3px;
+  border-radius: 999px;
+  color: #f8d17a;
+  background: rgba(10, 12, 16, 0.84);
+  box-sizing: content-box;
 }
 
 .avatarOption:hover {
@@ -572,4 +622,265 @@
 .saveBtn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+
+/* Achievements Section */
+.achievementSection {
+  margin-top: var(--space-6);
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.achievementHeadingIcon {
+  color: #f59e0b;
+  flex-shrink: 0;
+}
+
+.sectionSubtitle {
+  margin: 2px 0 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.achievementGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+@media (max-width: 640px) {
+  .achievementGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.achievementCard {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface-secondary);
+  transition: transform 150ms ease, border-color 150ms ease;
+}
+
+.achievementCard:hover {
+  border-color: color-mix(in srgb, var(--brand) 40%, var(--border));
+  transform: translateY(-1px);
+}
+
+.achievementUnlocked {
+  border-color: rgba(34, 197, 94, 0.4);
+  background: color-mix(in srgb, rgba(34, 197, 94, 0.08) 30%, var(--surface-secondary));
+}
+
+.achievementLocked {
+  opacity: 0.85;
+}
+
+.achievementRewards {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.achievementReward {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  border: 2px solid var(--border);
+  background: rgba(0, 0, 0, 0.25);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.achievementReward img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.achievementLocked .achievementReward img {
+  filter: grayscale(0.85) brightness(0.65);
+}
+
+.achievementReward svg {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  color: #fff;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
+}
+
+.achievementUnlocked .achievementReward svg {
+  color: #22c55e;
+}
+
+.achievementBody {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.achievementTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.achievementTitleRow h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.achievementTitleRow strong {
+  font-size: 0.82rem;
+  color: var(--brand);
+  white-space: nowrap;
+}
+
+.achievementBody p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+.progressTrack {
+  position: relative;
+  width: 100%;
+  height: 6px;
+  margin-top: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.progressTrack span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #eab308, #22c55e);
+  transition: width 300ms ease;
+}
+
+.emptyAchievements {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  padding: var(--space-4) 0;
+}
+
+.hiddenStatsNotice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+}
+
+/* Not In My Pot Factions */
+.nimpSection {
+  margin-top: var(--space-6);
+}
+
+.nimpFactionGrid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .nimpFactionGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.nimpFactionCard {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  position: relative;
+}
+
+.nimpFactionArtWrapper {
+  width: 76px;
+  height: 96px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.nimpFactionArt {
+  width: 68px;
+  height: 68px;
+  object-fit: contain;
+  display: block;
+}
+
+.nimpFactionArtOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.4) 0%, transparent 60%);
+}
+
+.nimpFactionDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.nimpFactionTitle {
+  margin: 0 0 4px;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.nimpVegetarianTitle {
+  color: #22c55e;
+}
+
+.nimpMeatEaterTitle {
+  color: #f97316;
+}
+
+.nimpVegetarianHighlight {
+  color: #4ade80 !important;
+}
+
+.nimpMeatEaterHighlight {
+  color: #fb923c !important;
 }

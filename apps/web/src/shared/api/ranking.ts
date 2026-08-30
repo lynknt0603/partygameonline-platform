@@ -1,20 +1,27 @@
 import { api } from "./http";
 
-export type RankingSort = "highestElo" | "wins" | "bloodlineWins";
+export type RankingSort = "highestElo" | "wins" | "bloodlineWins" | "vegetarianWinRate" | "meatEaterWinRate";
 export type RankingBloodline = "VAMPIRE" | "WEREWOLF" | "HALFBLOOD" | null;
-export type RankingGameId = "night-of-bloodlines" | "not-in-my-pot";
+export type RankingGameId = "night-of-bloodlines" | "not-in-my-pot" | "wheres-the-bone";
 
 export interface RankingEntryDto {
   rank: number;
   playerId: string;
   username?: string | null;
   displayName: string;
+  avatarUrl?: string | null;
   elo: number;
   highestElo: number;
   totalWins: number;
   totalMatches: number;
   favoriteBloodline?: string | null;
   bloodlineWins: number;
+  vegetarianMatches: number;
+  vegetarianWins: number;
+  vegetarianWinRate: number;
+  meatEaterMatches: number;
+  meatEaterWins: number;
+  meatEaterWinRate: number;
 }
 
 export interface RankingDto {

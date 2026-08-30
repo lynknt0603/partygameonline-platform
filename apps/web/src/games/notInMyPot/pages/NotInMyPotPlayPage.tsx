@@ -3,20 +3,18 @@ import {
   ArrowLeft,
   BookOpen,
   Check,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
-  ChevronUp,
   CircleAlert,
   Clock3,
   EyeOff,
   Flame,
-  Info,
   LogOut,
   RotateCcw,
   ShieldCheck,
   ShoppingBasket,
   Sparkles,
+  Trophy,
   Utensils,
   X,
 } from "lucide-react";
@@ -108,8 +106,8 @@ const CARD_META: Record<string, CardMeta> = {
   SLOTTED_SPOON: {
     labelVi: "Muôi thủng",
     labelEn: "Slotted Spoon",
-    descriptionVi: "Xem và xếp lại tối đa 3 lá",
-    descriptionEn: "Inspect and reorder up to three cards",
+    descriptionVi: "Xem 3 lá trên cùng đã được tráo",
+    descriptionEn: "Inspect the three shuffled top cards",
     art: NOT_IN_MY_POT_ASSETS.cards.slottedSpoon,
   },
   EMERGENCY_SHOPPING: {
@@ -207,12 +205,22 @@ function playerName(players: NotInMyPotPlayer[], playerId: unknown, locale: "vi"
   return locale === "vi" ? "Một người" : "A player";
 }
 
+const HIDDEN_ACTIVITY_EVENT_TYPES: ReadonlySet<string> = new Set([
+  "NOT_IN_MY_POT_GAME_STARTED",
+  "TURN_STARTED",
+  "ACTION_RESOLVED",
+  "SLOTTED_SPOON_INSPECTION_REQUIRED",
+  "SLOTTED_SPOON_RESOLVED",
+]);
+
 function eventText(event: NotInMyPotEvent, players: NotInMyPotPlayer[], locale: "vi" | "en"): string {
   const payload = event.payload;
   const actor = playerName(players, payload.playerId, locale);
   const target = playerName(players, payload.targetPlayerId, locale);
+  const initiator = playerName(players, payload.actorPlayerId, locale);
   const actionType = typeof payload.actionType === "string" ? payload.actionType : "";
   const role = typeof payload.role === "string" ? payload.role : null;
+  const doorCount = typeof payload.doorCount === "number" ? Math.max(0, Math.floor(payload.doorCount)) : null;
   switch (event.type) {
     case "NOT_IN_MY_POT_GAME_STARTED":
       return locale === "vi" ? "Bếp đã mở cửa. Giữ bí mật vai của bạn." : "The kitchen is open. Keep your role secret.";
@@ -225,23 +233,34 @@ function eventText(event: NotInMyPotEvent, players: NotInMyPotPlayer[], locale: 
     case "TARGET_SELECTION_REQUIRED":
       return locale === "vi" ? `${actor} đang chọn mục tiêu.` : `${actor} is choosing a target.`;
     case "PLAYER_DOOR_UPDATED":
+      if (typeof payload.actorPlayerId === "string" && doorCount !== null) {
+        return locale === "vi"
+          ? `${initiator} mời ${target} ra khỏi nhà ${doorCount}/3.`
+          : `${initiator} sent ${target} out ${doorCount}/3.`;
+      }
       return locale === "vi" ? `${actor} nhận thêm một dấu cửa.` : `${actor} received another door mark.`;
     case "PLAYER_EXPELLED":
       return locale === "vi" ? `${actor} bị mời ra khỏi nhà${role ? ` — ${roleLabel(role, locale)}` : ""}.` : `${actor} was sent out${role ? ` — ${roleLabel(role, locale)}` : ""}.`;
     case "SCOOP_OUT_RESOLVED":
       return locale === "vi" ? `${actor} đã vớt bớt bài khỏi nồi.` : `${actor} scooped cards from the pot.`;
-    case "POT_REORDER_REQUIRED":
-      return locale === "vi" ? `${actor} đang sắp xếp lại nồi.` : `${actor} is rearranging the pot.`;
-    case "POT_REORDERED":
-      return locale === "vi" ? `${actor} đã xếp lại nồi.` : `${actor} reordered the pot.`;
+    case "SLOTTED_SPOON_INSPECTION_REQUIRED":
+      return locale === "vi" ? `Hệ thống đang xáo ba lá trên cùng cho ${actor}.` : `The system is shuffling the top three cards for ${actor}.`;
+    case "SLOTTED_SPOON_RESOLVED":
+      return locale === "vi" ? "Ba lá trên cùng đã được xáo ngẫu nhiên." : "The top three cards were shuffled at random.";
     case "EMERGENCY_SHOPPING_RESOLVED":
-      return locale === "vi" ? `${actor} vừa đi chợ gấp.` : `${actor} went emergency shopping.`;
+      return locale === "vi" ? `${actor} vừa dùng lá đi chợ gấp.` : `${actor} just used the Emergency Shopping card.`;
     case "SHOPPING_RETURN_REQUIRED":
       return locale === "vi" ? `${actor} phải trả lại 2 lá.` : `${actor} must return two cards.`;
     case "TRASH_OUT_RESOLVED":
       return locale === "vi" ? `${actor} đã đổ rác của ${target}.` : `${actor} trashed ${target}'s hand.`;
     case "ACTION_TIMED_OUT":
       return locale === "vi" ? `Hành động của ${actor} hết giờ; máy chủ tự xử lý.` : `${actor}'s action timed out; the server resolved it.`;
+    case "TURN_TIMED_OUT":
+      return locale === "vi" ? `Lượt của ${actor} đã hết giờ.` : `${actor}'s turn timed out.`;
+    case "PLAYER_ABANDONED":
+      return locale === "vi" ? `${actor} đã rời bàn.` : `${actor} left the table.`;
+    case "SHOPPING_CARDS_RETURNED":
+      return locale === "vi" ? `${actor} đã trả lại bài đi chợ.` : `${actor} returned the shopping cards.`;
     case "POT_REVEALED": {
       const score = typeof payload.score === "number" ? payload.score : null;
       return locale === "vi" ? `Nồi được mở: ${formatScore(score)} điểm.` : `The pot was revealed: ${formatScore(score)} points.`;
@@ -349,6 +368,7 @@ function TableSeat({
   locale,
   targetable,
   onTarget,
+  isCurrentTurn,
 }: {
   player: NotInMyPotPlayer;
   position: number;
@@ -356,17 +376,35 @@ function TableSeat({
   locale: "vi" | "en";
   targetable: boolean;
   onTarget: () => void;
+  isCurrentTurn: boolean;
 }) {
   const angle = total > 1 ? 90 + (position * 360) / total : 90;
   const left = 50 + Math.cos((angle * Math.PI) / 180) * 42;
   const top = 50 + Math.sin((angle * Math.PI) / 180) * 38;
-  const seatClass = [styles.seat, player.you ? styles.seatSelf : "", targetable ? styles.seatTarget : "", player.expelled ? styles.seatExpelled : ""]
+  const isTurn = Boolean(isCurrentTurn && !player.expelled);
+  const seatClass = [
+    styles.seat,
+    player.you ? styles.seatSelf : "",
+    isTurn && !player.you ? styles.seatActiveOther : "",
+    isTurn && player.you ? styles.seatActiveSelf : "",
+    targetable ? styles.seatTarget : "",
+    player.expelled ? styles.seatExpelled : "",
+  ]
     .filter(Boolean)
     .join(" ");
   const seatContent = (
     <>
       <span className={styles.seatMeta}>
-        <strong className={styles.seatName}>{player.displayName}{player.you ? <em>{locale === "vi" ? "BẠN" : "YOU"}</em> : null}</strong>
+        <strong className={styles.seatName}>
+          <span>{player.displayName}</span>
+          {player.you ? <em className={styles.selfBadge}>{locale === "vi" ? "BẠN" : "YOU"}</em> : null}
+          {isTurn && !player.you ? (
+            <em className={styles.otherTurnBadge}>{locale === "vi" ? "Lượt của họ" : "Their turn"}</em>
+          ) : null}
+          {isTurn && player.you ? (
+            <em className={styles.selfTurnBadge}>{locale === "vi" ? "Lượt của bạn" : "Your turn"}</em>
+          ) : null}
+        </strong>
       </span>
       <span className={styles.outCardTrack} aria-label={`${player.doorCount} / 3 ${locale === "vi" ? "lá Mời ra khỏi nhà" : "Out You Go cards"}`}>
         {Array.from({ length: Math.max(0, Math.min(3, player.doorCount)) }, (_, index) => (
@@ -461,12 +499,10 @@ function PendingActionModal({
   hand,
   players,
   locale,
-  reorderIds,
   returnIds,
-  onReorder,
   onToggleReturn,
   onTarget,
-  onSubmitReorder,
+  onAcknowledgeSpoon,
   onSubmitReturn,
   busy,
 }: {
@@ -475,12 +511,10 @@ function PendingActionModal({
   hand: NotInMyPotCard[];
   players: NotInMyPotPlayer[];
   locale: "vi" | "en";
-  reorderIds: string[];
   returnIds: string[];
-  onReorder: (index: number, delta: number) => void;
   onToggleReturn: (cardId: string) => void;
   onTarget: (playerId: string) => void;
-  onSubmitReorder: () => void;
+  onAcknowledgeSpoon: () => void;
   onSubmitReturn: () => void;
   busy: boolean;
 }) {
@@ -507,34 +541,29 @@ function PendingActionModal({
       </ModalShell>
     );
   }
-  if (pending.type === "REORDER_POT_CARDS") {
-    const ordered = reorderIds.map((id) => inspectedCards.find((card) => card.cardId === id)).filter((card): card is NotInMyPotCard => Boolean(card));
+  if (pending.type === "INSPECT_SHUFFLED_POT") {
     return (
-      <ModalShell title={locale === "vi" ? "Xếp lại nồi" : "Reorder the pot"} wide>
-        <div className={styles.pendingIntro}>
-          <ShoppingBasket size={22} />
-          <p>{locale === "vi" ? "Đây là thông tin riêng của bạn. Thứ tự 1 sẽ nằm trên cùng nồi." : "This information is private to you. Position 1 goes on top of the pot."}</p>
-        </div>
-        <div className={styles.reorderList}>
-          {ordered.map((card, index) => (
-            <div className={styles.reorderRow} key={card.cardId}>
-              <span className={styles.orderNumber}>{index + 1}</span>
+      <ModalShell title={locale === "vi" ? "Muôi thủng — Ba lá trên cùng" : "Slotted Spoon — Top three cards"} wide>
+        <div className={styles.spoonInspection}>
+          {inspectedCards.map((card, index) => (
+            <div className={styles.spoonInspectionCard} key={card.cardId} style={{ animationDelay: `${index * 120}ms` }}>
               <NimpCard card={card} locale={locale} compact interactive={false} />
-              <span className={styles.reorderCopy}><strong>{cardLabel(card, locale)}</strong><small>{locale === "vi" ? "Thông tin bí mật" : "Private information"}</small></span>
-              <span className={styles.reorderActions}>
-                <button type="button" className={styles.reorderMove} disabled={index === 0 || busy} onClick={() => onReorder(index, -1)} aria-label="Move up"><ChevronUp size={16} /></button>
-                <button type="button" className={styles.reorderMove} disabled={index === ordered.length - 1 || busy} onClick={() => onReorder(index, 1)} aria-label="Move down"><ChevronDown size={16} /></button>
-              </span>
             </div>
           ))}
         </div>
+        <p className={styles.spoonPrivacy}><EyeOff size={16} /> {locale === "vi" ? "Thứ tự hiển thị đã được tráo ngẫu nhiên." : "The display order has been shuffled."}</p>
         <div className={styles.modalFooter}>
-          <span className={styles.selectionCount}>{ordered.length}/{pending.requiredCardCount} {locale === "vi" ? "lá" : "cards"}</span>
-          <button type="button" className={styles.primaryButton} disabled={busy || ordered.length !== pending.requiredCardCount} onClick={onSubmitReorder}><Check size={16} /> {locale === "vi" ? "Đặt vào nồi" : "Place in pot"}</button>
+          <span className={styles.selectionCount}>{inspectedCards.length} {locale === "vi" ? "lá riêng tư" : "private cards"}</span>
+          <button type="button" className={styles.primaryButton} disabled={busy} onClick={onAcknowledgeSpoon}><Check size={16} /> {locale === "vi" ? "Đã xem" : "Done"}</button>
         </div>
         {seconds !== null ? <p className={styles.timer}><Clock3 size={14} /> {seconds}s</p> : null}
       </ModalShell>
     );
+  }
+  // Returning shopping cards is handled inline in the hand panel so the
+  // player can select cards without opening a second modal.
+  if (pending.type === "RETURN_SHOPPING_CARDS") {
+    return null;
   }
   if (pending.type === "RETURN_SHOPPING_CARDS") {
     const choices = hand.filter((card) => pending.allowedCardIds.includes(card.cardId));
@@ -564,6 +593,30 @@ function PendingActionModal({
   );
 }
 
+function formatPlayerElo(player: NotInMyPotPlayer): string | null {
+  if (typeof player.eloDelta !== "number") {
+    return null;
+  }
+  const currentElo =
+    typeof player.newElo === "number"
+      ? player.newElo
+      : typeof player.oldElo === "number"
+        ? player.oldElo + player.eloDelta
+        : null;
+
+  const signedDelta =
+    player.eloDelta > 0
+      ? `+${player.eloDelta}`
+      : player.eloDelta < 0
+        ? String(player.eloDelta)
+        : "±0";
+
+  if (currentElo !== null) {
+    return `${currentElo} (${signedDelta})`;
+  }
+  return signedDelta;
+}
+
 function ResultModal({
   view,
   room,
@@ -577,9 +630,16 @@ function ResultModal({
   onPlayAgain: () => void;
   onLeave: () => void;
 }) {
-  const won = view.winnerPlayerIds.includes(view.you);
-  const winners = view.players.filter((player) => view.winnerPlayerIds.includes(player.playerId));
+  const winningIds = new Set(view.winnerPlayerIds.length > 0 ? view.winnerPlayerIds : view.players.filter((player) => player.winner).map((player) => player.playerId));
+  const won = winningIds.has(view.you);
+  const winners = view.players.filter((player) => winningIds.has(player.playerId));
+  const otherPlayers = view.players.filter((player) => !winningIds.has(player.playerId));
   const winnerRole = roleLabel(view.winnerFaction, locale);
+  const losingRole = view.winnerFaction === "VEGETARIAN"
+    ? roleLabel("MEAT_EATER", locale)
+    : view.winnerFaction === "MEAT_EATER"
+      ? roleLabel("VEGETARIAN", locale)
+      : locale === "vi" ? "Phe còn lại" : "Other faction";
   const gameEndedEvent = [...view.publicEvents].reverse().find((event) => event.type === "GAME_ENDED");
   const endReason = typeof gameEndedEvent?.payload.reason === "string" ? gameEndedEvent.payload.reason : null;
   const automaticEnd = view.finalPotScore === null
@@ -588,62 +648,72 @@ function ResultModal({
       || endReason === "ALL_MEAT_EATERS_EXPELLED");
   const automaticReasonText = endReason === "FACTIONS_EQUAL"
     ? (locale === "vi" ? "Số Người Ăn Thịt còn lại bằng số Người Ăn Chay còn lại." : "The remaining Meat Eaters equal the remaining Vegetarians.")
-    : endReason === "ALL_MEAT_EATERS_EXPELLED"
-      ? (locale === "vi" ? "Tất cả Người Ăn Thịt đã bị loại khỏi nhà." : "All Meat Eaters were expelled from the house.")
-      : (locale === "vi" ? "Chồng bài rút đã hết." : "The draw pile is empty.");
+      : endReason === "ALL_MEAT_EATERS_EXPELLED"
+        ? (locale === "vi" ? "Tất cả Người Ăn Thịt đã bị loại khỏi nhà." : "All Meat Eaters were expelled from the house.")
+        : (locale === "vi" ? "Chồng bài rút đã hết." : "The draw pile is empty.");
+  const winnerTeamText = locale === "vi" ? `${winnerRole} thắng` : `The ${winnerRole} team won`;
+  const secondaryTitle = endReason === "ALL_MEAT_EATERS_EXPELLED"
+    ? locale === "vi" ? "Đã bị loại" : "Eliminated"
+    : won
+      ? locale === "vi" ? "Đội đối thủ" : "Other Team"
+      : locale === "vi" ? "Đội của bạn" : "Your Team";
+  const reasonTitle = won
+    ? view.winnerFaction === "VEGETARIAN"
+      ? locale === "vi" ? "Căn bếp đã được bảo vệ!" : "The kitchen stayed safe!"
+      : locale === "vi" ? "Phe ăn thịt đã giành chiến thắng!" : "The Meat Eater team took the win!"
+    : locale === "vi" ? "Đừng lo, mỗi ván là một cơ hội mới!" : "Better luck next time — every game is a new chance!";
+  const reasonBody = automaticEnd
+    ? automaticReasonText
+    : view.finalPotScore !== null
+      ? locale === "vi" ? `Nồi đạt ${view.finalPotScore}/${view.targetScore} điểm.` : `The pot reached ${view.finalPotScore}/${view.targetScore} points.`
+      : locale === "vi" ? "Ván đấu đã kết thúc theo luật của trò chơi." : "The match ended according to the game rules.";
+  const renderPlayerRows = (players: NotInMyPotPlayer[], variant: "winner" | "other") => players.map((player, index) => {
+    const isYou = player.playerId === view.you;
+    const avatarUrl = room.players.find((item) => item.playerId === player.playerId)?.avatarUrl;
+    const delta = player.eloDelta;
+    const eloText = formatPlayerElo(player);
+    return (
+      <div className={`${styles.resultPlayerRow} ${isYou ? styles.resultPlayerYou : ""}`} key={player.playerId}>
+        <span className={`${styles.resultRank} ${variant === "winner" ? styles.resultRankWinner : styles.resultRankOther}`}>{index + 1}</span>
+        <span className={styles.resultAvatarSlot}>
+          <PlayerAvatar playerId={player.playerId} displayName={player.displayName} avatarUrl={avatarUrl} size={38} decorative />
+        </span>
+        <span className={styles.resultPlayerInfo}>
+          <strong>{player.displayName}{isYou ? (locale === "vi" ? " (Bạn)" : " (You)") : ""}</strong>
+          <small>{roleLabel(player.role, locale)}</small>
+        </span>
+        {eloText ? <em className={delta !== null && delta < 0 ? styles.eloDown : styles.eloUp}>{eloText}</em> : null}
+      </div>
+    );
+  });
   return (
     <div className={styles.resultLayer} role="dialog" aria-modal="true" aria-labelledby="nimp-result-title">
       <div className={styles.resultBackdrop} />
       <section className={`${styles.resultCard} ${won ? styles.resultWin : styles.resultLose}`}>
-        <div className={styles.resultRibbon}><Sparkles size={16} /> {locale === "vi" ? "BẾP ĐÃ KHÉP LẠI" : "KITCHEN CLOSED"}</div>
-        <div className={styles.resultOutcome}>
-          <span className={styles.resultIcon}>{won ? <ShieldCheck size={30} /> : <CircleAlert size={30} />}</span>
-          <p className={styles.modalEyebrow}>{won ? (locale === "vi" ? "PHE CỦA BẠN THẮNG" : "YOUR FACTION WON") : (locale === "vi" ? "PHE ĐỐI THỦ THẮNG" : "THE OTHER FACTION WON")}</p>
-          <h2 id="nimp-result-title">{winnerRole}</h2>
-        </div>
-        <div className={styles.resultScore}>
-          {automaticEnd ? (
-            <>
-              <span>{locale === "vi" ? "KẾT THÚC TỰ ĐỘNG" : "AUTOMATIC END"}</span>
-              <strong>{locale === "vi" ? "Không mở nồi" : "Pot not revealed"}</strong>
-              <small className={styles.automaticResultReason}>{automaticReasonText}</small>
-            </>
-          ) : (
-            <>
-              <span>{locale === "vi" ? "Điểm nồi cuối" : "Final pot score"}</span>
-              <strong>{formatScore(view.finalPotScore)} <small>/ {view.targetScore}</small></strong>
-            </>
-          )}
-        </div>
-        <div className={styles.resultWinners}>
-          <h3>{locale === "vi" ? "Người thắng" : "Winners"}</h3>
-          <div className={styles.winnerList}>
-            {winners.map((player) => (
-              <div className={styles.winnerRow} key={player.playerId}>
-                <PlayerAvatar playerId={player.playerId} displayName={player.displayName} avatarUrl={room.players.find((item) => item.playerId === player.playerId)?.avatarUrl} size={40} decorative />
-                <span><strong>{player.displayName}</strong><small>{roleLabel(player.role, locale)}</small></span>
-                {player.eloDelta !== null ? <em className={player.eloDelta >= 0 ? styles.eloUp : styles.eloDown}>{player.eloDelta >= 0 ? "+" : ""}{player.eloDelta} ELO</em> : null}
-              </div>
-            ))}
+        <div className={styles.resultKitchenPill}><Utensils size={15} /> {locale === "vi" ? "BẾP ĐÃ ĐÓNG" : "KITCHEN CLOSED"}</div>
+        <div className={styles.resultHero}>
+          <div className={`${styles.resultHeroBadge} ${won ? styles.resultHeroBadgeWin : styles.resultHeroBadgeLose}`} aria-hidden="true">
+            {won ? <Trophy size={28} /> : <CircleAlert size={28} />}
           </div>
+          <div className={`${styles.resultHeroTitle} ${won ? styles.resultHeroTitleWin : styles.resultHeroTitleLose}`}>
+            <h2 id="nimp-result-title">{won ? (locale === "vi" ? "Chiến thắng!" : "Victory!") : (locale === "vi" ? "Hẹn may mắn lần sau!" : "Better Luck Next Time!")}</h2>
+          </div>
+          <p className={styles.resultTeamOutcome}>{winnerTeamText}</p>
         </div>
-        {view.finalPot.length > 0 ? (
-          <div className={styles.resultPot}>
-            <h3>{locale === "vi" ? "Nồi được mở" : "Revealed pot"}</h3>
-            <div className={styles.resultPotCards}>
-              {view.finalPot.map((card) => <NimpCard key={card.cardId} card={card} locale={locale} compact interactive={false} />)}
-            </div>
+        <div className={`${styles.resultMessage} ${won ? styles.resultMessageWin : styles.resultMessageLose}`}>
+          <span className={styles.resultMessageIcon}>{won ? <ShieldCheck size={24} /> : <Sparkles size={24} />}</span>
+          <span><strong>{reasonTitle}</strong><small>{reasonBody}</small></span>
+        </div>
+        <div className={`${styles.resultTeamBlock} ${styles.resultWinnersBlock}`}>
+          <div className={styles.resultTeamHeading}><h3><Trophy size={17} /> {locale === "vi" ? "Người thắng" : "Winners"}</h3><span>{winnerRole}</span></div>
+          <div className={styles.resultPlayerList}>{renderPlayerRows(winners, "winner")}</div>
+        </div>
+        {otherPlayers.length > 0 ? (
+          <div className={`${styles.resultTeamBlock} ${styles.resultOthersBlock}`}>
+            <div className={styles.resultTeamHeading}><h3><CircleAlert size={17} /> {secondaryTitle}</h3><span>{losingRole}</span></div>
+            <div className={styles.resultPlayerList}>{renderPlayerRows(otherPlayers, "other")}</div>
           </div>
         ) : null}
-        <div className={styles.eloBoard}>
-          {view.players.filter((player) => player.newElo !== null).map((player) => (
-            <div className={styles.eloRow} key={player.playerId}>
-              <span>{player.displayName}</span>
-              <small>{player.oldElo} → {player.newElo}</small>
-              <em className={player.eloDelta !== null && player.eloDelta >= 0 ? styles.eloUp : styles.eloDown}>{player.eloDelta !== null && player.eloDelta >= 0 ? "+" : ""}{player.eloDelta ?? 0}</em>
-            </div>
-          ))}
-        </div>
         <div className={styles.resultActions}>
           <button type="button" className={styles.primaryButton} onClick={onPlayAgain}><RotateCcw size={17} /> {locale === "vi" ? "Chơi lại" : "Play again"}</button>
           <button type="button" className={styles.dangerButton} onClick={onLeave}><LogOut size={16} /> {locale === "vi" ? "Rời phòng" : "Leave room"}</button>
@@ -668,7 +738,6 @@ export function NotInMyPotPlayPage({
   const [showRole, setShowRole] = useState(false);
   const [roleSeen, setRoleSeen] = useState(false);
   const [showRules, setShowRules] = useState(false);
-  const [showLog, setShowLog] = useState(false);
   const [logCollapsed, setLogCollapsed] = useState(false);
   const [selectedAction, setSelectedAction] = useState<NotInMyPotCard | null>(null);
   const [selectedActionTarget, setSelectedActionTarget] = useState<string | null>(null);
@@ -678,7 +747,6 @@ export function NotInMyPotPlayPage({
   const [movingCard, setMovingCard] = useState<NotInMyPotCard | null>(null);
   const [revealCompletedVersion, setRevealCompletedVersion] = useState<number | null>(null);
   const [noticeHidden, setNoticeHidden] = useState(false);
-  const [reorderIds, setReorderIds] = useState<string[]>([]);
   const [returnIds, setReturnIds] = useState<string[]>([]);
   const [now, setNow] = useState(() => Date.now());
   const [visibleActionEventKey, setVisibleActionEventKey] = useState<string | null>(null);
@@ -712,29 +780,25 @@ export function NotInMyPotPlayPage({
 
   useEffect(() => {
     if (!view?.pendingAction) {
-      setReorderIds([]);
       setReturnIds([]);
       return;
     }
-    if (view.pendingAction.type === "REORDER_POT_CARDS") {
-      setReorderIds(view.privateInspectedCards.map((card) => card.cardId));
-      setReturnIds([]);
-    } else if (view.pendingAction.type === "RETURN_SHOPPING_CARDS") {
+    if (view.pendingAction.type === "RETURN_SHOPPING_CARDS") {
+      setSelectedHandCardId(null);
       setReturnIds((current) => current.filter((id) => view.pendingAction?.allowedCardIds.includes(id)));
-      setReorderIds([]);
     } else {
-      setReorderIds([]);
       setReturnIds([]);
     }
-  }, [view?.pendingAction, view?.privateInspectedCards]);
+  }, [view?.pendingAction]);
 
   useEffect(() => {
-    if (!view?.pendingAction?.deadline) {
+    const deadline = view?.pendingAction?.deadline ?? view?.turnDeadline;
+    if (!deadline) {
       return;
     }
     const timer = window.setInterval(() => setNow(Date.now()), 1_000);
     return () => window.clearInterval(timer);
-  }, [view?.pendingAction?.deadline]);
+  }, [view?.pendingAction?.deadline, view?.turnDeadline]);
 
   const submit = useCallback((command: NotInMyPotCommand): boolean => {
     const requestId = sendCommand(command);
@@ -776,13 +840,26 @@ export function NotInMyPotPlayPage({
   const pending = view?.pendingAction ?? null;
   const pendingForYou = Boolean(view && pending && pending.actorPlayerId === view.you);
   const pendingTargetIds = pendingForYou && pending?.type === "SELECT_TARGET" ? new Set(pending.allowedTargetPlayerIds) : new Set<string>();
-  const currentPlayer = view?.players.find((player) => player.playerId === view.currentPlayerId);
-  const events = view?.publicEvents.slice(-24).reverse() ?? [];
-  const latestActionEventIndex = view?.publicEvents.map((event) => event.type).lastIndexOf("ACTION_STARTED") ?? -1;
-  const latestActionEvent = view && latestActionEventIndex >= 0 ? view.publicEvents[latestActionEventIndex] : null;
+  const shoppingReturnPending = pendingForYou && pending?.type === "RETURN_SHOPPING_CARDS";
+  const shoppingReturnAllowedIds = shoppingReturnPending ? new Set(pending.allowedCardIds) : new Set<string>();
+  const visiblePublicEvents = view?.actionHistoryVisible === false ? [] : view?.publicEvents ?? [];
+  const events = visiblePublicEvents
+    .filter((event) => !HIDDEN_ACTIVITY_EVENT_TYPES.has(event.type))
+    .filter((event) => {
+      if (event.type === "ACTION_STARTED") {
+        return event.payload.actionType !== "OUT_OF_HOUSE" && event.payload.actionType !== "EMERGENCY_SHOPPING";
+      }
+      return event.type !== "SHOPPING_RETURN_REQUIRED" && event.type !== "SHOPPING_CARDS_RETURNED";
+    })
+    .slice(-24)
+    .reverse();
+  const latestActionEventIndex = visiblePublicEvents.map((event) => event.type).lastIndexOf("ACTION_STARTED");
+  const latestActionEvent = view && latestActionEventIndex >= 0 ? visiblePublicEvents[latestActionEventIndex] : null;
   const latestActionEventKey = latestActionEvent ? `${view?.roomId ?? room.id}:${latestActionEventIndex}` : null;
   const latestIngredientEvent = events.find((event) => event.type === "INGREDIENT_DECLARED") ?? null;
-  const pendingSeconds = remainingSeconds(pending?.deadline);
+  const turnSecondsRemaining = view && !view.finished && view.currentPlayerId
+    ? remainingSeconds(view.turnDeadline)
+    : null;
   // Keep `now` in the component so the countdown updates even when the server is quiet.
   void now;
 
@@ -796,9 +873,9 @@ export function NotInMyPotPlayPage({
     return () => window.clearTimeout(timer);
   }, [latestActionEventKey]);
 
-  const motionTypes = useMemo(() => ["SCOOP_OUT_RESOLVED", "POT_REORDER_REQUIRED", "EMERGENCY_SHOPPING_RESOLVED", "TRASH_OUT_RESOLVED"], []);
-  const latestMotionIdx = view ? view.publicEvents.map((e) => e.type).reduce((acc, type, idx) => motionTypes.includes(type) ? idx : acc, -1) : -1;
-  const latestMotionEvt = view && latestMotionIdx >= 0 ? view.publicEvents[latestMotionIdx] : null;
+  const motionTypes = useMemo(() => ["SCOOP_OUT_RESOLVED", "SLOTTED_SPOON_INSPECTION_REQUIRED", "EMERGENCY_SHOPPING_RESOLVED", "TRASH_OUT_RESOLVED"], []);
+  const latestMotionIdx = visiblePublicEvents.reduce((acc, event, idx) => motionTypes.includes(event.type) ? idx : acc, -1);
+  const latestMotionEvt = view && latestMotionIdx >= 0 ? visiblePublicEvents[latestMotionIdx] : null;
   const latestMotionEvtKey = latestMotionEvt ? `${view?.roomId ?? room.id}:motion:${latestMotionIdx}` : null;
 
   useEffect(() => {
@@ -813,8 +890,8 @@ export function NotInMyPotPlayPage({
     return () => window.clearTimeout(timer);
   }, [latestMotionEvtKey, latestMotionEvt]);
 
-  const latestIngredientIdx = view ? view.publicEvents.map((e) => e.type).lastIndexOf("INGREDIENT_DECLARED") : -1;
-  const latestIngredientEvt = view && latestIngredientIdx >= 0 ? view.publicEvents[latestIngredientIdx] : null;
+  const latestIngredientIdx = visiblePublicEvents.map((event) => event.type).lastIndexOf("INGREDIENT_DECLARED");
+  const latestIngredientEvt = view && latestIngredientIdx >= 0 ? visiblePublicEvents[latestIngredientIdx] : null;
   const isRemoteIngredient = Boolean(latestIngredientEvt && latestIngredientEvt.payload.playerId !== view?.you);
   const latestRemoteIngredientKey = isRemoteIngredient && latestIngredientEvt ? `${view?.roomId ?? room.id}:remote-ing:${latestIngredientIdx}` : null;
 
@@ -869,18 +946,6 @@ export function NotInMyPotPlayPage({
     setSelectedActionTarget(null);
   };
 
-  const reorder = (index: number, delta: number) => {
-    setReorderIds((current) => {
-      const next = [...current];
-      const target = index + delta;
-      if (target < 0 || target >= next.length) {
-        return current;
-      }
-      [next[index], next[target]] = [next[target], next[index]];
-      return next;
-    });
-  };
-
   const toggleReturn = (cardId: string) => {
     setReturnIds((current) => {
       if (current.includes(cardId)) {
@@ -910,21 +975,7 @@ export function NotInMyPotPlayPage({
     );
   }
 
-  const turnText = pendingForYou
-    ? locale === "vi" ? "Bạn cần hoàn thành hành động" : "You need to finish an action"
-    : view.canAct
-      ? locale === "vi" ? "Lượt của bạn" : "Your turn"
-      : currentPlayer
-        ? locale === "vi" ? `Đợi ${currentPlayer.displayName}` : `Waiting for ${currentPlayer.displayName}`
-        : locale === "vi" ? "Đang đợi bàn" : "Waiting for the table";
-  const pendingTitle = pending?.type === "SELECT_TARGET"
-    ? locale === "vi" ? "Chọn mục tiêu để tiếp tục" : "Choose a target to continue"
-    : pending?.type === "REORDER_POT_CARDS"
-      ? locale === "vi" ? "Sắp xếp lại nồi — thông tin riêng" : "Reorder the pot — private view"
-      : pending?.type === "RETURN_SHOPPING_CARDS"
-        ? locale === "vi" ? "Trả lại 2 lá đi chợ" : "Return two shopping cards"
-        : null;
-  const selectedHandCard = view.myHand.find((card) => card.cardId === selectedHandCardId) ?? null;
+    const selectedHandCard = view.myHand.find((card) => card.cardId === selectedHandCardId) ?? null;
   const actionType = typeof latestActionEvent?.payload.actionType === "string" ? latestActionEvent.payload.actionType : null;
   const actionActor = latestActionEvent ? playerName(view.players, latestActionEvent.payload.playerId, locale) : null;
   const actionCard = actionType ? {
@@ -950,18 +1001,14 @@ export function NotInMyPotPlayPage({
         </div>
         <div className={styles.topTools}>
           <div className={`${styles.gameStatus} ${view.finished ? styles.statusFinished : styles.statusLive}`}><span className={styles.statusDot} /> {view.finished ? (locale === "vi" ? "Đã xong" : "Finished") : phaseLabel(view.phase, locale)}</div>
+          {turnSecondsRemaining !== null ? <span className={styles.turnTimer}>{turnSecondsRemaining}s</span> : null}
           <button type="button" className={styles.topButton} onClick={() => { setRoleSeen(true); setShowRole(true); }}><ShieldCheck size={16} /> <span>{locale === "vi" ? "Vai của tôi" : "My role"}</span></button>
           <button type="button" className={styles.topIconButton} onClick={() => setShowRules(true)} aria-label={locale === "vi" ? "Luật chơi" : "Rules"}><BookOpen size={17} /></button>
         </div>
       </header>
 
-      <div className={`${styles.gameLayout} ${logCollapsed ? styles.gameLayoutLogCollapsed : ""}`}>
+          <div className={`${styles.gameLayout} ${logCollapsed ? styles.gameLayoutLogCollapsed : ""} ${view.actionHistoryVisible ? "" : styles.gameLayoutLogHidden}`}>
         <section className={styles.tablePanel}>
-          <div className={styles.panelHeader}>
-            <div><p className={styles.modalEyebrow}>{locale === "vi" ? "BÀN BẾP" : "KITCHEN TABLE"}</p><h1>{locale === "vi" ? "Nồi của ai đây?" : "Whose pot is it?"}</h1></div>
-            <div className={styles.scoreTarget}><span>{locale === "vi" ? "Mục tiêu" : "Target"}</span><strong>{view.targetScore} <small>{locale === "vi" ? "điểm" : "pts"}</small></strong></div>
-          </div>
-
           <div className={styles.tableSurface} data-finished={view.finished}>
             <div className={styles.tableTexture} />
             <div className={styles.seatRing} aria-label={locale === "vi" ? "Ghế người chơi" : "Player seats"}>
@@ -974,15 +1021,11 @@ export function NotInMyPotPlayPage({
                   locale={locale}
                   targetable={pendingTargetIds.has(player.playerId)}
                   onTarget={() => submit({ type: "SELECT_TARGET", targetPlayerId: player.playerId })}
+                  isCurrentTurn={!view.finished && view.currentPlayerId === player.playerId}
                 />
               ))}
             </div>
 
-            <div className={`${styles.turnIndicator} ${view.canAct ? styles.turnIndicatorYou : ""}`}>
-              <span className={styles.turnIcon}>{pendingForYou ? <CircleAlert size={17} /> : view.canAct ? <Flame size={17} /> : <Clock3 size={17} />}</span>
-              <span><strong>{turnText}</strong>{pendingTitle ? <small>{pendingTitle}</small> : null}</span>
-              {pendingSeconds !== null && pendingForYou ? <em>{pendingSeconds}s</em> : null}
-            </div>
 
             <div className={styles.centerStage}>
               <div className={styles.pileRow}>
@@ -996,6 +1039,10 @@ export function NotInMyPotPlayPage({
                 />
 
                 <div className={styles.potPlayZone}>
+                  <div className={styles.potTargetBadge}>
+                    <span>{locale === "vi" ? "Mục tiêu" : "Target"}</span>
+                    <strong>{view.targetScore} <small>{locale === "vi" ? "điểm" : "pts"}</small></strong>
+                  </div>
                   <CardPile
                     count={view.potCardCount}
                     label={locale === "vi" ? "NỒI" : "POT"}
@@ -1045,11 +1092,41 @@ export function NotInMyPotPlayPage({
                 <span><strong>{locale === "vi" ? "BÀI TRÊN TAY" : "MY HAND"}</strong><small>{view.myHand.length} {locale === "vi" ? "lá" : "cards"}</small></span>
                 <span>{selectedHandCard ? (locale === "vi" ? `Đã chọn: ${cardLabel(selectedHandCard, locale)}` : `Selected: ${cardLabel(selectedHandCard, locale)}`) : (locale === "vi" ? "Chọn một lá để đánh" : "Select a card to play")}</span>
               </div>
+              {shoppingReturnPending ? (
+                <div className={styles.shoppingReturnPrompt} role="status">
+                  <ShoppingBasket size={16} />
+                  <span>
+                    <strong>{locale === "vi" ? "Đi chợ gấp" : "Emergency shopping"}</strong>
+                    <small>{locale === "vi" ? `Chọn đúng ${pending?.requiredCardCount ?? 2} lá để trả lại chồng bài.` : `Choose exactly ${pending?.requiredCardCount ?? 2} cards to return to the deck.`}</small>
+                  </span>
+                  <em>{returnIds.length}/{pending?.requiredCardCount ?? 2}</em>
+                </div>
+              ) : null}
               <div className={styles.handGrid}>
-                {view.myHand.map((card) => <NimpCard key={card.cardId} card={card} locale={locale} selected={card.cardId === selectedHandCardId} disabled={!view.canAct || busy || Boolean(pending) || Boolean(movingCard) || revealInProgress} onClick={() => onHandCard(card)} />)}
+                {view.myHand.map((card) => {
+                  const returnable = shoppingReturnAllowedIds.has(card.cardId);
+                  return (
+                    <NimpCard
+                      key={card.cardId}
+                      card={card}
+                      locale={locale}
+                      selected={shoppingReturnPending ? returnIds.includes(card.cardId) : card.cardId === selectedHandCardId}
+                      disabled={shoppingReturnPending ? busy || !returnable || Boolean(movingCard) || revealInProgress : !view.canAct || busy || Boolean(pending) || Boolean(movingCard) || revealInProgress}
+                      onClick={() => shoppingReturnPending ? toggleReturn(card.cardId) : onHandCard(card)}
+                    />
+                  );
+                })}
                 {view.myHand.length === 0 ? <p className={styles.emptyHand}>{locale === "vi" ? "Bạn không còn lá trên tay." : "You have no cards in hand."}</p> : null}
               </div>
-              {selectedHandCard || view.canDeclarePotReady ? <div className={styles.actionDock}>
+              {shoppingReturnPending || selectedHandCard || view.canDeclarePotReady ? <div className={styles.actionDock}>
+                {shoppingReturnPending ? (
+                  <>
+                    <span className={styles.shoppingReturnTimer}>{pending?.deadline ? `${remainingSeconds(pending.deadline) ?? 0}s` : null}</span>
+                    <button type="button" className={styles.primaryButton} disabled={busy || returnIds.length !== (pending?.requiredCardCount ?? 2)} onClick={() => { submit({ type: "RETURN_SHOPPING_CARDS", cardIds: returnIds }); }}>
+                      <Check size={16} /> {locale === "vi" ? "Trả bài" : "Return cards"}
+                    </button>
+                  </>
+                ) : null}
                 {selectedHandCard && isIngredient(selectedHandCard) ? <button type="button" className={styles.playCardButton} disabled={busy || Boolean(movingCard)} onClick={playSelectedIngredient}><Flame size={17} /> {locale === "vi" ? "ĐÁNH LÁ NÀY" : "PLAY THIS CARD"}</button> : null}
                 {view.canDeclarePotReady ? <button type="button" className={styles.readyButton} disabled={busy || Boolean(movingCard)} onClick={() => setShowPotReady(true)}><ShieldCheck size={17} /> {locale === "vi" ? "Mở nồi tính điểm" : "Reveal Pot and Calculate Score"}</button> : null}
               </div> : null}
@@ -1058,7 +1135,7 @@ export function NotInMyPotPlayPage({
 
         </section>
 
-        <aside className={`${styles.sidePanel} ${logCollapsed ? styles.sidePanelCollapsed : ""}`}>
+        {view.actionHistoryVisible ? <aside className={`${styles.sidePanel} ${logCollapsed ? styles.sidePanelCollapsed : ""}`}>
           {logCollapsed ? (
             <button type="button" className={styles.logExpandButton} onClick={() => setLogCollapsed(false)} aria-label={locale === "vi" ? "Mở Nhật ký bàn" : "Expand table log"}>
               <ChevronLeft size={18} />
@@ -1068,18 +1145,17 @@ export function NotInMyPotPlayPage({
           ) : (
             <div className={styles.sideSection}>
               <div className={styles.sideHeader}>
-                <div><p className={styles.modalEyebrow}>{locale === "vi" ? "CÔNG KHAI" : "PUBLIC"}</p><h2>{locale === "vi" ? "Nhật ký bàn" : "Table log"}</h2></div>
+                <p className={styles.modalEyebrow}>{locale === "vi" ? "NHẬT KÝ" : "ACTIVITY LOG"}</p>
                 <div className={styles.logHeaderActions}>
-                  <button type="button" className={styles.mobileLogButton} onClick={() => setShowLog((current) => !current)}>{showLog ? <X size={16} /> : <Info size={16} />}</button>
                   <button type="button" className={styles.collapseLogButton} onClick={() => setLogCollapsed(true)} aria-label={locale === "vi" ? "Thu nhỏ Nhật ký bàn" : "Collapse table log"}><ChevronRight size={17} /></button>
                 </div>
               </div>
-              <div className={`${styles.logList} ${showLog ? styles.logOpen : ""}`}>
-                {events.length === 0 ? <p className={styles.emptyLog}>{locale === "vi" ? "Bàn đang chờ sự kiện đầu tiên." : "Waiting for the first table event."}</p> : events.map((event, index) => <div className={styles.logItem} key={`${event.type}-${index}`}><span className={styles.logMarker} /><div><p>{eventText(event, view.players, locale)}</p><small>{event.type.replaceAll("_", " ")}</small></div></div>)}
+              <div className={styles.logList}>
+                {events.length === 0 ? <p className={styles.emptyLog}>{locale === "vi" ? "Bàn đang chờ sự kiện đầu tiên." : "Waiting for the first table event."}</p> : events.map((event, index) => <div className={styles.logItem} key={`${event.type}-${index}`}><span className={styles.logMarker} /><div><p>{eventText(event, view.players, locale)}</p></div></div>)}
               </div>
             </div>
           )}
-        </aside>
+        </aside> : null}
       </div>
 
       {notice && !noticeHidden ? <div className={`${styles.notice} ${rejectCode ? styles.noticeError : ""}`} role="status"><CircleAlert size={15} /> <span>{notice}</span><button type="button" onClick={() => setNoticeHidden(true)} aria-label="Dismiss"><X size={14} /></button></div> : null}
@@ -1111,7 +1187,7 @@ export function NotInMyPotPlayPage({
 
       {selectedAction ? <ActionCardModal card={selectedAction} players={view.players} locale={locale} selectedTargetId={selectedActionTarget} onSelectTarget={setSelectedActionTarget} onConfirm={confirmAction} onClose={() => { setSelectedAction(null); setSelectedActionTarget(null); }} busy={busy} /> : null}
 
-      {pending && pendingForYou ? <PendingActionModal pending={pending} inspectedCards={view.privateInspectedCards} hand={view.myHand} players={view.players} locale={locale} reorderIds={reorderIds} returnIds={returnIds} onReorder={reorder} onToggleReturn={toggleReturn} onTarget={(playerId) => { submit({ type: "SELECT_TARGET", targetPlayerId: playerId }); }} onSubmitReorder={() => { submit({ type: "REORDER_POT_CARDS", cardIds: reorderIds }); }} onSubmitReturn={() => { submit({ type: "RETURN_SHOPPING_CARDS", cardIds: returnIds }); }} busy={busy} /> : null}
+      {pending && pendingForYou && pending.type !== "RETURN_SHOPPING_CARDS" ? <PendingActionModal pending={pending} inspectedCards={view.privateInspectedCards} hand={view.myHand} players={view.players} locale={locale} returnIds={returnIds} onToggleReturn={toggleReturn} onTarget={(playerId) => { submit({ type: "SELECT_TARGET", targetPlayerId: playerId }); }} onAcknowledgeSpoon={() => { submit({ type: "ACKNOWLEDGE_SLOTTED_SPOON" }); }} onSubmitReturn={() => { submit({ type: "RETURN_SHOPPING_CARDS", cardIds: returnIds }); }} busy={busy} /> : null}
 
       {showPotReady ? <ModalShell title={locale === "vi" ? "Mở nồi tính điểm?" : "Reveal Pot and Calculate Score?"} onClose={() => setShowPotReady(false)}><div className={styles.readyModal}><div className={styles.readyIcon}><ShieldCheck size={26} /></div><h3>{locale === "vi" ? "Mở nồi và tính điểm ngay?" : "Reveal the pot and calculate its score now?"}</h3><p>{locale === "vi" ? `Máy chủ sẽ mở nồi và so sánh điểm với mục tiêu ${view.targetScore}. Hành động này kết thúc ván.` : `The server will reveal the pot and compare it with the ${view.targetScore}-point target. This ends the game.`}</p></div><div className={styles.modalFooter}><button type="button" className={styles.ghostButton} onClick={() => setShowPotReady(false)}>{locale === "vi" ? "Chưa" : "Not yet"}</button><button type="button" className={styles.primaryButton} disabled={busy} onClick={() => { submit({ type: "DECLARE_POT_READY" }); setShowPotReady(false); }}><Check size={16} /> {locale === "vi" ? "Mở nồi tính điểm" : "Reveal Pot and Calculate Score"}</button></div></ModalShell> : null}
 

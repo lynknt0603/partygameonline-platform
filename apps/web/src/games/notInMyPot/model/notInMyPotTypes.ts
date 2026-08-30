@@ -68,6 +68,8 @@ export interface NotInMyPotView {
   finished: boolean;
   currentPlayerId: string | null;
   turnNumber: number;
+  turnDeadline: string | null;
+  actionHistoryVisible: boolean;
   targetScore: number;
   winnerFaction: NotInMyPotRole | string | null;
   winnerPlayerIds: string[];
@@ -218,6 +220,8 @@ export function parseNotInMyPotView(value: unknown): NotInMyPotView | null {
     finished: record.finished === true,
     currentPlayerId: asNullableString(record.currentPlayerId),
     turnNumber: asNumber(record.turnNumber, 1),
+    turnDeadline: asNullableString(record.turnDeadline),
+    actionHistoryVisible: record.actionHistoryVisible !== false,
     targetScore: asNumber(record.targetScore),
     winnerFaction: asNullableString(record.winnerFaction),
     winnerPlayerIds: asStringList(record.winnerPlayerIds),
