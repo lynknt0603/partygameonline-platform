@@ -2,6 +2,7 @@ import { Clock, Play, Users } from "lucide-react";
 import type { GameManifest } from "@/game/core/GameManifest";
 import { NOB_BRANDING, NOB_CATALOGUE_ID } from "@/games/nob";
 import { NOT_IN_MY_POT_ASSETS } from "@/games/notInMyPot";
+const WHERES_THE_BONE_ART = "/assets/games/wheres-the-bone/boner-thief.png";
 import { usePlayGame } from "@/shared/hooks/useRooms";
 import { useLocale, useT } from "@/shared/i18n/useT";
 import { memberLoginPath } from "@/shared/auth/memberAccess";
@@ -30,6 +31,8 @@ export function GameCard({ game }: GameCardProps) {
           <img className={styles.artPhoto} src={NOB_BRANDING.visualIdentity} alt="" />
         ) : game.id === "not-in-my-pot" ? (
           <img className={styles.artPhoto} src={NOT_IN_MY_POT_ASSETS.visualIdentity} alt="" />
+        ) : game.id === "wheres-the-bone" ? (
+          <img className={styles.artPhoto} src={WHERES_THE_BONE_ART} alt="" />
         ) : (
           <span className={styles.artMark} />
         )}

@@ -42,6 +42,17 @@ const PRESENTATION: Record<string, Presentation> = {
       className: "not-in-my-pot",
     },
   },
+  "wheres-the-bone": {
+    displayName: "Where's the Bone",
+    displayNameVi: "Where's the Bone",
+    genre: "Hidden role • deduction",
+    genreVi: "Ẩn vai • suy luận",
+    summary: "Wake up, follow the clues and find the bone thief.",
+    summaryVi: "Thức dậy, theo dấu vết và tìm ra kẻ trộm xương.",
+    durationMin: 10,
+    durationMax: 20,
+    theme: { id: "wheres-the-bone-yard", name: "Moonlit Dog Yard", prefersDarkCanvas: true, hudVariant: "platform", className: "wheres-the-bone" },
+  },
 };
 
 const FALLBACK: Presentation = {

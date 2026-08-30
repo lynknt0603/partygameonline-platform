@@ -37,6 +37,17 @@ export interface PlayerStatsDto {
     elo: number;
     highestElo: number;
   };
+  wheresTheBoneStats?: {
+    totalMatches: number;
+    matchesWon: number;
+    winRate: number;
+    boneThief: FactionStats;
+    yardDog: FactionStats;
+    whiteDog: FactionStats;
+    packmate: FactionStats;
+    elo: number;
+    highestElo: number;
+  };
   achievements: AchievementDto[];
   avatars: AvatarDto[];
 }
@@ -98,6 +109,17 @@ export const DEFAULT_PLAYER_STATS: PlayerStatsDto = {
     winRate: 0,
     vegetarian: { matchesPlayed: 0, matchesWon: 0, winRate: 0 },
     meatEater: { matchesPlayed: 0, matchesWon: 0, winRate: 0 },
+    elo: 5000,
+    highestElo: 5000,
+  },
+  wheresTheBoneStats: {
+    totalMatches: 0,
+    matchesWon: 0,
+    winRate: 0,
+    boneThief: { matchesPlayed: 0, matchesWon: 0, winRate: 0 },
+    yardDog: { matchesPlayed: 0, matchesWon: 0, winRate: 0 },
+    whiteDog: { matchesPlayed: 0, matchesWon: 0, winRate: 0 },
+    packmate: { matchesPlayed: 0, matchesWon: 0, winRate: 0 },
     elo: 5000,
     highestElo: 5000,
   },

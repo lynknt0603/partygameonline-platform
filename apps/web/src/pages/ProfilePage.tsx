@@ -130,6 +130,14 @@ export function ProfilePage({ profileUsername }: { profileUsername?: string } = 
     elo: 5000,
     highestElo: 5000,
   };
+  const bone = stats?.wheresTheBoneStats ?? {
+    totalMatches: 0, matchesWon: 0, winRate: 0,
+    boneThief: { matchesPlayed: 0, matchesWon: 0, winRate: 0 },
+    yardDog: { matchesPlayed: 0, matchesWon: 0, winRate: 0 },
+    whiteDog: { matchesPlayed: 0, matchesWon: 0, winRate: 0 },
+    packmate: { matchesPlayed: 0, matchesWon: 0, winRate: 0 },
+    elo: 5000, highestElo: 5000,
+  };
 
   const copyId = async () => {
     try {
@@ -609,6 +617,18 @@ export function ProfilePage({ profileUsername }: { profileUsername?: string } = 
         <div className={styles.sectionFooterNote}>
           <Info size={16} className={styles.infoIcon} />
           <span>{t("realtimeStatsNote")}</span>
+        </div>
+      </section>
+      <section className={`${styles.statsSection} theme-panel`}>
+        <div className={styles.sectionHeader}><Moon size={20} className={styles.sectionMoonIcon} /><h3>Where's the Bone</h3></div>
+        <div className={styles.kpiGrid}>
+          <div className={`${styles.kpiCard} theme-card`}><div className={styles.kpiIconWrapper}><Swords size={22} className={styles.kpiIcon} /></div><div className={styles.kpiInfo}><span className={styles.kpiLabel}>{t("totalMatches")}</span><span className={styles.kpiValue}>{bone.totalMatches}</span></div></div>
+          <div className={`${styles.kpiCard} theme-card`}><div className={styles.kpiIconWrapper}><Gauge size={22} className={styles.kpiIconGold} /></div><div className={styles.kpiInfo}><span className={styles.kpiLabel}>{t("eloRating")}</span><span className={styles.kpiValue}>{bone.elo}</span><small className={styles.kpiHint}>{t("highestElo")}: {bone.highestElo}</small></div></div>
+          <div className={`${styles.kpiCard} theme-card`}><div className={styles.kpiIconWrapper}><Trophy size={22} className={styles.kpiIconGold} /></div><div className={styles.kpiInfo}><span className={styles.kpiLabel}>{t("matchesWon")}</span><span className={styles.kpiValue}>{bone.matchesWon}</span></div></div>
+          <div className={`${styles.kpiCard} theme-card`}><div className={styles.kpiIconWrapper}><Crosshair size={22} className={styles.kpiIconTarget} /></div><div className={styles.kpiInfo}><span className={styles.kpiLabel}>{t("winRate")}</span><span className={styles.kpiValue}>{bone.winRate}%</span></div></div>
+        </div>
+        <div className={styles.factionGrid}>
+          {[[locale === "vi" ? "Chó Trộm Xương" : "Bone Thief", bone.boneThief], [locale === "vi" ? "Chó Canh Sân" : "Yard Dog", bone.yardDog], [locale === "vi" ? "Chó Trắng" : "White Dog", bone.whiteDog], [locale === "vi" ? "Đồng minh" : "Secret Packmate", bone.packmate]].map(([label, item]) => <div className={`${styles.factionCard} theme-card`} key={label as string}><div className={styles.factionDetails}><h4>{label as string}</h4><div className={styles.factionRow}><span>{t("matchesPlayed")}</span><strong>{(item as typeof bone.boneThief).matchesPlayed}</strong></div><div className={styles.factionRow}><span>{t("matchesWon")}</span><strong>{(item as typeof bone.boneThief).matchesWon}</strong></div><div className={styles.factionRow}><span>{t("winRate")}</span><strong>{(item as typeof bone.boneThief).winRate}%</strong></div></div></div>)}
         </div>
       </section>
         </>

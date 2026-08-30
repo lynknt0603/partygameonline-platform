@@ -2,7 +2,7 @@ import { api } from "./http";
 
 export type RankingSort = "highestElo" | "wins" | "bloodlineWins" | "vegetarianWinRate" | "meatEaterWinRate";
 export type RankingBloodline = "VAMPIRE" | "WEREWOLF" | "HALFBLOOD" | null;
-export type RankingGameId = "night-of-bloodlines" | "not-in-my-pot";
+export type RankingGameId = "night-of-bloodlines" | "not-in-my-pot" | "wheres-the-bone";
 
 export interface RankingEntryDto {
   rank: number;

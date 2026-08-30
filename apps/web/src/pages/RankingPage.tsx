@@ -50,6 +50,7 @@ const SORT_OPTIONS: Array<{ id: RankingSort; label: string; icon: typeof Crown }
 const RANKING_GAMES: Array<{ id: RankingGameId; label: string }> = [
   { id: "night-of-bloodlines", label: "Night of Bloodlines" },
   { id: "not-in-my-pot", label: "Not In My Pot" },
+  { id: "wheres-the-bone", label: "Where's the Bone" },
 ];
 
 function formatNumber(value: number): string {
@@ -218,10 +219,13 @@ export function RankingPage() {
   const [page, setPage] = useState(0);
 
   const isNob = gameId === "night-of-bloodlines";
+  const isNotInMyPot = gameId === "not-in-my-pot";
   const visibleSortOptions = SORT_OPTIONS.filter((option) =>
     isNob
       ? option.id !== "vegetarianWinRate" && option.id !== "meatEaterWinRate"
-      : option.id !== "bloodlineWins"
+      : isNotInMyPot
+        ? option.id !== "bloodlineWins"
+        : option.id === "highestElo" || option.id === "wins"
   );
 
   const ranking = useQuery({

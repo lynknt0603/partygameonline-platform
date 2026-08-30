@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { NOB_CATALOGUE_ID } from "@/games/nob";
 import { NOT_IN_MY_POT_ID } from "@/games/notInMyPot";
+import { WHERES_THE_BONE_ID } from "@/games/wheresTheBone";
+import { WHERES_THE_BONE_DEFAULT_SETTINGS, type WheresTheBoneSettings } from "@/games/wheresTheBone/model/wheresTheBoneSettings";
 import {
   NOB_DEFAULT_TIMING,
   NOB_GAMEPLAY_PRESETS,
@@ -45,14 +47,16 @@ export function RoomSettingsPanel({ room, maxCap, isHost, onClose, onCloseRoom }
   const [locked, setLocked] = useState(room.locked);
   const [nob, setNob] = useState<NobTiming>(room.nobTiming ?? NOB_DEFAULT_TIMING);
   const [notInMyPot, setNotInMyPot] = useState<NotInMyPotSettings>(room.notInMyPotSettings ?? NIMP_DEFAULT_SETTINGS);
+  const [wheresTheBone, setWheresTheBone] = useState<WheresTheBoneSettings>(room.wheresTheBoneSettings ?? WHERES_THE_BONE_DEFAULT_SETTINGS);
   const isNob = room.gameId === NOB_CATALOGUE_ID;
   const isNotInMyPot = room.gameId === NOT_IN_MY_POT_ID;
+  const isWheresTheBone = room.gameId === WHERES_THE_BONE_ID;
   const save = () => {
-    if (!canEdit || (!isNob && !isNotInMyPot)) {
+    if (!canEdit || (!isNob && !isNotInMyPot && !isWheresTheBone)) {
       onClose();
       return;
     }
-    update.mutate(isNob ? { nob, locked } : { notInMyPot, locked }, { onSuccess: () => onClose() });
+    update.mutate(isNob ? { nob, locked } : isNotInMyPot ? { notInMyPot, locked } : { wheresTheBone, locked }, { onSuccess: () => onClose() });
   };
 
   return (
@@ -155,6 +159,18 @@ export function RoomSettingsPanel({ room, maxCap, isHost, onClose, onCloseRoom }
               />
               {t("nimpShowActionHistory")}
             </label>
+            {!canEdit ? <p className={styles.bubble}>{waiting ? t("nobTimersHostOnly") : t("nobTimersLocked")}</p> : null}
+          </section>
+        ) : null}
+
+        {isWheresTheBone ? (
+          <section className={styles.timerBlock}>
+            <h3>{t("wtbSettings")}</h3>
+            <TimerRow label={`${t("wtbNightSeconds")} · ${wheresTheBone.nightSeconds}s`} value={wheresTheBone.nightSeconds} presets={[5, 10, 15, 20, 30]} disabled={!canEdit} onChange={(next) => setWheresTheBone((current) => ({ ...current, nightSeconds: next }))} />
+            <TimerRow label={`${t("wtbDiscussionSeconds")} · ${wheresTheBone.discussionSeconds}s`} value={wheresTheBone.discussionSeconds} presets={[60, 120, 180, 300]} disabled={!canEdit} onChange={(next) => setWheresTheBone((current) => ({ ...current, discussionSeconds: next }))} />
+            <TimerRow label={`${t("wtbVotingSeconds")} · ${wheresTheBone.votingSeconds}s`} value={wheresTheBone.votingSeconds} presets={[30, 60, 90, 120]} disabled={!canEdit} onChange={(next) => setWheresTheBone((current) => ({ ...current, votingSeconds: next }))} />
+            <label className={styles.row}><input type="checkbox" checked={wheresTheBone.showActionHistory} onChange={() => setWheresTheBone((current) => ({ ...current, showActionHistory: !current.showActionHistory }))} disabled={!canEdit} /> {t("wtbShowActionHistory")}</label>
+            <label className={styles.row}><input type="checkbox" checked={wheresTheBone.whiteDogEnabled} onChange={() => setWheresTheBone((current) => ({ ...current, whiteDogEnabled: !current.whiteDogEnabled }))} disabled={!canEdit} /> {t("wtbWhiteDogEnabled")}</label>
             {!canEdit ? <p className={styles.bubble}>{waiting ? t("nobTimersHostOnly") : t("nobTimersLocked")}</p> : null}
           </section>
         ) : null}
