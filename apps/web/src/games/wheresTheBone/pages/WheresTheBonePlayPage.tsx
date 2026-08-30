@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, Bone, CircleDotDashed, Clock3, Eye, Heart, LogOut, MessageSquare, Moon, RotateCcw, Shield, ThumbsDown, ThumbsUp, Trophy, UserRound, Users } from "lucide-react";
+import { ArrowRight, Bone, Clock3, Eye, Heart, LogOut, MessageSquare, Moon, RotateCcw, Shield, Trophy, UserRound, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { RoomView } from "@/shared/lobby/roomView";
 import { PlayerAvatar } from "@/shared/components/PlayerAvatar/PlayerAvatar";
@@ -137,6 +137,8 @@ export function WheresTheBonePlayPage({ room, view, snapshotPending, snapshotErr
   const [showRole, setShowRole] = useState(false);
   const [roleSeen, setRoleSeen] = useState(false);
   const [now, setNow] = useState(Date.now());
+  const [serverOffset, setServerOffset] = useState(0);
+  const [selectedPackmates, setSelectedPackmates] = useState<string[]>([]);
 
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 1000);
@@ -150,12 +152,30 @@ export function WheresTheBonePlayPage({ room, view, snapshotPending, snapshotErr
     }
   }, [view?.myRole, roleSeen]);
 
-  const left = useMemo(() => (view ? Math.max(0, Math.ceil((new Date(view.deadline).getTime() - now) / 1000)) : 0), [view, now]);
-  const skipVoteLeft = useMemo(() => (view?.discussionSkipVoteDeadline ? Math.max(0, Math.ceil((new Date(view.discussionSkipVoteDeadline).getTime() - now) / 1000)) : 0), [view?.discussionSkipVoteDeadline, now]);
+  useEffect(() => {
+    if (view?.serverTime) setServerOffset(new Date(view.serverTime).getTime() - Date.now());
+  }, [view?.serverTime]);
+
+  useEffect(() => {
+    if (view?.phase !== "PACK_SELECTION") setSelectedPackmates([]);
+  }, [view?.phase, view?.version]);
+
+  const left = useMemo(() => (view?.deadline ? Math.max(0, Math.ceil((new Date(view.deadline).getTime() - (now + serverOffset)) / 1000)) : 0), [view?.deadline, now, serverOffset]);
   const me = view?.players.find((p) => p.me);
   const role = view?.myRole ?? me?.role ?? null;
   const meta = (roleDescriptions[locale] ?? roleDescriptions.vi)[role ?? "YARD_DOG"] ?? roleDescriptions.vi.YARD_DOG;
-  const mustTakeBone = Boolean(view?.phase === "NIGHT_HOUR" && !view.boneTaken && role === "BONE_THIEF" && view.players.length > 4 && view.currentAwakePlayerIds.includes(view.viewerPlayerId));
+  const recruitedWhiteDog = role === "WHITE_DOG" && view?.myWhiteDogRecruited;
+  // The API intentionally omits the viewer from currentAwakePlayerIds, so use
+  // the viewer's private player row when deciding whether the thief is forced
+  // to act this hour.
+  const mustTakeBone = Boolean(
+    view?.phase === "NIGHT_HOUR"
+      && !view.boneTaken
+      && role === "BONE_THIEF"
+      && me?.awake
+      && view.legalActions.includes("TAKE_BONE")
+      && !view.legalActions.includes("WAIT"),
+  );
   const command = (value: WheresTheBoneCommand) => {
     sendCommand(value);
   };
@@ -185,7 +205,7 @@ export function WheresTheBonePlayPage({ room, view, snapshotPending, snapshotErr
               <Moon size={28} />
               <div>
                 <strong>{locale === "vi" ? "Chọn giờ thức bí mật" : "Choose secret wake time"}</strong>
-                <p>{locale === "vi" ? "Mỗi người chọn một mặt xúc xắc. Các giờ còn lại được giữ kín." : "Each player chooses one dice face. The remaining hours remain secret."}</p>
+                <p>{locale === "vi" ? "Mỗi Dog phe Canh Sân chọn một mặt xúc xắc. Chó Trộm Xương giữ cả hai giờ thức." : "Each Yard-side Dog chooses one die face. The Bone Thief keeps both wake times."}</p>
               </div>
             </section>
           )}
@@ -200,7 +220,7 @@ export function WheresTheBonePlayPage({ room, view, snapshotPending, snapshotErr
                 </strong>
                 <p>
                   {view.boneTaken
-                    ? locale === "vi" ? "Hãy thảo luận để tìm người chơi đáng nghi." : "Discuss to find suspicious players."
+                    ? locale === "vi" ? "Ghi nhớ người thức cùng; sau đêm sẽ đến lúc thảo luận." : "Remember who woke with you; discussion starts after the night."
                     : mustTakeBone
                       ? locale === "vi" ? "Bạn là Chó Trộm Xương và phải lấy xương ngay trong lượt này." : "You are the Bone Thief and must take the bone this turn."
                       : locale === "vi" ? "Người đang thức hãy thực hiện hành động của mình." : "Awake players, perform your actions."}
@@ -249,24 +269,24 @@ export function WheresTheBonePlayPage({ room, view, snapshotPending, snapshotErr
             {can("SELECT_PACKMATE") && (
               <div className={styles.actionGroup}>
                 <div className={styles.actionLabel}>
-                  <span>{locale === "vi" ? "Chọn một người đã thức cùng để trở thành Chó Nguyền" : "Choose an awake witness to become your Packmate"}</span>
+                  <span>{locale === "vi" ? `Chọn ${view?.requiredPackmateCount ?? 1} đồng minh bí mật` : `Choose ${view?.requiredPackmateCount ?? 1} secret Packmate${(view?.requiredPackmateCount ?? 1) > 1 ? "s" : ""}`}</span>
                 </div>
                 <div className={styles.actionChoices}>
                   {view?.players.filter((p) => view.packmateCandidateIds.includes(p.playerId)).map((p) => (
-                    <button key={p.playerId} type="button" className={styles.choice} onClick={() => command({ type: "SELECT_PACKMATE", targetPlayerId: p.playerId })}>
+                    <button key={p.playerId} type="button" className={styles.choice} data-selected={selectedPackmates.includes(p.playerId)} onClick={() => setSelectedPackmates((current) => current.includes(p.playerId) ? current.filter((id) => id !== p.playerId) : [...current, p.playerId])}>
                       {p.displayName}
                     </button>
                   ))}
                 </div>
+                <button type="button" className={styles.primary} disabled={selectedPackmates.length !== (view?.requiredPackmateCount ?? 0)} onClick={() => command({ type: "SELECT_PACKMATE", targetPlayerIds: selectedPackmates })}>
+                  {locale === "vi" ? "Xác nhận đồng minh" : "Confirm Packmates"}
+                </button>
               </div>
             )}
             {can("START_VOTE") && (
               <button type="button" className={styles.primary} onClick={() => command({ type: "START_VOTE" })}>
-                {locale === "vi" ? "Bỏ phiếu bỏ qua giai đoạn thảo luận" : "Vote to skip discussion phase"}
+                {locale === "vi" ? "Bắt đầu bỏ phiếu" : "Start voting"}
               </button>
-            )}
-            {view?.phase === "DISCUSSION" && view.discussionSkipVoteStarted && (
-              <DiscussionSkipVote view={view} secondsLeft={skipVoteLeft} canVote={can("VOTE_TO_SKIP_DISCUSSION")} locale={locale} onVote={(approved) => command({ type: "VOTE_TO_SKIP_DISCUSSION", approved })} />
             )}
             {can("VOTE") && (
               <div className={styles.voteGrid}>
@@ -350,6 +370,22 @@ export function WheresTheBonePlayPage({ room, view, snapshotPending, snapshotErr
                 ))}
               </div>
             ) : null}
+            {view?.myPeekResults && Object.keys(view.myPeekResults).length ? (
+              <div className={styles.clues}>
+                <strong>{locale === "vi" ? "KẾT QUẢ NHÌN TRỘM" : "PEEK RESULTS"}</strong>
+                {Object.entries(view.myPeekResults).map(([id, hours]) => <p key={id}>{view.players.find((p) => p.playerId === id)?.displayName ?? id}: {hours.map((hour) => `${hour}:00am`).join(", ")}</p>)}
+              </div>
+            ) : null}
+            {view?.myCoAwakeRecords.length ? (
+              <div className={styles.clues}>
+                <strong>{locale === "vi" ? "AI ĐÃ THỨC CÙNG" : "CO-AWAKE RECORDS"}</strong>
+                {view.myCoAwakeRecords.map((record) => <p key={record.hour}>{record.hour}:00am · {record.playerIds.map((id) => view.players.find((p) => p.playerId === id)?.displayName ?? id).join(", ")}</p>)}
+              </div>
+            ) : null}
+            {view?.myWitnessedBoneTakenHours.length ? <div className={styles.clues}><strong>{locale === "vi" ? "GIỜ BẠN THẤY XƯƠNG BỊ LẤY" : "WITNESSED THEFT HOURS"}</strong><p>{view.myWitnessedBoneTakenHours.map((hour) => `${hour}:00am`).join(", ")}</p></div> : null}
+            {view?.knownBoneThiefId ? <div className={styles.clues}><strong>{locale === "vi" ? "BIẾT CHÓ TRỘM XƯƠNG" : "KNOWN BONE THIEF"}</strong><p>{view.players.find((p) => p.playerId === view.knownBoneThiefId)?.displayName ?? view.knownBoneThiefId}</p></div> : null}
+            {view?.myWhiteDogRecruited ? <div className={styles.clues}><strong>{locale === "vi" ? "BẠN ĐÃ VÀO BẦY TRỘM" : "RECRUITED WHITE DOG"}</strong><p>{locale === "vi" ? "Bạn thắng cùng phe trộm, hoặc thắng riêng nếu bị vote loại." : "You win with the thief pack, or alone if the pack votes you out."}</p></div> : null}
+            {view?.events.length ? <div className={styles.clues}><strong>{locale === "vi" ? "NHẬT KÝ HÀNH ĐỘNG" : "ACTION HISTORY"}</strong>{view.events.slice(-8).map((event, index) => <p key={`${event.type}-${index}`}>{event.type}</p>)}</div> : null}
             {view?.knownPackmateIds.length ? (
               <div className={styles.clues}>
                 <strong>{locale === "vi" ? "ĐỒNG MINH" : "ALLIES"}</strong>
@@ -377,8 +413,10 @@ export function WheresTheBonePlayPage({ room, view, snapshotPending, snapshotErr
             <h1>{roleLabel(role, locale)}</h1>
             <img className={styles.modalRoleImage} src={roleArt(role, me?.seat)} alt="" />
             <div className={styles.roleCondition}>
-              <strong>{locale === "vi" ? "Phe: " : "Pack: "}{meta.faction}</strong>
-              <p><b>{locale === "vi" ? "Điều kiện thắng:" : "Win condition:"}</b> {meta.condition}</p>
+              <strong>{locale === "vi" ? "Phe: " : "Pack: "}{recruitedWhiteDog ? locale === "vi" ? "Phe Trộm Xương" : "Thief Pack" : meta.faction}</strong>
+              <p><b>{locale === "vi" ? "Điều kiện thắng:" : "Win condition:"}</b> {role === "WHITE_DOG" && view?.myWhiteDogRecruited
+                ? locale === "vi" ? "Thắng cùng phe trộm, hoặc thắng riêng nếu bị vote loại." : "Win with the thief pack, or alone if voted out."
+                : meta.condition}</p>
             </div>
             <h3>{locale === "vi" ? "💡 Mẹo chơi dành cho bạn:" : "💡 Strategy tips for you:"}</h3>
             <ul>
@@ -501,64 +539,6 @@ function EloBadge({ player, locale }: { player: BonePlayer; locale: Locale }) {
   return <span className={player.eloDelta < 0 ? styles.eloDown : styles.eloUp}>ELO {player.newElo ?? ((player.oldElo ?? 0) + player.eloDelta)} ({signed})</span>;
 }
 
-function DiscussionSkipVote({ view, secondsLeft, canVote, locale, onVote }: { view: WheresTheBoneView; secondsLeft: number; canVote: boolean; locale: Locale; onVote: (approved: boolean) => void }) {
-  const yes = view.players.filter((player) => view.discussionSkipVotes[player.playerId] === true);
-  const no = view.players.filter((player) => view.discussionSkipVotes[player.playerId] === false);
-  const blank = view.players.filter((player) => !(player.playerId in view.discussionSkipVotes));
-  const required = Math.floor(view.players.length / 2) + 1;
-  const voted = view.viewerPlayerId in view.discussionSkipVotes;
-  const names = (players: BonePlayer[]) => (players.length ? players.map((player) => player.displayName).join(", ") : locale === "vi" ? "Không có" : "None");
-
-  return (
-    <section className={styles.skipVotePanel} aria-label={locale === "vi" ? "Bỏ phiếu bỏ qua giai đoạn thảo luận" : "Vote to skip discussion phase"}>
-      <div className={styles.skipVoteHeading}>
-        <strong>{locale === "vi" ? "Bỏ phiếu bỏ qua giai đoạn thảo luận" : "Vote to skip discussion phase"}</strong>
-        <span><Clock3 size={14} />{view.discussionSkipVoteOpen ? `${secondsLeft}s` : locale === "vi" ? "Đã kết thúc" : "Ended"}</span>
-      </div>
-      <p>
-        {view.discussionSkipVoteOpen
-          ? locale === "vi" ? `Cần ít nhất ${required} phiếu Có để chuyển ngay sang giai đoạn vote.` : `Need at least ${required} Yes votes to skip directly to voting.`
-          : locale === "vi" ? "Không đạt quá bán. Giai đoạn thảo luận tiếp tục." : "Vote did not pass. Discussion phase continues."}
-      </p>
-      {canVote ? (
-        <div className={styles.skipVoteActions}>
-          <button type="button" data-choice="yes" onClick={() => onVote(true)}>
-            <ThumbsUp size={16} /> {locale === "vi" ? "Có" : "Yes"}
-          </button>
-          <button type="button" data-choice="no" onClick={() => onVote(false)}>
-            <ThumbsDown size={16} /> {locale === "vi" ? "Không" : "No"}
-          </button>
-        </div>
-      ) : voted && view.discussionSkipVoteOpen ? (
-        <small className={styles.skipVoteSubmitted}>{locale === "vi" ? "Bạn đã bỏ phiếu. Không thể thay đổi lựa chọn." : "You have voted. Selection cannot be changed."}</small>
-      ) : null}
-      <div className={styles.skipVoteResults}>
-        <div data-result="yes">
-          <ThumbsUp size={15} />
-          <span>
-            <b>{locale === "vi" ? `Có (${yes.length})` : `Yes (${yes.length})`}</b>
-            <small>{names(yes)}</small>
-          </span>
-        </div>
-        <div data-result="no">
-          <ThumbsDown size={15} />
-          <span>
-            <b>{locale === "vi" ? `Không (${no.length})` : `No (${no.length})`}</b>
-            <small>{names(no)}</small>
-          </span>
-        </div>
-        <div data-result="blank">
-          <CircleDotDashed size={15} />
-          <span>
-            <b>{locale === "vi" ? `Phiếu trống (${blank.length})` : `No vote (${blank.length})`}</b>
-            <small>{names(blank)}</small>
-          </span>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function winningFactionLabel(faction: string | null, locale: Locale) {
   if (faction === "WHITE_DOG") return { label: locale === "vi" ? "Chó Trắng" : "White Dog", icon: "🤍" };
   if (faction === "YARD_PACK") return { label: locale === "vi" ? "Phe Canh Sân" : "Yard Dogs", icon: "🏡" };
@@ -589,14 +569,35 @@ function phaseTitle(phase?: string, locale: Locale = "vi") {
 
 function actionHint(view: WheresTheBoneView | null, mustTakeBone = false, locale: Locale = "vi") {
   if (!view) return locale === "vi" ? "Đang kết nối bàn chơi…" : "Connecting to game table…";
-  if (view.phase === "WAKE_SELECTION") return locale === "vi" ? "Hãy chọn một giờ trên xúc xắc bí mật của bạn." : "Choose one hour from your secret dice.";
+  if (view.phase === "WAKE_SELECTION") {
+    return view.legalActions.includes("SELECT_WAKE_TIME")
+      ? locale === "vi" ? "Hãy chọn một giờ trên xúc xắc bí mật của bạn." : "Choose one hour from your secret dice."
+      : locale === "vi" ? "Đợi các Dog phe Canh Sân chọn giờ thức bí mật." : "Wait for the Yard-side Dogs to choose their secret wake time.";
+  }
   if (view.phase === "NIGHT_HOUR") {
+    const me = view.players.find((player) => player.me);
+    const witnessedThisHour = view.myWitnessedBoneTakenHours.includes(view.currentHour);
+    if (witnessedThisHour && !me?.awake && view.legalActions.length === 0) {
+      return locale === "vi" ? "Bạn vừa thấy xương bị lấy. Đợi lựa chọn bí mật hoàn tất rồi canh giờ sẽ tiếp tục." : "You saw the bone being taken. Wait for the secret choice to finish, then this hour will continue.";
+    }
+    if (!me?.awake && view.legalActions.length === 0) {
+      return locale === "vi" ? "Bạn đang ngủ trong chuồng. Giữ kín thông tin và chờ giờ của mình." : "You are asleep in your kennel. Keep your secrets and wait for your hour.";
+    }
+    if (me?.awake && view.legalActions.length === 0) {
+      return locale === "vi" ? "Bạn đã xong lượt ở canh giờ này. Chờ canh giờ tiếp theo." : "You are done for this hour. Wait for the next wake call.";
+    }
     if (view.boneTaken) return locale === "vi" ? "Xương đã mất. Ghi nhớ ai đã thức cùng bạn." : "The bone is gone. Remember who woke up with you.";
     if (mustTakeBone) return locale === "vi" ? "Bạn bắt buộc phải lấy xương trong lượt thức này." : "You must take the bone during this wake hour.";
     return locale === "vi" ? "Mỗi giờ, người đang thức có thể thực hiện hành động của mình." : "Each hour, awake players may perform their actions.";
   }
-  if (view.phase === "PACK_SELECTION") return locale === "vi" ? "Chỉ những người đã thức cùng lúc xương bị lấy mới có thể trở thành Chó Nguyền." : "Only witnesses awake when the bone was stolen can be chosen as Packmates.";
+  if (view.phase === "PACK_SELECTION") {
+    return view.legalActions.includes("SELECT_PACKMATE")
+      ? locale === "vi" ? `Chọn đúng ${view.requiredPackmateCount} người đủ điều kiện để vào bầy bí mật.` : `Choose exactly ${view.requiredPackmateCount} eligible players for the secret pack.`
+      : locale === "vi" ? "Đợi lựa chọn đồng bọn bí mật hoàn tất." : "Wait for the secret Packmate selection to finish.";
+  }
   if (view.phase === "DISCUSSION") return locale === "vi" ? "Trao đổi manh mối, sau đó bắt đầu vote." : "Share clues, then start voting.";
-  if (view.phase === "VOTING") return locale === "vi" ? "Chọn người bạn nghi ngờ nhất." : "Vote for the player you suspect most.";
+  if (view.phase === "VOTING") return view.legalActions.includes("VOTE")
+    ? locale === "vi" ? "Chọn người bạn nghi ngờ nhất." : "Vote for the player you suspect most."
+    : locale === "vi" ? "Phiếu của bạn đã được giữ kín. Chờ các Dog còn lại." : "Your ballot is secret. Wait for the other Dogs.";
   return "";
 }

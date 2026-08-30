@@ -167,8 +167,7 @@ export function RoomSettingsPanel({ room, maxCap, isHost, onClose, onCloseRoom }
           <section className={styles.timerBlock}>
             <h3>{t("wtbSettings")}</h3>
             <TimerRow label={`${t("wtbNightSeconds")} · ${wheresTheBone.nightSeconds}s`} value={wheresTheBone.nightSeconds} presets={[5, 10, 15, 20, 30]} disabled={!canEdit} onChange={(next) => setWheresTheBone((current) => ({ ...current, nightSeconds: next }))} />
-            <TimerRow label={`${t("wtbDiscussionSeconds")} · ${wheresTheBone.discussionSeconds}s`} value={wheresTheBone.discussionSeconds} presets={[60, 120, 180, 300]} disabled={!canEdit} onChange={(next) => setWheresTheBone((current) => ({ ...current, discussionSeconds: next }))} />
-            <TimerRow label={`${t("wtbVotingSeconds")} · ${wheresTheBone.votingSeconds}s`} value={wheresTheBone.votingSeconds} presets={[30, 60, 90, 120]} disabled={!canEdit} onChange={(next) => setWheresTheBone((current) => ({ ...current, votingSeconds: next }))} />
+            <TimerRow label={`${t("wtbPackSelectionSeconds")} · ${wheresTheBone.packSelectionSeconds}s`} value={wheresTheBone.packSelectionSeconds} presets={[5, 10, 15, 20, 30]} disabled={!canEdit} onChange={(next) => setWheresTheBone((current) => ({ ...current, packSelectionSeconds: next }))} />
             <label className={styles.row}><input type="checkbox" checked={wheresTheBone.showActionHistory} onChange={() => setWheresTheBone((current) => ({ ...current, showActionHistory: !current.showActionHistory }))} disabled={!canEdit} /> {t("wtbShowActionHistory")}</label>
             <label className={styles.row}><input type="checkbox" checked={wheresTheBone.whiteDogEnabled} onChange={() => setWheresTheBone((current) => ({ ...current, whiteDogEnabled: !current.whiteDogEnabled }))} disabled={!canEdit} /> {t("wtbWhiteDogEnabled")}</label>
             {!canEdit ? <p className={styles.bubble}>{waiting ? t("nobTimersHostOnly") : t("nobTimersLocked")}</p> : null}
