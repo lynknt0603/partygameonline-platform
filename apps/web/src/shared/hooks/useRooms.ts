@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { ApiError } from "@/shared/api/types";
-import { closeRoom, createRoom, fetchRoom, fetchRooms, joinRoom, leaveRoom, setReady, startRoom, updateRoomSettings } from "@/shared/api/rooms";
+import { closeRoom, createRoom, fetchRoom, fetchRooms, joinRoom, kickRoom, leaveRoom, setReady, startRoom, updateRoomSettings } from "@/shared/api/rooms";
 import type { NobTiming } from "@/games/nob/model/nobTiming";
 import type { NotInMyPotSettings } from "@/games/notInMyPot/model/notInMyPotSettings";
 import type { WheresTheBoneSettings } from "@/games/wheresTheBone/model/wheresTheBoneSettings";
@@ -184,6 +184,18 @@ export function useLeaveRoom() {
   });
 }
 
+export function useKickRoom(roomId: string) {
+  const queryClient = useQueryClient();
+  const normalized = roomId.toUpperCase();
+  return useMutation({
+    mutationFn: (playerId: string) => kickRoom(normalized, playerId),
+    onSuccess: (room) => {
+      queryClient.setQueryData(["room", normalized], room);
+      void queryClient.invalidateQueries({ queryKey: ["rooms"] });
+    },
+  });
+}
+
 export function useReadyRoom(roomId: string) {
   const queryClient = useQueryClient();
   const normalized = roomId.toUpperCase();
@@ -220,7 +232,7 @@ export function useCloseRoom() {
 export function useUpdateRoomSettings(roomId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (settings: { nob?: NobTiming; notInMyPot?: NotInMyPotSettings; wheresTheBone?: WheresTheBoneSettings; locked?: boolean }) => updateRoomSettings(roomId.toUpperCase(), settings),
+    mutationFn: (settings: { nob?: NobTiming; notInMyPot?: NotInMyPotSettings; wheresTheBone?: WheresTheBoneSettings; locked?: boolean; maxPlayers?: number }) => updateRoomSettings(roomId.toUpperCase(), settings),
     onSuccess: (room) => {
       queryClient.setQueryData(["room", roomId.toUpperCase()], room);
       queryClient.setQueryData(["room", room.id], room);

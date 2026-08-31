@@ -261,6 +261,7 @@ export function WheresTheBonePlayPage({ room, view, snapshotPending, snapshotErr
   const [clueAlert, setClueAlert] = useState<ClueAlert | null>(null);
   const clueCountsRef = useRef<{ peek: number; witnessed: number; present: number; missing: number } | null>(null);
   const revealedRoleKeyRef = useRef<string | null>(null);
+  const initialRevealKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 1000);
@@ -276,6 +277,21 @@ export function WheresTheBonePlayPage({ room, view, snapshotPending, snapshotErr
       setShowRole(!clueAlert);
     }
   }, [view?.myRole, view?.myWhiteDogRecruited, clueAlert]);
+
+  useEffect(() => {
+    if (view?.phase !== "ROLE_REVEAL" || !view.myRole) return;
+    const revealKey = view.phaseStartedAt;
+    if (initialRevealKeyRef.current === revealKey) return;
+    initialRevealKeyRef.current = revealKey;
+    setRoleChangePending(false);
+    setShowRole(true);
+
+    const phaseStartedAt = new Date(view.phaseStartedAt).getTime();
+    const snapshotServerTime = new Date(view.serverTime).getTime();
+    const elapsed = Math.max(0, snapshotServerTime - phaseStartedAt);
+    const timeoutId = window.setTimeout(() => setShowRole(false), Math.max(0, 10_000 - elapsed));
+    return () => window.clearTimeout(timeoutId);
+  }, [view?.phase, view?.phaseStartedAt, view?.myRole]);
 
   useEffect(() => {
     if (view?.serverTime) setServerOffset(new Date(view.serverTime).getTime() - Date.now());
@@ -366,6 +382,12 @@ export function WheresTheBonePlayPage({ room, view, snapshotPending, snapshotErr
     if (view?.phase !== "PACK_SELECTION") setSelectedPackmates([]);
   }, [view?.phase, view?.version]);
 
+  useEffect(() => {
+    if (view?.phase !== "DISCUSSION" && view?.phase !== "VOTING") return;
+    setClueAlert(null);
+    setShowRole(false);
+  }, [view?.phase]);
+
   const left = useMemo(() => (view?.deadline ? Math.max(0, Math.ceil((new Date(view.deadline).getTime() - (now + serverOffset)) / 1000)) : 0), [view?.deadline, now, serverOffset]);
   const discussionExpired = view?.phase === "DISCUSSION" && left === 0;
   const reportedViewerPlayerId = view?.viewerPlayerId || null;
@@ -374,6 +396,8 @@ export function WheresTheBonePlayPage({ room, view, snapshotPending, snapshotErr
   const otherPlayers = view?.players.filter((p) => !p.me && p.playerId !== viewerPlayerId) ?? [];
   const discussionSkipRequester = view?.players.find((player) => player.playerId === view.discussionSkipRequesterId);
   const role = view?.myRole ?? me?.role ?? null;
+  const roleWakeHours = view?.myWakeHours.length ? view.myWakeHours : view?.myDice ?? [];
+  const roleWakeHoursAreFinal = Boolean(view?.myWakeHours.length);
   const meta = (roleDescriptions[locale] ?? roleDescriptions.vi)[role ?? "YARD_DOG"] ?? roleDescriptions.vi.YARD_DOG;
   const recruitedWhiteDog = role === "WHITE_DOG" && view?.myWhiteDogRecruited;
   const knownThiefId = view?.knownBoneThiefId
@@ -436,12 +460,27 @@ export function WheresTheBonePlayPage({ room, view, snapshotPending, snapshotErr
       </header>
       <div className={styles.layout}>
         <section className={styles.mainColumn}>
+          {view?.phase === "ROLE_REVEAL" && (
+            <section className={styles.banner}>
+              <Heart size={28} />
+              <div>
+                <div className={styles.bannerHeading}>
+                  <strong>{locale === "vi" ? "Xem vai trò và giờ dậy" : "Review role and wake time"}</strong>
+                  <span className={styles.bannerTimer}><Clock3 size={15} /> {left}s</span>
+                </div>
+                <p>{locale === "vi" ? "Ghi nhớ thông tin bí mật của bạn. Giờ đầu tiên sẽ bắt đầu khi hết thời gian chuẩn bị." : "Remember your private information. The first hour starts when preparation ends."}</p>
+              </div>
+            </section>
+          )}
           {view?.phase === "WAKE_SELECTION" && (
             <section className={styles.banner}>
               <Moon size={28} />
               <div>
-                <strong>{locale === "vi" ? "Chọn giờ thức" : "Wake choice"}</strong>
-                <p>{locale === "vi" ? "Ván 4 chú chó: mỗi Chó Canh Sân chọn 1 giờ thức từ 2 xúc xắc bí mật." : "4 Players room: each Yard Dog chooses 1 wake hour from 2 secret dice."}</p>
+                <div className={styles.bannerHeading}>
+                  <strong>{locale === "vi" ? "Chọn giờ thức" : "Wake choice"}</strong>
+                  <span className={styles.bannerTimer}><Clock3 size={15} /> {left}s</span>
+                </div>
+                <p>{locale === "vi" ? "Chọn 1 trong 2 giờ trên xúc xắc. Hết giờ, hệ thống sẽ chọn ngẫu nhiên cho người chưa chọn." : "Choose 1 of your 2 dice hours. When time expires, a random hour is assigned to anyone who has not chosen."}</p>
               </div>
             </section>
           )}
@@ -472,7 +511,7 @@ export function WheresTheBonePlayPage({ room, view, snapshotPending, snapshotErr
           <section className={styles.panel}>
             <div className={styles.panelHeading}>
               <h2><Bone size={19} /> {locale === "vi" ? "Hành động" : "Actions"}</h2>
-              {view?.deadline && view.phase !== "NIGHT_HOUR" ? (
+              {view?.deadline && view.phase !== "NIGHT_HOUR" && view.phase !== "ROLE_REVEAL" && view.phase !== "WAKE_SELECTION" ? (
                 <span className={styles.phaseTimer}>
                   <Clock3 size={15} /> {left}s
                 </span>
@@ -737,6 +776,14 @@ export function WheresTheBonePlayPage({ room, view, snapshotPending, snapshotErr
                 ? locale === "vi" ? "Thắng cùng phe trộm, hoặc thắng riêng nếu bị vote loại." : "Win with the thief pack, or alone if voted out."
                 : meta.condition}</p>
             </div>
+            {roleWakeHours.length ? (
+              <div className={styles.dice}>
+                <span>{roleWakeHoursAreFinal
+                  ? locale === "vi" ? "Giờ dậy của bạn" : "Your wake time"
+                  : locale === "vi" ? "Các giờ dậy có thể chọn" : "Available wake times"}</span>
+                <div>{roleWakeHours.map((hour, index) => <b key={`${hour}-${index}`}>{hour}:00am</b>)}</div>
+              </div>
+            ) : null}
             <h3>{locale === "vi" ? "💡 Mẹo chơi dành cho bạn:" : "💡 Tips for you:"}</h3>
             <ul>
               {meta.tips.map((tip) => <li key={tip}>{tip}</li>)}
@@ -896,6 +943,7 @@ function roleTone(role: BoneRole | null) {
 
 function phaseTitle(phase?: string, locale: Locale = "vi") {
   if (locale === "en") {
+    if (phase === "ROLE_REVEAL") return "Role reveal";
     if (phase === "WAKE_SELECTION") return "Wake choice";
     if (phase === "NIGHT_HOUR") return "Kennel night";
     if (phase === "PACK_SELECTION") return "Pack selection";
@@ -903,6 +951,7 @@ function phaseTitle(phase?: string, locale: Locale = "vi") {
     if (phase === "VOTING") return "Voting";
     return "Result";
   }
+  if (phase === "ROLE_REVEAL") return "Xem vai trò";
   if (phase === "WAKE_SELECTION") return "Chọn giờ thức";
   if (phase === "NIGHT_HOUR") return "Đêm trong sân";
   if (phase === "PACK_SELECTION") return "Chọn đồng minh";
@@ -913,6 +962,11 @@ function phaseTitle(phase?: string, locale: Locale = "vi") {
 
 function actionHint(view: WheresTheBoneView | null, mustTakeBone = false, locale: Locale = "vi") {
   if (!view) return locale === "vi" ? "Đang kết nối bàn chơi…" : "Connecting to game table…";
+  if (view.phase === "ROLE_REVEAL") {
+    return locale === "vi"
+      ? "Xem và ghi nhớ vai trò cùng giờ dậy bí mật của bạn."
+      : "Review and remember your role and private wake time.";
+  }
   if (view.phase === "WAKE_SELECTION") {
     return view.legalActions.includes("SELECT_WAKE_TIME")
       ? locale === "vi" ? "Chọn 1 giờ thức từ 2 xúc sắc bí mật của bạn." : "Choose 1 wake time from your 2 secret dice."

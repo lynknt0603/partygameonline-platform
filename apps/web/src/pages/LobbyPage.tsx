@@ -2,9 +2,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Copy, Link2, MessageCircle, Settings } from "lucide-react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { WHERES_THE_BONE_ID } from "@/games/wheresTheBone";
+import { ConfirmDialog } from "@/shared/components/ConfirmDialog/ConfirmDialog";
 import { PlayerSeat } from "@/shared/components/PlayerSeat/PlayerSeat";
 import { useGame } from "@/shared/hooks/useGames";
-import { useCloseRoom, useJoinRoom, useLeaveRoom, useReadyRoom, useRoom, useStartRoom } from "@/shared/hooks/useRooms";
+import { useCloseRoom, useJoinRoom, useKickRoom, useLeaveRoom, useReadyRoom, useRoom, useStartRoom } from "@/shared/hooks/useRooms";
 import { useRoomRealtime } from "@/shared/hooks/useRoomRealtime";
 import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
 import { useLocale, useT } from "@/shared/i18n/useT";
@@ -26,6 +27,7 @@ export function LobbyPage() {
   const room = roomQuery.data;
   const { game } = useGame(room?.gameId);
   const join = useJoinRoom();
+  const kick = useKickRoom(roomId);
   const leave = useLeaveRoom();
   const ready = useReadyRoom(roomId);
   const start = useStartRoom(roomId);
@@ -33,6 +35,7 @@ export function LobbyPage() {
   const [chatOpen, setChatOpen] = useState(false);
   const [hostOpen, setHostOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [kickTargetId, setKickTargetId] = useState<string | null>(null);
 
   useRoomRealtime(roomId);
   const chat = useLobbyChat(roomId, youId);
@@ -89,6 +92,7 @@ export function LobbyPage() {
   const seats = useMemo(() => (room ? seatsForRoom(room, youId) : []), [room, youId]);
   const you = seats.find((seat) => seat.isYou);
   const isHost = Boolean(you?.isHost);
+  const kickTarget = room?.players.find((player) => player.playerId === kickTargetId);
   const occupied = seats.filter((seat) => seat.state !== "empty");
   const waiting = occupied.filter((seat) => !seat.isHost && seat.state !== "ready");
   const requiresFullTable = room?.gameId === WHERES_THE_BONE_ID;
@@ -182,7 +186,15 @@ export function LobbyPage() {
           <section className={styles.list}>
             <h2>{t("players")}</h2>
             {seats.map((seat) => (
-              <PlayerSeat key={seat.id} player={seat} compact />
+              <PlayerSeat
+                key={seat.id}
+                player={seat}
+                compact
+                onKick={isHost && room.status === "waiting" ? (id) => {
+                  kick.reset();
+                  setKickTargetId(id);
+                } : undefined}
+              />
             ))}
           </section>
         </>
@@ -197,7 +209,14 @@ export function LobbyPage() {
           </div>
           <div className={styles.seatRing}>
             {seats.map((seat) => (
-              <PlayerSeat key={seat.id} player={seat} />
+              <PlayerSeat
+                key={seat.id}
+                player={seat}
+                onKick={isHost && room.status === "waiting" ? (id) => {
+                  kick.reset();
+                  setKickTargetId(id);
+                } : undefined}
+              />
             ))}
           </div>
         </div>
@@ -275,12 +294,30 @@ export function LobbyPage() {
       {hostOpen ? (
         <RoomSettingsPanel
           room={room}
-          maxCap={game?.maxPlayers ?? 11}
+          minCap={game?.minPlayers ?? 2}
+          maxCap={game?.maxPlayers ?? room.capacity}
           isHost={isHost}
           onClose={() => setHostOpen(false)}
           onCloseRoom={() => close.mutate(room.id)}
         />
       ) : null}
+      <ConfirmDialog
+        open={Boolean(kickTargetId)}
+        title={t("kickConfirmTitle")}
+        body={t("kickConfirmBody").replace("{name}", kickTarget?.displayName ?? kickTargetId ?? "")}
+        confirmLabel={t("kickConfirmYes")}
+        cancelLabel={t("kickConfirmNo")}
+        pending={kick.isPending}
+        error={kick.error}
+        onCancel={() => {
+          if (!kick.isPending) setKickTargetId(null);
+        }}
+        onConfirm={() => {
+          if (kickTargetId) {
+            kick.mutate(kickTargetId, { onSuccess: () => setKickTargetId(null) });
+          }
+        }}
+      />
     </div>
   );
 }

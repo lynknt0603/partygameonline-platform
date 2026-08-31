@@ -32,6 +32,10 @@ export function leaveRoom(roomId: string): Promise<void> {
   return api<void>(`/api/v1/rooms/${roomId}/leave`, { method: "POST" });
 }
 
+export function kickRoom(roomId: string, playerId: string): Promise<RoomDto> {
+  return api<RoomDto>(`/api/v1/rooms/${roomId}/kick/${encodeURIComponent(playerId)}`, { method: "POST" });
+}
+
 export function setReady(roomId: string, ready: boolean): Promise<RoomDto> {
   return api<RoomDto>(`/api/v1/rooms/${roomId}/ready`, {
     method: "PUT",
@@ -49,7 +53,7 @@ export function closeRoom(roomId: string): Promise<void> {
 
 export function updateRoomSettings(
   roomId: string,
-  body: { nob?: NobTiming; notInMyPot?: NotInMyPotSettings; wheresTheBone?: WheresTheBoneSettings; locked?: boolean },
+  body: { nob?: NobTiming; notInMyPot?: NotInMyPotSettings; wheresTheBone?: WheresTheBoneSettings; locked?: boolean; maxPlayers?: number },
 ): Promise<RoomDto> {
   return api<RoomDto>(`/api/v1/rooms/${roomId}/settings`, {
     method: "PUT",

@@ -1,7 +1,8 @@
 import { api } from "./http";
 
-export type RankingSort = "highestElo" | "wins" | "bloodlineWins" | "vegetarianWinRate" | "meatEaterWinRate";
+export type RankingSort = "highestElo" | "wins" | "bloodlineWins" | "roleWins" | "vegetarianWinRate" | "meatEaterWinRate";
 export type RankingBloodline = "VAMPIRE" | "WEREWOLF" | "HALFBLOOD" | null;
+export type RankingRole = "WHITE_DOG" | "YARD_DOG" | "BONE_THIEF" | "PACKMATE" | null;
 export type RankingGameId = "night-of-bloodlines" | "not-in-my-pot" | "wheres-the-bone";
 
 export interface RankingEntryDto {
@@ -16,6 +17,8 @@ export interface RankingEntryDto {
   totalMatches: number;
   favoriteBloodline?: string | null;
   bloodlineWins: number;
+  favoriteRole?: string | null;
+  roleWins: number;
   vegetarianMatches: number;
   vegetarianWins: number;
   vegetarianWinRate: number;
@@ -28,6 +31,7 @@ export interface RankingDto {
   gameId: string;
   sort: RankingSort;
   bloodline?: RankingBloodline;
+  role?: RankingRole;
   podium: RankingEntryDto[];
   entries: RankingEntryDto[];
   me?: RankingEntryDto | null;
@@ -41,11 +45,12 @@ interface RankingQuery {
   gameId: RankingGameId;
   sort: RankingSort;
   bloodline: RankingBloodline;
+  role: RankingRole;
   page?: number;
   size?: number;
 }
 
-export async function fetchRanking({ gameId, sort, bloodline, page = 0, size = 7 }: RankingQuery): Promise<RankingDto> {
+export async function fetchRanking({ gameId, sort, bloodline, role, page = 0, size = 7 }: RankingQuery): Promise<RankingDto> {
   const params = new URLSearchParams({
     gameId,
     sort,
@@ -54,6 +59,9 @@ export async function fetchRanking({ gameId, sort, bloodline, page = 0, size = 7
   });
   if (bloodline) {
     params.set("bloodline", bloodline);
+  }
+  if (role) {
+    params.set("role", role);
   }
   return api<RankingDto>(`/api/v1/rankings?${params.toString()}`);
 }

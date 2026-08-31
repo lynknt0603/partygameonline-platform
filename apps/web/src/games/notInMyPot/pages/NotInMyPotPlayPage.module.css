@@ -3169,22 +3169,46 @@ button.gameCard:hover:not(:disabled) {
   animation: nimpPotToDiscard 900ms cubic-bezier(0.2, 0.72, 0.24, 1) calc(var(--event-card-index) * 90ms) both;
 }
 
+.drawToHandMotion img,
+.handToDrawMotion img,
+.handToDiscardMotion img,
+.drawReplacementMotion img,
+.actionToTargetMotion img,
+.cardToPotMotion img {
+  top: var(--motion-from-y, 44%);
+  left: var(--motion-from-x, 30%);
+}
+
 .drawToHandMotion img {
-  top: 44%;
-  left: 30%;
-  animation: nimpDrawToHand 1s cubic-bezier(0.2, 0.72, 0.24, 1) calc(var(--event-card-index) * 130ms) both;
+  animation: nimpCardBetweenPoints 1s cubic-bezier(0.2, 0.72, 0.24, 1) calc(var(--event-card-index) * 130ms) both;
+}
+
+.handToDrawMotion img {
+  animation: nimpCardBetweenPoints 900ms cubic-bezier(0.2, 0.72, 0.24, 1) calc(var(--event-card-index) * 110ms) both;
 }
 
 .handToDiscardMotion img {
-  bottom: -14%;
-  left: 52%;
-  animation: nimpHandToDiscard 850ms cubic-bezier(0.2, 0.72, 0.24, 1) calc(var(--event-card-index) * 60ms) both;
+  animation: nimpCardBetweenPoints 850ms cubic-bezier(0.2, 0.72, 0.24, 1) calc(var(--event-card-index) * 60ms) both;
 }
 
 .drawReplacementMotion img {
-  top: 44%;
-  left: 30%;
-  animation: nimpDrawToHand 950ms cubic-bezier(0.2, 0.72, 0.24, 1) calc(780ms + var(--event-card-index) * 110ms) both;
+  animation: nimpCardBetweenPoints 950ms cubic-bezier(0.2, 0.72, 0.24, 1) calc(780ms + var(--event-card-index) * 110ms) both;
+}
+
+.actionToTargetMotion img {
+  animation: nimpCardBetweenPoints 650ms cubic-bezier(0.2, 0.72, 0.24, 1) calc(var(--event-card-index) * 80ms) both;
+}
+
+.cardToPotMotion img {
+  animation: nimpCardBetweenPoints 720ms cubic-bezier(0.2, 0.72, 0.24, 1) calc(var(--event-card-index) * 80ms) both;
+}
+
+.trashHandToDiscardMotion img {
+  animation-delay: calc(520ms + var(--event-card-index) * 60ms);
+}
+
+.trashDrawReplacementMotion img {
+  animation-delay: calc(1.18s + var(--event-card-index) * 110ms);
 }
 
 .inspectionMotion {
@@ -3677,18 +3701,26 @@ button.gameCard.cardSelected:hover:not(:disabled) {
   100% { transform: translate(315%, -28%) rotate(4deg) scale(0.68); opacity: 0; }
 }
 
-@keyframes nimpDrawToHand {
-  0% { transform: translate(-50%, -50%) rotate(-5deg) scale(0.68); opacity: 0; }
+@keyframes nimpCardBetweenPoints {
+  0% {
+    top: var(--motion-from-y, 44%);
+    left: var(--motion-from-x, 30%);
+    transform: translate(-50%, -50%) rotate(-5deg) scale(0.68);
+    opacity: 0;
+  }
   18% { opacity: 1; }
-  84% { transform: translate(255%, 245%) rotate(2deg) scale(0.88); opacity: 1; }
-  100% { transform: translate(255%, 255%) rotate(0) scale(0.84); opacity: 0; }
-}
-
-@keyframes nimpHandToDiscard {
-  0% { transform: translate(-50%, 0) rotate(-3deg) scale(0.85); opacity: 0; }
-  16% { opacity: 1; }
-  82% { transform: translate(300%, -245%) rotate(9deg) scale(0.7); opacity: 1; }
-  100% { transform: translate(315%, -238%) rotate(4deg) scale(0.66); opacity: 0; }
+  84% {
+    top: var(--motion-to-y, 88%);
+    left: var(--motion-to-x, 50%);
+    transform: translate(-50%, -50%) rotate(2deg) scale(0.88);
+    opacity: 1;
+  }
+  100% {
+    top: var(--motion-to-y, 88%);
+    left: var(--motion-to-x, 50%);
+    transform: translate(-50%, -50%) rotate(0) scale(0.84);
+    opacity: 0;
+  }
 }
 
 @keyframes nimpInspectCard {
@@ -4467,7 +4499,7 @@ button.gameCard.cardSelected:hover:not(:disabled) {
 }
 
 .seatExpelled {
-  min-height: 144px;
+  min-height: 124px;
   opacity: 1;
   border: 2px solid rgba(151, 62, 43, 0.48);
   background: rgba(239, 218, 183, 0.96);
@@ -4742,5 +4774,549 @@ button.gameCard.cardSelected:hover:not(:disabled) {
 
   .potTargetBadge small {
     font-size: 7.5px;
+  }
+}
+
+/* Keep the two gameplay piles compact and leave more room for player seats. */
+.centerStage {
+  width: min(410px, 52%);
+}
+
+.pileRow {
+  grid-template-columns: minmax(92px, 0.82fr) minmax(132px, 1.18fr);
+  align-items: center;
+  gap: clamp(12px, 2vw, 24px);
+}
+
+.drawPile .pileStage {
+  width: 76px;
+  height: 112px;
+}
+
+.drawPile .pileCardBack {
+  width: 70px;
+  height: 105px;
+  border-radius: 7px;
+}
+
+.drawPile .pileCountBadge {
+  right: -9px;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 6px;
+  font-size: 10px;
+}
+
+.potPlayZone {
+  min-height: 174px;
+  padding: 9px 14px 12px;
+  border-width: 2px;
+}
+
+.potPlayZone::before {
+  top: 9px;
+  right: 14px;
+  left: 14px;
+  height: 11px;
+  border-width: 2px;
+}
+
+.potPlayZone::after {
+  top: 58px;
+  right: -10px;
+  bottom: 38px;
+  left: -10px;
+  border-right-width: 7px;
+  border-left-width: 7px;
+}
+
+.potPile .pileHeading {
+  min-height: 30px;
+  margin: 2px 0 5px;
+  padding: 3px 6px 3px 9px;
+  font-size: 9px;
+}
+
+.potPile .pileHeading strong {
+  min-width: 28px;
+  height: 24px;
+  padding: 0 6px;
+  font-size: 12px;
+}
+
+.potPile .pileStage {
+  width: 82px;
+  height: 112px;
+}
+
+.potPile .pileCardBack {
+  width: 75px;
+  height: 108px;
+  border-radius: 7px;
+}
+
+@media (max-width: 840px) {
+  .centerStage {
+    width: min(380px, 62%);
+  }
+}
+
+@media (max-width: 620px) {
+  .centerStage {
+    width: min(280px, calc(100% - 44px));
+  }
+
+  .pileRow {
+    grid-template-columns: minmax(72px, 0.82fr) minmax(104px, 1.18fr);
+    gap: 8px;
+  }
+
+  .drawPile .pileStage {
+    width: 62px;
+    height: 92px;
+  }
+
+  .drawPile .pileCardBack {
+    width: 57px;
+    height: 86px;
+  }
+
+  .potPlayZone {
+    min-height: 142px;
+    padding: 6px 8px 8px;
+  }
+
+  .potPile .pileStage {
+    width: 68px;
+    height: 94px;
+  }
+
+  .potPile .pileCardBack {
+    width: 62px;
+    height: 90px;
+  }
+}
+
+/* Compact game chrome: the table owns the timer and hand instead of reserving
+   permanent header/bottom-panel space for them. */
+.topbar {
+  min-height: 42px;
+  padding: 3px 7px;
+  transition: min-height 180ms ease, padding 180ms ease, background 180ms ease;
+}
+
+.topbar .brandIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+}
+
+.topbar .brand strong {
+  font-size: 0.96rem;
+}
+
+.topbar .brand span {
+  font-size: 9px;
+}
+
+.topbar .topButton,
+.topbar .topIconButton,
+.collapseHeaderButton {
+  min-height: 34px;
+}
+
+.topbar .topIconButton,
+.collapseHeaderButton {
+  width: 34px;
+  padding: 0;
+}
+
+.collapseHeaderButton,
+.headerExpandButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(91, 69, 35, 0.2);
+  color: #795331;
+  background: rgba(255, 250, 238, 0.72);
+  cursor: pointer;
+}
+
+.collapseHeaderButton {
+  flex: 0 0 34px;
+  border-radius: 10px;
+}
+
+.collapseHeaderButton:hover,
+.headerExpandButton:hover {
+  border-color: rgba(91, 69, 35, 0.42);
+  background: #fff3d0;
+  color: #9d4c2a;
+}
+
+.topbarCollapsed {
+  display: flex;
+  min-height: 28px;
+  justify-content: center;
+  padding: 2px 7px;
+  border-radius: 11px;
+  background: rgba(255, 246, 225, 0.76);
+}
+
+.headerExpandButton {
+  gap: 5px;
+  min-height: 22px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 8px;
+  font-weight: 850;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.tableTurnTimer {
+  position: relative;
+  z-index: 9;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 27px;
+  margin-top: 7px;
+  padding: 3px 9px;
+  border: 1px solid rgba(181, 77, 50, 0.32);
+  border-radius: 999px;
+  background: rgba(255, 244, 215, 0.94);
+  color: #81513a;
+  box-shadow: 0 4px 10px rgba(82, 47, 20, 0.13);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.tableTurnTimer strong {
+  min-width: 28px;
+  color: #a3442c;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+@media (min-width: 621px) {
+  .seatRing {
+    inset: 54px 14px 18px;
+  }
+
+  .centerStage {
+    top: 48%;
+    width: min(350px, 45%);
+  }
+
+  .pileRow {
+    grid-template-columns: minmax(76px, 0.82fr) minmax(110px, 1.18fr);
+    gap: clamp(9px, 1.5vw, 17px);
+  }
+
+  .drawPile .pileStage {
+    width: 64px;
+    height: 96px;
+  }
+
+  .drawPile .pileCardBack {
+    width: 60px;
+    height: 90px;
+  }
+
+  .potPlayZone {
+    min-height: 150px;
+    padding: 7px 10px 9px;
+  }
+
+  .potPlayZone::before {
+    top: 7px;
+    right: 10px;
+    left: 10px;
+    height: 9px;
+  }
+
+  .potPlayZone::after {
+    top: 49px;
+    right: -8px;
+    bottom: 31px;
+    left: -8px;
+    border-right-width: 6px;
+    border-left-width: 6px;
+  }
+
+  .potPile .pileHeading {
+    min-height: 26px;
+    margin: 1px 0 4px;
+    font-size: 8px;
+  }
+
+  .potPile .pileHeading strong {
+    min-width: 25px;
+    height: 21px;
+    font-size: 10px;
+  }
+
+  .potPile .pileStage {
+    width: 70px;
+    height: 96px;
+  }
+
+  .potPile .pileCardBack {
+    width: 65px;
+    height: 93px;
+  }
+}
+
+@media (max-width: 620px) {
+  .topbar {
+    min-height: 38px;
+  }
+
+  .topbarCollapsed {
+    min-height: 27px;
+  }
+
+  .collapseHeaderButton {
+    width: 32px;
+    min-height: 32px;
+    flex-basis: 32px;
+  }
+
+  .seatRing {
+    bottom: auto;
+  }
+
+  .centerStage {
+    top: 51%;
+    width: min(258px, calc(100% - 34px));
+  }
+
+  .pileRow {
+    grid-template-columns: minmax(64px, 0.82fr) minmax(92px, 1.18fr);
+    gap: 6px;
+  }
+
+  .drawPile .pileStage {
+    width: 56px;
+    height: 84px;
+  }
+
+  .drawPile .pileCardBack {
+    width: 52px;
+    height: 78px;
+  }
+
+  .potPlayZone {
+    min-height: 126px;
+    padding: 5px 6px 7px;
+  }
+
+  .potPile .pileStage {
+    width: 60px;
+    height: 84px;
+  }
+
+  .potPile .pileCardBack {
+    width: 56px;
+    height: 81px;
+  }
+
+  .tableTurnTimer {
+    min-height: 24px;
+    margin-top: 5px;
+  }
+
+}
+
+/* Keep the tabletop completely clear: the lower third of the activity rail is
+   now the player's hand, while the upper two thirds remain the scrollable log. */
+.sidePanel {
+  display: grid;
+  grid-template-rows: minmax(0, 2fr) minmax(190px, 1fr);
+}
+
+.logPane {
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+  transition: min-height 180ms ease;
+}
+
+.logPane > .sideSection {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.sidePanelLogCollapsed {
+  grid-template-rows: 42px minmax(0, 1fr);
+}
+
+.logPaneCollapsed {
+  min-height: 42px;
+}
+
+.logPaneCollapsed .logExpandButton {
+  min-height: 42px;
+  flex-direction: row;
+  gap: 7px;
+  padding: 5px 10px;
+}
+
+.logPaneCollapsed .logExpandButton span {
+  writing-mode: horizontal-tb;
+}
+
+.sidePanelHandOnly {
+  align-content: end;
+  grid-template-rows: minmax(190px, 34%);
+  border: 0;
+  background: transparent;
+  backdrop-filter: none;
+}
+
+.sideHandDock {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  padding: 9px 8px 8px;
+  overflow: hidden;
+  border-top: 1px solid rgba(91, 51, 22, 0.22);
+  background: linear-gradient(180deg, rgba(255, 248, 228, 0.94), rgba(236, 210, 164, 0.92));
+  box-shadow: 0 -7px 18px rgba(69, 37, 15, 0.11), inset 0 1px rgba(255, 255, 255, 0.7);
+}
+
+.sidePanelHandOnly .sideHandDock {
+  border: 1px solid rgba(91, 51, 22, 0.28);
+  border-radius: 15px;
+}
+
+.sideHandDock .handTitle {
+  position: static;
+  display: flex;
+  flex: 0 0 auto;
+  margin-bottom: 5px;
+}
+
+.sideHandDock .handTitle > span:last-child {
+  display: none;
+}
+
+.sideHandDock .handTitle strong {
+  font-size: 9px;
+  letter-spacing: 0.08em;
+}
+
+.sideHandDock .handTitle small {
+  font-size: 8px;
+}
+
+.sideHandDock .handGrid {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 5px;
+  min-height: 0;
+  padding: 2px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x proximity;
+}
+
+.sideHandDock .handGrid .gameCard {
+  flex: 0 0 68px;
+  border-radius: 8px;
+  scroll-snap-align: start;
+}
+
+.sideHandDock .cardFooter {
+  min-height: 28px;
+  gap: 1px;
+  padding: 3px 4px 4px;
+}
+
+.sideHandDock .cardFooter strong {
+  font-size: 7.5px;
+}
+
+.sideHandDock .cardFooter span {
+  display: none;
+}
+
+.sideHandDock .cardFooter em {
+  font-size: 7px;
+}
+
+.sideHandDock button.gameCard:hover:not(:disabled) {
+  z-index: 4;
+  transform: translateY(-3px) scale(1.02);
+}
+
+.sideHandDock .cardSelected,
+.sideHandDock button.gameCard.cardSelected:hover:not(:disabled) {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 0 0 3px rgba(214, 124, 56, 0.22), 0 10px 18px rgba(65, 36, 15, 0.24);
+}
+
+.sideHandDock .shoppingReturnPrompt {
+  flex: 0 0 auto;
+  margin: 0 0 5px;
+  padding: 4px 6px;
+}
+
+.sideHandDock .shoppingReturnPrompt small {
+  white-space: normal;
+}
+
+.sideHandDock .actionDock {
+  position: static;
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  align-self: stretch;
+  justify-content: flex-end;
+  gap: 5px;
+  min-height: 0;
+  margin-top: 5px;
+}
+
+.sideHandDock .playCardButton,
+.sideHandDock .readyButton,
+.sideHandDock .primaryButton {
+  min-height: 30px;
+  padding: 0 8px;
+  font-size: 8px;
+}
+
+@media (max-width: 840px) {
+  .sidePanel,
+  .sidePanelLogCollapsed,
+  .sidePanelHandOnly {
+    display: flex;
+    align-content: initial;
+    flex-direction: column;
+  }
+
+  .logPane {
+    flex: 0 0 230px;
+  }
+
+  .logPaneCollapsed {
+    flex-basis: 42px;
+  }
+
+  .sideHandDock,
+  .sidePanelHandOnly .sideHandDock {
+    flex: 0 0 205px;
+    min-height: 205px;
+    border-radius: 0 0 14px 14px;
   }
 }

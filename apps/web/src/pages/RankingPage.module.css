@@ -192,6 +192,10 @@
 .vampire .bloodlineFilterLabel { color: #f87171; }
 .werewolf .bloodlineFilterLabel { color: #60a5fa; }
 .halfblood .bloodlineFilterLabel { color: #c084fc; }
+.whiteDog .bloodlineFilterLabel { color: #f8fafc; }
+.yardDog .bloodlineFilterLabel { color: #fbbf24; }
+.boneThief .bloodlineFilterLabel { color: #fb7185; }
+.cursedDog .bloodlineFilterLabel { color: #a78bfa; }
 
 .notInMyPotSidebarNote {
   margin-top: auto;
@@ -715,6 +719,9 @@
     grid-template-columns: repeat(3, 1fr);
     gap: 6px;
     padding-top: var(--space-3);
+  }
+  .roleFilters {
+    grid-template-columns: repeat(2, 1fr);
   }
   .bloodlineFilter {
     min-height: 52px;
