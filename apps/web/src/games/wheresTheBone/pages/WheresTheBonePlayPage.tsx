@@ -3,6 +3,7 @@ import { ArrowRight, Bone, Clock3, Eye, Heart, LogOut, MessageSquare, Moon, Rota
 import { useNavigate } from "react-router-dom";
 import type { RoomView } from "@/shared/lobby/roomView";
 import { PlayerAvatar } from "@/shared/components/PlayerAvatar/PlayerAvatar";
+import { ConfirmDialog } from "@/shared/components/ConfirmDialog/ConfirmDialog";
 import { useLeaveRoom } from "@/shared/hooks/useRooms";
 import { useLobbyChat } from "@/shared/hooks/useLobbyChat";
 import { useLocale } from "@/shared/i18n/useT";
@@ -21,8 +22,8 @@ type ClueAlert = {
 };
 
 const roleNames: Record<Locale, Record<string, string>> = {
-  vi: { BONE_THIEF: "Chó Trộm Xương", WHITE_DOG: "Chó Trắng", YARD_DOG: "Chó Canh Sân", PACKMATE: "Đồng Bọn Trộm Xương" },
-  en: { BONE_THIEF: "Bone Thief", WHITE_DOG: "White Dog", YARD_DOG: "Yard Dog", PACKMATE: "Secret Packmate" },
+  vi: { BONE_THIEF: "Chó Trộm Xương", WHITE_DOG: "Chó Trắng", YARD_DOG: "Chó Canh Sân", PACKMATE: "Chó Nguyền" },
+  en: { BONE_THIEF: "Bone Thief", WHITE_DOG: "White Dog", YARD_DOG: "Yard Dog", PACKMATE: "Cursed Dog" },
 };
 
 const roleDescriptions: Record<Locale, Record<string, { faction: string; condition: string; tips: string[] }>> = {
@@ -32,14 +33,13 @@ const roleDescriptions: Record<Locale, Record<string, { faction: string; conditi
       condition: "Lấy trộm khúc xương vào ban đêm và thuyết phục cả bầy không bỏ phiếu treo cổ mình ở cuối ván.",
       tips: [
         "Chọn đồng bọn khéo léo để phối hợp kéo phiếu và che mắt bầy chó.",
-        "Thảo luận chủ động để hướng sự nghi ngờ sang Chó Canh Sân hoặc Đồng Bọn Trộm Xương.",
+        "Thảo luận chủ động để hướng sự nghi ngờ sang Chó Canh Sân hoặc Chó Nguyền.",
       ],
     },
     PACKMATE: {
       faction: "Phe Trộm Xương 🐾",
-      condition: "Bảo vệ thành công Chó Trộm Xương không bị cả bầy vote treo cổ ở cuối ván.",
+      condition: "Bạn đã bị nguyền và đổi sang Phe Trộm Xương. Bạn thắng nếu bảo vệ Chó Trộm Xương không bị cả bầy vote loại ở cuối ván.",
       tips: [
-        "Hệ thống sẽ hiển thị vai trò và tên thật của Chó Trộm Xương cho bạn.",
         "Hãy bào chữa và lái dư luận sang người khác khi thảo luận nhóm.",
         "Vote trùng mục tiêu với Chó Trộm Xương để tăng cơ hội cứu nguy.",
       ],
@@ -69,9 +69,9 @@ const roleDescriptions: Record<Locale, Record<string, { faction: string; conditi
     },
     PACKMATE: {
       faction: "Thief Pack 🐾",
-      condition: "Protect the Bone Thief from being voted out by the pack at the end of the game.",
+      condition: "You were cursed and joined the Thief Pack. You win if the Bone Thief avoids being voted out.",
       tips: [
-        "Identify the Bone Thief (revealed to you in your private state).",
+        "You keep your original appearance, but the Bone Thief's identity is revealed to you.",
         "Actively defend the Thief and redirect focus during debates.",
         "Coordinate your vote with the Bone Thief to secure their safety.",
       ],
@@ -95,6 +95,7 @@ const roleDescriptions: Record<Locale, Record<string, { faction: string; conditi
 function roleArt(role: BoneRole | null, seat = 0) {
   if (role === "BONE_THIEF") return "/assets/games/wheres-the-bone/bone-thief.png";
   if (role === "WHITE_DOG") return "/assets/games/wheres-the-bone/white-dog.png";
+  // A cursed Dog changes alignment, not appearance.
   return `/assets/games/wheres-the-bone/yard-dog-${(seat % 8) + 1}.png`;
 }
 
@@ -186,35 +187,63 @@ function translateClue(clue: string, locale: Locale): string {
   return clue;
 }
 
-const eventNames: Record<Locale, Record<string, string>> = {
-  vi: {
-    GAME_STARTED: "Ván chơi bắt đầu",
-    BONE_TAKEN: "Khúc xương đã bị lấy",
-    DISCUSSION_SKIP_REQUESTED: "Một người chơi đề nghị bỏ qua thảo luận",
-    DISCUSSION_SKIP_APPROVED: "Đề nghị bỏ qua thảo luận đã được thông qua",
-    DISCUSSION_SKIP_REJECTED: "Đề nghị bỏ qua thảo luận không được thông qua",
-    DISCUSSION_SKIP_CANCELLED: "Đề nghị bỏ qua thảo luận đã bị hủy",
-    VOTING_STARTED: "Bắt đầu bỏ phiếu",
-    VOTE_CAST: "Một phiếu đã được gửi",
-    GAME_FINISHED: "Ván chơi kết thúc",
-    PLAYER_ABANDONED: "Một người chơi đã rời ván",
-  },
-  en: {
-    GAME_STARTED: "Game started",
-    BONE_TAKEN: "The bone was taken",
-    DISCUSSION_SKIP_REQUESTED: "A player requested to skip discussion",
-    DISCUSSION_SKIP_APPROVED: "The discussion skip request was approved",
-    DISCUSSION_SKIP_REJECTED: "The discussion skip request was rejected",
-    DISCUSSION_SKIP_CANCELLED: "The discussion skip request was cancelled",
-    VOTING_STARTED: "Voting started",
-    VOTE_CAST: "A vote was submitted",
-    GAME_FINISHED: "Game finished",
-    PLAYER_ABANDONED: "A player left the game",
-  },
-};
+type NightJournalEntry = { key: string; hour: number; priority: number; text: string };
 
-function eventLabel(type: string, locale: Locale): string {
-  return eventNames[locale]?.[type] ?? type.replaceAll("_", " ").toLowerCase().replace(/^./, (letter) => letter.toUpperCase());
+function createNightJournal(view: WheresTheBoneView, locale: Locale): NightJournalEntry[] {
+  const entries: NightJournalEntry[] = [];
+  const playerName = (playerId: string) => view.players.find((player) => player.playerId === playerId)?.displayName ?? playerId;
+  const witnessedHours = new Set(view.myWitnessedBoneTakenHours);
+
+  view.myCoAwakeRecords.forEach((record) => {
+    const names = record.playerIds.map(playerName).join(", ");
+    entries.push({
+      key: `awake-${record.hour}`,
+      hour: record.hour,
+      priority: 0,
+      text: record.playerIds.length
+        ? locale === "vi"
+          ? `Thức dậy cùng ${names} lúc ${record.hour}:00am.`
+          : `Woke up with ${names} at ${record.hour}:00am.`
+        : locale === "vi"
+          ? `Thức dậy một mình lúc ${record.hour}:00am.`
+          : `Woke up alone at ${record.hour}:00am.`,
+    });
+  });
+
+  view.myWitnessedBoneTakenHours.forEach((hour) => {
+    const thiefName = view.boneTakenBy ? playerName(view.boneTakenBy) : (locale === "vi" ? "Chó Trộm Xương" : "the Bone Thief");
+    entries.push({
+      key: `witnessed-${hour}`,
+      hour,
+      priority: 1,
+      text: locale === "vi"
+        ? `Thấy ${thiefName} lấy xương lúc ${hour}:00am.`
+        : `Saw ${thiefName} take the bone at ${hour}:00am.`,
+    });
+  });
+
+  view.myObservedBonePresentHours.filter((hour) => !witnessedHours.has(hour)).forEach((hour) => {
+    entries.push({
+      key: `present-${hour}`,
+      hour,
+      priority: 1,
+      text: locale === "vi" ? `Xương vẫn còn lúc ${hour}:00am.` : `The bone was still there at ${hour}:00am.`,
+    });
+  });
+
+  view.myObservedBoneMissingHours.filter((hour) => !witnessedHours.has(hour)).forEach((hour) => {
+    entries.push({
+      key: `missing-${hour}`,
+      hour,
+      priority: 1,
+      text: locale === "vi" ? `Xương đã mất lúc ${hour}:00am.` : `The bone was already missing at ${hour}:00am.`,
+    });
+  });
+
+  if (!entries.length) {
+    return view.myClues.map((clue, index) => ({ key: `clue-${index}`, hour: 0, priority: index, text: translateClue(clue, locale) }));
+  }
+  return entries.sort((left, right) => left.hour - right.hour || left.priority - right.priority);
 }
 
 export function WheresTheBonePlayPage({ room, view, snapshotPending, snapshotError, notice, rejectCode, sendCommand }: Props) {
@@ -224,12 +253,14 @@ export function WheresTheBonePlayPage({ room, view, snapshotPending, snapshotErr
   const chat = useLobbyChat(room.id, view?.viewerPlayerId);
   const [chatDraft, setChatDraft] = useState("");
   const [showRole, setShowRole] = useState(false);
-  const [roleSeen, setRoleSeen] = useState(false);
+  const [roleChangePending, setRoleChangePending] = useState(false);
+  const [confirmLeave, setConfirmLeave] = useState(false);
   const [now, setNow] = useState(Date.now());
   const [serverOffset, setServerOffset] = useState(0);
   const [selectedPackmates, setSelectedPackmates] = useState<string[]>([]);
   const [clueAlert, setClueAlert] = useState<ClueAlert | null>(null);
   const clueCountsRef = useRef<{ peek: number; witnessed: number; present: number; missing: number } | null>(null);
+  const revealedRoleKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 1000);
@@ -237,11 +268,14 @@ export function WheresTheBonePlayPage({ room, view, snapshotPending, snapshotErr
   }, []);
 
   useEffect(() => {
-    if (view?.myRole && !roleSeen) {
-      setRoleSeen(true);
-      setShowRole(true);
+    if (!view?.myRole) return;
+    const roleKey = `${view.myRole}:${view.myWhiteDogRecruited ? "recruited" : "original"}`;
+    if (revealedRoleKeyRef.current !== roleKey) {
+      setRoleChangePending(revealedRoleKeyRef.current !== null);
+      revealedRoleKeyRef.current = roleKey;
+      setShowRole(!clueAlert);
     }
-  }, [view?.myRole, roleSeen]);
+  }, [view?.myRole, view?.myWhiteDogRecruited, clueAlert]);
 
   useEffect(() => {
     if (view?.serverTime) setServerOffset(new Date(view.serverTime).getTime() - Date.now());
@@ -333,6 +367,7 @@ export function WheresTheBonePlayPage({ room, view, snapshotPending, snapshotErr
   }, [view?.phase, view?.version]);
 
   const left = useMemo(() => (view?.deadline ? Math.max(0, Math.ceil((new Date(view.deadline).getTime() - (now + serverOffset)) / 1000)) : 0), [view?.deadline, now, serverOffset]);
+  const discussionExpired = view?.phase === "DISCUSSION" && left === 0;
   const me = view?.players.find((p) => p.me);
   const discussionSkipRequester = view?.players.find((player) => player.playerId === view.discussionSkipRequesterId);
   const role = view?.myRole ?? me?.role ?? null;
@@ -340,6 +375,9 @@ export function WheresTheBonePlayPage({ room, view, snapshotPending, snapshotErr
   const recruitedWhiteDog = role === "WHITE_DOG" && view?.myWhiteDogRecruited;
   const knownThiefId = view?.knownBoneThiefId
     ?? (view && view.myWitnessedBoneTakenHours.length > 0 ? view.boneTakenBy : null);
+  const knownPackmateIdSet = new Set(view?.knownPackmateIds ?? []);
+  const thiefIdForPack = role === "BONE_THIEF" ? view?.viewerPlayerId ?? null : knownThiefId;
+  const nightJournal = useMemo(() => view ? createNightJournal(view, locale) : [], [view, locale]);
   // The API intentionally omits the viewer from currentAwakePlayerIds, so use
   // the viewer's private player row when deciding whether the thief is forced
   // to act this hour.
@@ -354,6 +392,18 @@ export function WheresTheBonePlayPage({ room, view, snapshotPending, snapshotErr
   const command = (value: WheresTheBoneCommand) => {
     sendCommand(value);
   };
+  const openRole = () => {
+    setRoleChangePending(false);
+    setShowRole(true);
+  };
+  const closeRole = () => {
+    setRoleChangePending(false);
+    setShowRole(false);
+  };
+  const closeClue = () => {
+    setClueAlert(null);
+    if (roleChangePending) setShowRole(true);
+  };
   const can = (type: WheresTheBoneCommand["type"]) => Boolean(view?.legalActions.includes(type));
 
   if (view?.finished) {
@@ -363,13 +413,15 @@ export function WheresTheBonePlayPage({ room, view, snapshotPending, snapshotErr
   return (
     <main className={styles.page}>
       <header className={styles.header}>
+        <button type="button" className={styles.leaveTop} onClick={() => setConfirmLeave(true)}>
+          <LogOut size={16} /> {locale === "vi" ? "Rời phòng" : "Leave Room"}
+        </button>
         <div className={styles.roomCode}>#{room.code}</div>
         <div className={styles.phase}>
           <span className={styles.phaseIcon}>{view?.phase === "NIGHT_HOUR" ? <Moon size={16} /> : view?.phase === "VOTING" ? <Shield size={16} /> : <Bone size={16} />}</span>
           {phaseTitle(view?.phase, locale)}
-          <span className={styles.timer}><Clock3 size={14} />{left}s</span>
         </div>
-        <button type="button" className={styles.roleButton} onClick={() => setShowRole(true)}>
+        <button type="button" className={styles.roleButton} onClick={openRole}>
           <Heart size={15} /> {locale === "vi" ? "Vai của tôi" : "My Role"}
         </button>
       </header>
@@ -388,14 +440,19 @@ export function WheresTheBonePlayPage({ room, view, snapshotPending, snapshotErr
             <section className={styles.banner}>
               <Bone size={30} />
               <div>
-                <strong>
-                  {view.boneTaken
-                    ? locale === "vi" ? "Xương đã biến mất" : "The bone is gone"
-                    : locale === "vi" ? `Giờ ${view.currentHour}:00am · Cả sân cùng thức` : `Hour ${view.currentHour}:00am · Yard waking up`}
-                </strong>
+                <div className={styles.bannerHeading}>
+                  <strong>
+                    {locale === "vi"
+                      ? `Giờ ${view.currentHour}:00am`
+                      : `Hour ${view.currentHour}:00am`}
+                  </strong>
+                  <span className={styles.bannerTimer}>
+                    <Clock3 size={15} /> {left}s
+                  </span>
+                </div>
                 <p>
                   {view.boneTaken
-                    ? locale === "vi" ? "Ghi nhớ người thức cùng; sau đêm sẽ đến lúc thảo luận." : "Remember who woke with you; discussion starts after the night."
+                    ? locale === "vi" ? "Xương đã bị lấy, nhưng canh giờ hiện tại vẫn tiếp tục cho đến khi bộ đếm kết thúc." : "The bone was taken, but the current hour continues until the countdown ends."
                     : mustTakeBone
                       ? locale === "vi" ? "Bạn là Chó Trộm Xương và phải lấy xương ngay trong lượt này." : "You are the Bone Thief and must take the bone this turn."
                       : locale === "vi" ? "Người đang thức hãy thực hiện hành động của mình." : "Awake players, perform your actions."}
@@ -404,7 +461,14 @@ export function WheresTheBonePlayPage({ room, view, snapshotPending, snapshotErr
             </section>
           )}
           <section className={styles.panel}>
-            <h2><Bone size={19} /> {locale === "vi" ? "Hành động" : "Actions"}</h2>
+            <div className={styles.panelHeading}>
+              <h2><Bone size={19} /> {locale === "vi" ? "Hành động" : "Actions"}</h2>
+              {view?.deadline && view.phase !== "NIGHT_HOUR" ? (
+                <span className={styles.phaseTimer}>
+                  <Clock3 size={15} /> {left}s
+                </span>
+              ) : null}
+            </div>
             <p className={styles.muted}>{actionHint(view, mustTakeBone, locale)}</p>
             {can("SELECT_WAKE_TIME") && (
               <div className={styles.actionRow}>
@@ -458,12 +522,12 @@ export function WheresTheBonePlayPage({ room, view, snapshotPending, snapshotErr
                 </button>
               </div>
             )}
-            {can("REQUEST_SKIP_DISCUSSION") && (
+            {can("REQUEST_SKIP_DISCUSSION") && !discussionExpired && (
               <button type="button" className={styles.primary} onClick={() => command({ type: "REQUEST_SKIP_DISCUSSION" })}>
                 {locale === "vi" ? "Bỏ qua thảo luận" : "Skip discussion"}
               </button>
             )}
-            {view?.phase === "DISCUSSION" && view.discussionSkipRequesterId && (
+            {view?.phase === "DISCUSSION" && view.discussionSkipRequesterId && !discussionExpired && (
               <div className={styles.skipVotePanel} role="alert" aria-live="assertive">
                 <div className={styles.skipVoteHeading}>
                   <strong>{locale === "vi" ? "Đề nghị bỏ qua thảo luận" : "Skip discussion request"}</strong>
@@ -502,6 +566,14 @@ export function WheresTheBonePlayPage({ room, view, snapshotPending, snapshotErr
                 </small>
               </div>
             )}
+            {discussionExpired && (
+              <p className={styles.discussionExpired} role="status" aria-live="polite">
+                <Clock3 size={17} />
+                {locale === "vi"
+                  ? "Thời gian thảo luận đã hết. Đề nghị bỏ qua đã đóng; đang chuyển sang bỏ phiếu chính thức…"
+                  : "Discussion time is over. The skip request is closed; opening the official vote…"}
+              </p>
+            )}
             {can("VOTE") && (
               <div className={styles.voteGrid}>
                 {view?.players.filter((p) => !p.me).map((p) => (
@@ -524,11 +596,12 @@ export function WheresTheBonePlayPage({ room, view, snapshotPending, snapshotErr
             <h2><Shield size={19} /> {locale === "vi" ? "Theo dõi đàn chó" : "Pack Overview"}</h2>
             <div className={styles.playerGrid}>
               {view?.players.map((p) => (
-                <div key={p.playerId} className={styles.playerCard} data-me={p.me} data-awake={p.awake} data-known-thief={knownThiefId === p.playerId}>
+                <div key={p.playerId} className={styles.playerCard} data-me={p.me} data-awake={p.awake} data-known-thief={knownThiefId === p.playerId} data-known-packmate={knownPackmateIdSet.has(p.playerId)}>
                   <PlayerAvatar playerId={p.playerId} displayName={p.displayName} avatarUrl={room.players.find((player) => player.playerId === p.playerId)?.avatarUrl} size={46} />
                   <strong>{p.displayName}</strong>
-                  <span>{p.me ? roleLabel(p.role, locale) : view.finished ? roleLabel(p.role, locale) : knownThiefId === p.playerId ? roleLabel("BONE_THIEF", locale) : p.awake ? (locale === "vi" ? "Đang thức" : "Awake") : "???"}</span>
+                  <span>{p.me ? roleLabel(p.role, locale) : view.finished ? roleLabel(p.role, locale) : knownThiefId === p.playerId ? roleLabel("BONE_THIEF", locale) : knownPackmateIdSet.has(p.playerId) ? roleLabel("PACKMATE", locale) : p.awake ? (locale === "vi" ? "Đang thức" : "Awake") : "???"}</span>
                   {knownThiefId === p.playerId && !p.me && <small className={styles.knownThiefBadge}>🦴 {locale === "vi" ? "Bạn đã thấy kẻ trộm" : "Theft witnessed"}</small>}
+                  {knownPackmateIdSet.has(p.playerId) && !p.me && <small className={styles.knownPackmateBadge}>🐾 {locale === "vi" ? "Chó Nguyền" : "Cursed Dog"}</small>}
                   {p.voted && <small>{locale === "vi" ? "Đã vote" : "Voted"}</small>}
                 </div>
               ))}
@@ -577,34 +650,11 @@ export function WheresTheBonePlayPage({ room, view, snapshotPending, snapshotErr
                 ))}
               </div>
             </div>
-            {view && (view.myClues.length || view.myObservedBonePresentHours.length || view.myObservedBoneMissingHours.length || view.myWitnessedBoneTakenHours.length) ? (
+            {nightJournal.length ? (
               <div className={styles.clues}>
-                <strong>{locale === "vi" ? "Dấu vết bạn đã thấy" : "Witnessed clues"}</strong>
+                <strong>{locale === "vi" ? "Nhật ký trong đêm" : "Night journal"}</strong>
                 <div className={styles.memoryList}>
-                  {view.myObservedBonePresentHours.map((hour) => (
-                    <p key={`bone-present-${hour}`}>
-                      <span>{locale === "vi" ? "Kiểm tra xương" : "Bone check"}</span>
-                      <b>{locale === "vi" ? "Xương vẫn còn" : "Bone was still there"}</b>
-                      <span>{locale === "vi" ? `lúc ${hour}:00am` : `at ${hour}:00am`}</span>
-                    </p>
-                  ))}
-                  {view.myWitnessedBoneTakenHours.map((hour) => (
-                    <p key={`bone-theft-${hour}`}>
-                      <span>{locale === "vi" ? "Chó Trộm Xương" : "Bone Thief"}</span>
-                      <b>{view.players.find((player) => player.playerId === view.boneTakenBy)?.displayName ?? (locale === "vi" ? "Chó Trộm Xương" : "Bone Thief")}</b>
-                      <span>{locale === "vi" ? `đã lấy xương lúc ${hour}:00am` : `took bone at ${hour}:00am`}</span>
-                    </p>
-                  ))}
-                  {view.myObservedBoneMissingHours.map((hour) => (
-                    <p key={`bone-missing-${hour}`}>
-                      <span>{locale === "vi" ? "Kiểm tra xương" : "Bone check"}</span>
-                      <b>{locale === "vi" ? "Xương đã mất" : "Bone was already missing"}</b>
-                      <span>{locale === "vi" ? `khi bạn thức lúc ${hour}:00am` : `when you woke at ${hour}:00am`}</span>
-                    </p>
-                  ))}
-                  {!view.myObservedBonePresentHours.length && !view.myObservedBoneMissingHours.length && !view.myWitnessedBoneTakenHours.length && view.myClues.map((clue, index) => (
-                    <p key={`clue-${index}`}>{translateClue(clue, locale)}</p>
-                  ))}
+                  {nightJournal.map((entry) => <p key={entry.key}>{entry.text}</p>)}
                 </div>
               </div>
             ) : null}
@@ -621,54 +671,39 @@ export function WheresTheBonePlayPage({ room, view, snapshotPending, snapshotErr
                 </div>
               </div>
             ) : null}
-            {view?.myCoAwakeRecords.length ? (
+            {view?.myWhiteDogRecruited ? <div className={styles.clues}><strong>{locale === "vi" ? "Bạn đã vào Bầy Trộm" : "You joined the Thief Pack"}</strong><p>{locale === "vi" ? "Bạn thắng cùng phe trộm, hoặc thắng riêng nếu bị vote loại." : "You win with the thief pack, or alone if the pack votes you out."}</p></div> : null}
+            {view && (view.knownPackmateIds.length > 0 || thiefIdForPack) ? (
               <div className={styles.clues}>
-                <strong>{locale === "vi" ? "Đã thức cùng" : "Woke up with"}</strong>
+                <strong>{locale === "vi" ? "Đồng bọn bạn biết" : "Known packmates"}</strong>
                 <div className={styles.memoryList}>
-                  {view.myCoAwakeRecords.map((record) => (
-                    <p key={record.hour}>
-                      <b>{record.hour}:00am</b>
-                      <span>{locale === "vi" ? "cùng " : "with "}{record.playerIds.map((id) => view.players.find((p) => p.playerId === id)?.displayName ?? id).join(", ")}</span>
+                  {view.knownPackmateIds.map((id) => (
+                    <p key={`known-packmate-${id}`}>
+                      <b>{view.players.find((p) => p.playerId === id)?.displayName ?? id}</b>
+                      <span>{locale === "vi" ? "là Chó Nguyền" : "is a Cursed Dog"}</span>
                     </p>
                   ))}
+                  {thiefIdForPack ? (
+                    <p key={`known-thief-${thiefIdForPack}`}>
+                      <b>{view.players.find((p) => p.playerId === thiefIdForPack)?.displayName ?? thiefIdForPack}</b>
+                      <span>{locale === "vi" ? "là Chó Trộm Xương" : "is the Bone Thief"}</span>
+                    </p>
+                  ) : null}
                 </div>
               </div>
             ) : null}
-            {view?.knownBoneThiefId ? <div className={styles.clues}><strong>{locale === "vi" ? "Chó lấy xương" : "Bone Thief"}</strong><p>{view.players.find((p) => p.playerId === view.knownBoneThiefId)?.displayName ?? view.knownBoneThiefId}</p></div> : null}
-            {view?.myWhiteDogRecruited ? <div className={styles.clues}><strong>{locale === "vi" ? "Bạn đã vào Bầy Trộm" : "You joined the Thief Pack"}</strong><p>{locale === "vi" ? "Bạn thắng cùng phe trộm, hoặc thắng riêng nếu bị vote loại." : "You win with the thief pack, or alone if the pack votes you out."}</p></div> : null}
-            {view?.events.length ? <div className={styles.clues}><strong>{locale === "vi" ? "Nhật ký hành động" : "Action history"}</strong>{view.events.slice(-8).map((event, index) => <p key={`${event.type}-${index}`}>{eventLabel(event.type, locale)}</p>)}</div> : null}
-            {view?.knownPackmateIds.length ? (
-              <div className={styles.clues}>
-                <strong>{locale === "vi" ? "Đồng bọn bạn biết" : "Known packmates"}</strong>
-                <p>{view.knownPackmateIds.map((id) => view.players.find((p) => p.playerId === id)?.displayName ?? id).join(", ")}</p>
-              </div>
-            ) : null}
-            {me?.awake ? (
-              <div className={styles.clues}>
-                <strong>{locale === "vi" ? "Dog cùng thức" : "Awake together"}</strong>
-                {view && view.currentAwakePlayerIds.length ? (
-                  <p>{view.currentAwakePlayerIds.map((id) => view.players.find((p) => p.playerId === id)?.displayName ?? id).join(", ")}</p>
-                ) : (
-                  <p className={styles.aloneNotice}>{locale === "vi" ? "Bạn thức một mình." : "You are awake alone."}</p>
-                )}
-              </div>
-            ) : null}
           </section>
-          <button type="button" className={styles.leave} onClick={() => leave.mutate(room.id)}>
-            {locale === "vi" ? "Rời phòng" : "Leave Room"}
-          </button>
         </aside>
       </div>
       {clueAlert && !view?.finished && (
         <div className={styles.modalLayer} role="alertdialog" aria-modal="true" aria-live="assertive">
-          <button className={styles.modalBackdrop} type="button" aria-label={locale === "vi" ? "Đóng dấu vết" : "Dismiss clue"} onClick={() => setClueAlert(null)} />
+          <button className={styles.modalBackdrop} type="button" aria-label={locale === "vi" ? "Đóng dấu vết" : "Dismiss clue"} onClick={closeClue} />
           <section className={styles.clueModal}>
-            <button type="button" className={styles.close} aria-label={locale === "vi" ? "Đóng" : "Close"} onClick={() => setClueAlert(null)}>×</button>
+            <button type="button" className={styles.close} aria-label={locale === "vi" ? "Đóng" : "Close"} onClick={closeClue}>×</button>
             <span className={styles.clueModalIcon}>{clueAlert.kind === "peek" ? <Eye size={34} /> : <Bone size={34} />}</span>
             <span className={styles.secret}>{locale === "vi" ? "DẤU VẾT MỚI" : "NEW CLUE"}</span>
             <h1>{clueAlert.title}</h1>
             <p className={styles.clueModalBody}>{clueAlert.body}</p>
-            <button type="button" className={styles.modalContinue} onClick={() => setClueAlert(null)}>
+            <button type="button" className={styles.modalContinue} onClick={closeClue}>
               {locale === "vi" ? "Xác nhận" : "Confirm"}
             </button>
           </section>
@@ -676,10 +711,12 @@ export function WheresTheBonePlayPage({ room, view, snapshotPending, snapshotErr
       )}
       {showRole && role && !view?.finished && (
         <div className={styles.modalLayer} role="dialog" aria-modal="true">
-          <button className={styles.modalBackdrop} type="button" aria-label={locale === "vi" ? "Đóng" : "Close"} onClick={() => setShowRole(false)} />
+          <button className={styles.modalBackdrop} type="button" aria-label={locale === "vi" ? "Đóng" : "Close"} onClick={closeRole} />
           <section className={styles.roleModal}>
-            <button type="button" className={styles.close} aria-label={locale === "vi" ? "Đóng" : "Close"} onClick={() => setShowRole(false)}>×</button>
-            <span className={styles.secret}>{locale === "vi" ? "Vai Trò Bí Mật Của Bạn" : "Your Secret Role"}</span>
+            <button type="button" className={styles.close} aria-label={locale === "vi" ? "Đóng" : "Close"} onClick={closeRole}>×</button>
+            <span className={styles.secret}>{roleChangePending
+              ? locale === "vi" ? "Vai trò của bạn đã thay đổi" : "Your role has changed"
+              : locale === "vi" ? "Vai Trò Bí Mật Của Bạn" : "Your Secret Role"}</span>
             <h1>{roleLabel(role, locale)}</h1>
             <img className={styles.modalRoleImage} src={roleArt(role, me?.seat)} alt="" />
             <div className={styles.roleCondition}>
@@ -692,17 +729,34 @@ export function WheresTheBonePlayPage({ room, view, snapshotPending, snapshotErr
             <ul>
               {meta.tips.map((tip) => <li key={tip}>{tip}</li>)}
             </ul>
-            <button type="button" className={styles.modalContinue} onClick={() => setShowRole(false)}>
+            <button type="button" className={styles.modalContinue} onClick={closeRole}>
               {locale === "vi" ? "Đã nhớ vai của tôi" : "I understand my role"}
             </button>
           </section>
         </div>
       )}
+      <ConfirmDialog
+        open={confirmLeave}
+        title={locale === "vi" ? "Rời phòng?" : "Leave room?"}
+        body={locale === "vi"
+          ? "Bạn sẽ rời ván chơi và bị tính là thua 1 ván. Bạn có chắc muốn rời phòng không?"
+          : "Leaving this match counts as one loss. Are you sure you want to leave the room?"}
+        confirmLabel={locale === "vi" ? "Có, rời phòng" : "Yes, leave room"}
+        cancelLabel={locale === "vi" ? "Ở lại" : "Stay"}
+        pending={leave.isPending}
+        error={leave.error}
+        onConfirm={() => leave.mutate(room.id)}
+        onCancel={() => {
+          leave.reset();
+          setConfirmLeave(false);
+        }}
+      />
     </main>
   );
 }
 
 function WheresTheBoneResult({ view, room, locale, onPlayAgain, onLeave }: { view: WheresTheBoneView; room: RoomView; locale: Locale; onPlayAgain: () => void; onLeave: () => void; }) {
+  const [confirmLeave, setConfirmLeave] = useState(false);
   const winnerIds = new Set(view.winnerPlayerIds);
   const winners = view.players.filter((player) => winnerIds.has(player.playerId));
   const meWon = winnerIds.has(view.viewerPlayerId);
@@ -794,10 +848,19 @@ function WheresTheBoneResult({ view, room, locale, onPlayAgain, onLeave }: { vie
         <button type="button" className={styles.resultPrimary} onClick={onPlayAgain}>
           <RotateCcw size={17} /> {locale === "vi" ? "Chơi lại" : "Play again"}
         </button>
-        <button type="button" className={styles.resultLeave} onClick={onLeave}>
+        <button type="button" className={styles.resultLeave} onClick={() => setConfirmLeave(true)}>
           <LogOut size={17} /> {locale === "vi" ? "Rời phòng" : "Leave room"}
         </button>
       </div>
+      <ConfirmDialog
+        open={confirmLeave}
+        title={locale === "vi" ? "Rời phòng?" : "Leave room?"}
+        body={locale === "vi" ? "Bạn có chắc muốn rời phòng không?" : "Are you sure you want to leave the room?"}
+        confirmLabel={locale === "vi" ? "Có, rời phòng" : "Yes, leave room"}
+        cancelLabel={locale === "vi" ? "Ở lại" : "Stay"}
+        onConfirm={onLeave}
+        onCancel={() => setConfirmLeave(false)}
+      />
     </main>
   );
 }
