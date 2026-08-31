@@ -368,7 +368,10 @@ export function WheresTheBonePlayPage({ room, view, snapshotPending, snapshotErr
 
   const left = useMemo(() => (view?.deadline ? Math.max(0, Math.ceil((new Date(view.deadline).getTime() - (now + serverOffset)) / 1000)) : 0), [view?.deadline, now, serverOffset]);
   const discussionExpired = view?.phase === "DISCUSSION" && left === 0;
-  const me = view?.players.find((p) => p.me);
+  const reportedViewerPlayerId = view?.viewerPlayerId || null;
+  const me = view?.players.find((p) => p.me || p.playerId === reportedViewerPlayerId);
+  const viewerPlayerId = reportedViewerPlayerId || me?.playerId || null;
+  const otherPlayers = view?.players.filter((p) => !p.me && p.playerId !== viewerPlayerId) ?? [];
   const discussionSkipRequester = view?.players.find((player) => player.playerId === view.discussionSkipRequesterId);
   const role = view?.myRole ?? me?.role ?? null;
   const meta = (roleDescriptions[locale] ?? roleDescriptions.vi)[role ?? "YARD_DOG"] ?? roleDescriptions.vi.YARD_DOG;
@@ -391,6 +394,12 @@ export function WheresTheBonePlayPage({ room, view, snapshotPending, snapshotErr
   );
   const command = (value: WheresTheBoneCommand) => {
     sendCommand(value);
+  };
+  const submitVote = (targetPlayerId: string) => {
+    // Keep the client-side target list and payload aligned with the server rule
+    // that a player may only vote for another player.
+    if (viewerPlayerId && targetPlayerId === viewerPlayerId) return;
+    command({ type: "VOTE", targetPlayerId });
   };
   const openRole = () => {
     setRoleChangePending(false);
@@ -492,7 +501,7 @@ export function WheresTheBonePlayPage({ room, view, snapshotPending, snapshotErr
                   <span>{locale === "vi" ? "Chọn người chơi để xem giờ" : "Choose player to peek"}</span>
                 </div>
                 <div className={styles.actionChoices}>
-                  {view?.players.filter((p) => !p.me).map((p) => (
+                  {otherPlayers.map((p) => (
                     <button key={p.playerId} type="button" className={styles.choice} onClick={() => command({ type: "PEEK_WAKE_TIME", targetPlayerId: p.playerId })}>
                       {p.displayName}
                     </button>
@@ -576,8 +585,8 @@ export function WheresTheBonePlayPage({ room, view, snapshotPending, snapshotErr
             )}
             {can("VOTE") && (
               <div className={styles.voteGrid}>
-                {view?.players.filter((p) => !p.me).map((p) => (
-                  <button key={p.playerId} type="button" className={styles.voteButton} onClick={() => command({ type: "VOTE", targetPlayerId: p.playerId })}>
+                {otherPlayers.map((p) => (
+                  <button key={p.playerId} type="button" className={styles.voteButton} onClick={() => submitVote(p.playerId)}>
                     {p.displayName}
                   </button>
                 ))}
@@ -596,12 +605,15 @@ export function WheresTheBonePlayPage({ room, view, snapshotPending, snapshotErr
             <h2><Shield size={19} /> {locale === "vi" ? "Theo dõi đàn chó" : "Pack Overview"}</h2>
             <div className={styles.playerGrid}>
               {view?.players.map((p) => (
-                <div key={p.playerId} className={styles.playerCard} data-me={p.me} data-awake={p.awake} data-known-thief={knownThiefId === p.playerId} data-known-packmate={knownPackmateIdSet.has(p.playerId)}>
+                <div key={p.playerId} className={styles.playerCard} data-me={p.me || p.playerId === viewerPlayerId} data-awake={p.awake} data-known-thief={knownThiefId === p.playerId} data-known-packmate={knownPackmateIdSet.has(p.playerId)}>
                   <PlayerAvatar playerId={p.playerId} displayName={p.displayName} avatarUrl={room.players.find((player) => player.playerId === p.playerId)?.avatarUrl} size={46} />
-                  <strong>{p.displayName}</strong>
-                  <span>{p.me ? roleLabel(p.role, locale) : view.finished ? roleLabel(p.role, locale) : knownThiefId === p.playerId ? roleLabel("BONE_THIEF", locale) : knownPackmateIdSet.has(p.playerId) ? roleLabel("PACKMATE", locale) : p.awake ? (locale === "vi" ? "Đang thức" : "Awake") : "???"}</span>
-                  {knownThiefId === p.playerId && !p.me && <small className={styles.knownThiefBadge}>🦴 {locale === "vi" ? "Bạn đã thấy kẻ trộm" : "Theft witnessed"}</small>}
-                  {knownPackmateIdSet.has(p.playerId) && !p.me && <small className={styles.knownPackmateBadge}>🐾 {locale === "vi" ? "Chó Nguyền" : "Cursed Dog"}</small>}
+                  <div className={styles.playerNameRow}>
+                    <strong>{p.displayName}</strong>
+                    {(p.me || p.playerId === viewerPlayerId) && <small className={styles.meBadge}>{locale === "vi" ? "Tôi" : "Me"}</small>}
+                  </div>
+                  <span>{p.me || p.playerId === viewerPlayerId ? roleLabel(p.role, locale) : view.finished ? roleLabel(p.role, locale) : knownThiefId === p.playerId ? roleLabel("BONE_THIEF", locale) : knownPackmateIdSet.has(p.playerId) ? roleLabel("PACKMATE", locale) : p.awake ? (locale === "vi" ? "Đang thức" : "Awake") : "???"}</span>
+                  {knownThiefId === p.playerId && !p.me && p.playerId !== viewerPlayerId && <small className={styles.knownThiefBadge}>🦴 {locale === "vi" ? "Bạn đã thấy kẻ trộm" : "Theft witnessed"}</small>}
+                  {knownPackmateIdSet.has(p.playerId) && !p.me && p.playerId !== viewerPlayerId && <small className={styles.knownPackmateBadge}>🐾 {locale === "vi" ? "Chó Nguyền" : "Cursed Dog"}</small>}
                   {p.voted && <small>{locale === "vi" ? "Đã vote" : "Voted"}</small>}
                 </div>
               ))}

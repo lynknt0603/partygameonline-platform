@@ -1,94 +1,93 @@
 # partygameonline-platform
 
-Web frontend cho nền tảng chơi board game và party game trực tuyến nhiều người chơi theo thời gian thực (BoardVerse). Ứng dụng cung cấp giao diện tương tác trực quan cho các tựa game như Night of Bloodlines (Đêm Huyết Tộc), kết nối với backend qua REST API và WebSocket.
+Web frontend client for Party Game Online (BoardVerse), a real-time multiplayer tabletop and party card game platform. It delivers interactive gameplay for games including Night of Bloodlines and Where's The Bone, communicating with the backend via REST APIs and WebSockets.
 
-## Công nghệ sử dụng
+## Tech Stack
 
-- Giao diện: React 19, TypeScript, Vite
-- Quản lý trạng thái: Zustand, TanStack Query (React Query) v5
-- Định tuyến: React Router v7
-- Styling và UI: CSS Modules, Design Tokens, Lucide React
+- UI Framework: React 19, TypeScript, Vite
+- State Management: Zustand, TanStack Query (React Query) v5
+- Routing: React Router v7
+- Styling & Icons: CSS Modules, Design Tokens, Lucide React
 
-## Cấu trúc thư mục
+## Project Structure
 
-- apps/web/src/app: Cấu hình router, providers và layout chính
-- apps/web/src/features: Các tính năng cốt lõi (xác thực, danh sách phòng, chat)
-- apps/web/src/games: Logic giao diện và tài nguyên riêng cho từng game (ví dụ: Night of Bloodlines)
-- apps/web/src/shared: Các component dùng chung, store, hook và tiện ích
-- scripts: Các script hỗ trợ kiểm thử và tiện ích mở rộng
+- apps/web/src/app: Router configuration, providers, and main application layout
+- apps/web/src/features: Core platform features (authentication, room lobby, chat)
+- apps/web/src/games: Game-specific UI and game logic (e.g. Night of Bloodlines, Where's The Bone)
+- apps/web/src/shared: Reusable components, custom hooks, and shared stores
+- scripts: Automated bot testing and utility scripts
 
-## Yêu cầu môi trường
+## Prerequisites
 
-- Node.js 20 trở lên
-- npm 10 trở lên
+- Node.js 20 or higher
+- npm 10 or higher
 
-## Hướng dẫn cài đặt và chạy ứng dụng
+## Getting Started
 
-### 1. Cài đặt thư viện
+### 1. Install Dependencies
 
-Di chuyển vào thư mục ứng dụng web và cài đặt dependencies:
+Navigate to the web app directory and install dependencies:
 
 ```bash
 cd apps/web
 npm install
 ```
 
-### 2. Chạy môi trường phát triển (Development)
+### 2. Development Server
 
 ```bash
 npm run dev
 ```
 
-Ứng dụng sẽ chạy tại địa chỉ: `http://localhost:5173/`
+The web client will start at `http://localhost:5173/`.
+Vite is pre-configured to proxy `/api` and `/ws` requests to the backend server at `http://127.0.0.1:8080/`.
 
-Vite đã được cấu hình sẵn proxy để tự động chuyển tiếp các request `/api` và `/ws` tới backend tại `http://127.0.0.1:8080/`.
-
-Hoặc có thể chạy nhanh từ thư mục gốc của repository:
+Alternatively, run from the repository root:
 
 ```bash
 npm run dev
 ```
 
-## Hướng dẫn kiểm tra và build dự án
+## Build and Testing
 
-### 1. Kiểm tra lỗi kiểu dữ liệu (Typecheck)
+### 1. Type Check
 
 ```bash
-# Chạy từ apps/web
+# From apps/web directory
 npm run typecheck
 
-# Hoặc chạy từ thư mục gốc
+# Or from repository root
 npm run typecheck
 ```
 
-### 2. Build bản Production
+### 2. Production Build
 
 ```bash
-# Chạy từ apps/web
+# From apps/web directory
 npm run build
 
-# Hoặc chạy từ thư mục gốc
+# Or from repository root
 npm run build
 ```
 
-Kết quả build sẽ được tạo trong thư mục `apps/web/dist`.
+Production output will be generated in `apps/web/dist`.
 
-### 3. Xem trước bản build (Preview)
+### 3. Preview Production Build
 
 ```bash
 cd apps/web
 npm run preview
 ```
 
-### 4. Chạy script mô phỏng người chơi (Bot testing)
+### 4. Bot Player Testing
 
-Để kiểm thử luồng chơi nhiều người trong phòng chờ mà không cần mở nhiều trình duyệt thủ công, sử dụng script bot:
+To simulate multiple players joining and testing a room without manually opening multiple browser windows:
 
 ```bash
-# Cú pháp: node scripts/bot-players.mjs <MÃ_PHÒNG> <SỐ_LƯỢNG_BOT>
+# Usage: node scripts/bot-players.mjs <ROOM_CODE> <PLAYER_COUNT>
 node scripts/bot-players.mjs ABCD 6
 ```
 
-## Giấy phép
+## License
 
 All rights reserved.
