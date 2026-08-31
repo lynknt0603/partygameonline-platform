@@ -21,6 +21,7 @@ import styles from "./LobbyChrome.module.css";
 
 interface RoomSettingsPanelProps {
   room: RoomView;
+  minCap: number;
   maxCap: number;
   isHost: boolean;
   onClose: () => void;
@@ -35,7 +36,7 @@ const GAMEPLAY_FIELDS: Array<{ key: keyof NobTiming; labelKey: "nobDraftSeconds"
   { key: "hunterDecisionSeconds", labelKey: "nobHunterSeconds" },
 ];
 
-export function RoomSettingsPanel({ room, maxCap, isHost, onClose, onCloseRoom }: RoomSettingsPanelProps) {
+export function RoomSettingsPanel({ room, minCap, maxCap, isHost, onClose, onCloseRoom }: RoomSettingsPanelProps) {
   const t = useT();
   const waiting = room.status === "waiting";
   const canEdit = isHost && waiting;
@@ -51,12 +52,19 @@ export function RoomSettingsPanel({ room, maxCap, isHost, onClose, onCloseRoom }
   const isNob = room.gameId === NOB_CATALOGUE_ID;
   const isNotInMyPot = room.gameId === NOT_IN_MY_POT_ID;
   const isWheresTheBone = room.gameId === WHERES_THE_BONE_ID;
+  const maxPlayersError = players < room.players.length
+    ? t("maxPlayersBelowCurrent").replace("{count}", String(room.players.length))
+    : null;
   const save = () => {
-    if (!canEdit || (!isNob && !isNotInMyPot && !isWheresTheBone)) {
+    if (maxPlayersError) {
+      return;
+    }
+    if (!canEdit) {
       onClose();
       return;
     }
-    update.mutate(isNob ? { nob, locked } : isNotInMyPot ? { notInMyPot, locked } : { wheresTheBone, locked }, { onSuccess: () => onClose() });
+    const gameSettings = isNob ? { nob } : isNotInMyPot ? { notInMyPot } : isWheresTheBone ? { wheresTheBone } : {};
+    update.mutate({ ...gameSettings, locked, maxPlayers: players }, { onSuccess: () => onClose() });
   };
 
   return (
@@ -98,13 +106,14 @@ export function RoomSettingsPanel({ room, maxCap, isHost, onClose, onCloseRoom }
           {t("maxPlayers")} ({players})
           <input
             type="range"
-            min={2}
-            max={Math.max(2, maxCap)}
+            min={Math.max(2, minCap)}
+            max={Math.max(minCap, maxCap)}
             value={players}
             onChange={(event) => setPlayers(Number(event.target.value))}
-            disabled
+            disabled={!canEdit}
           />
         </label>
+        {maxPlayersError ? <p className={styles.saveError}>{maxPlayersError}</p> : null}
 
         <label className={styles.row}>
           <input type="checkbox" checked={spectators} onChange={() => setSpectators((value) => !value)} disabled />
@@ -144,7 +153,7 @@ export function RoomSettingsPanel({ room, maxCap, isHost, onClose, onCloseRoom }
           <section className={styles.timerBlock}>
             <h3>{t("nimpSettings")}</h3>
             <TimerRow
-              label={`${t("nimpTurnSeconds")} Â· ${notInMyPot.turnSeconds}s`}
+              label={`${t("nimpTurnSeconds")} · ${notInMyPot.turnSeconds}s`}
               value={notInMyPot.turnSeconds}
               presets={NIMP_TURN_PRESETS}
               disabled={!canEdit}
@@ -176,7 +185,7 @@ export function RoomSettingsPanel({ room, maxCap, isHost, onClose, onCloseRoom }
 
         {update.error ? <p className={styles.saveError}>{update.error.message}</p> : null}
 
-        <button type="button" className={styles.save} onClick={save} disabled={update.isPending}>
+        <button type="button" className={styles.save} onClick={save} disabled={update.isPending || Boolean(maxPlayersError)}>
           {t("save")}
         </button>
 
