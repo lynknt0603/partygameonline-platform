@@ -1,57 +1,94 @@
 # partygameonline-platform
 
-Web frontend for Party Game Online, a real-time multiplayer tabletop and party game platform.
+Web frontend cho nền tảng chơi board game và party game trực tuyến nhiều người chơi theo thời gian thực (BoardVerse). Ứng dụng cung cấp giao diện tương tác trực quan cho các tựa game như Night of Bloodlines (Đêm Huyết Tộc), kết nối với backend qua REST API và WebSocket.
 
-Built with React 19, TypeScript, and Vite. Connects to `partygameonline-server` over REST and WebSockets.
+## Công nghệ sử dụng
 
-## Architecture & Tech Stack
+- Giao diện: React 19, TypeScript, Vite
+- Quản lý trạng thái: Zustand, TanStack Query (React Query) v5
+- Định tuyến: React Router v7
+- Styling và UI: CSS Modules, Design Tokens, Lucide React
 
-- **UI Shell & State:** React 19, TypeScript, Zustand, TanStack Query v5, React Router v7.
-- **Game UI:** Night of Bloodlines board, card, Moon Mark, and decision components.
-- **Styling:** CSS Modules, Design Tokens (Daybreak & Midnight themes).
-- **Networking:** WebSocket client for real-time game actions and projected state events; REST client for sessions and rooms.
+## Cấu trúc thư mục
 
-## Project Structure
+- apps/web/src/app: Cấu hình router, providers và layout chính
+- apps/web/src/features: Các tính năng cốt lõi (xác thực, danh sách phòng, chat)
+- apps/web/src/games: Logic giao diện và tài nguyên riêng cho từng game (ví dụ: Night of Bloodlines)
+- apps/web/src/shared: Các component dùng chung, store, hook và tiện ích
+- scripts: Các script hỗ trợ kiểm thử và tiện ích mở rộng
 
-```text
-apps/web/
-├── public/assets/games/   # Static card textures, badges, token assets
-└── src/
-    ├── app/               # Providers, shell layout, routing
-    ├── features/          # Platform features (auth, rooms, chat)
-    ├── game/              # Shared game contracts
-    ├── games/nob/         # Night of Bloodlines components, models, assets
-    ├── pages/             # Route pages (Home, Rooms, Lobby, GamePage)
-    └── shared/            # UI components, hooks, i18n, state stores
-```
+## Yêu cầu môi trường
 
-## Getting Started
+- Node.js 20 trở lên
+- npm 10 trở lên
 
-### Prerequisites
+## Hướng dẫn cài đặt và chạy ứng dụng
 
-- Node.js 20+
-- npm 10+
+### 1. Cài đặt thư viện
 
-### Development
+Di chuyển vào thư mục ứng dụng web và cài đặt dependencies:
 
 ```bash
 cd apps/web
 npm install
+```
+
+### 2. Chạy môi trường phát triển (Development)
+
+```bash
 npm run dev
 ```
 
-The application will start at `http://localhost:5173/`. Vite is pre-configured to proxy `/api` and `/ws` requests to `http://127.0.0.1:8080/`.
+Ứng dụng sẽ chạy tại địa chỉ: `http://localhost:5173/`
 
-### Build & Verification
+Vite đã được cấu hình sẵn proxy để tự động chuyển tiếp các request `/api` và `/ws` tới backend tại `http://127.0.0.1:8080/`.
+
+Hoặc có thể chạy nhanh từ thư mục gốc của repository:
 
 ```bash
-# Typecheck
+npm run dev
+```
+
+## Hướng dẫn kiểm tra và build dự án
+
+### 1. Kiểm tra lỗi kiểu dữ liệu (Typecheck)
+
+```bash
+# Chạy từ apps/web
 npm run typecheck
 
-# Production build
+# Hoặc chạy từ thư mục gốc
+npm run typecheck
+```
+
+### 2. Build bản Production
+
+```bash
+# Chạy từ apps/web
+npm run build
+
+# Hoặc chạy từ thư mục gốc
 npm run build
 ```
 
-## License
+Kết quả build sẽ được tạo trong thư mục `apps/web/dist`.
+
+### 3. Xem trước bản build (Preview)
+
+```bash
+cd apps/web
+npm run preview
+```
+
+### 4. Chạy script mô phỏng người chơi (Bot testing)
+
+Để kiểm thử luồng chơi nhiều người trong phòng chờ mà không cần mở nhiều trình duyệt thủ công, sử dụng script bot:
+
+```bash
+# Cú pháp: node scripts/bot-players.mjs <MÃ_PHÒNG> <SỐ_LƯỢNG_BOT>
+node scripts/bot-players.mjs ABCD 6
+```
+
+## Giấy phép
 
 All rights reserved.
