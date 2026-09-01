@@ -652,12 +652,14 @@
 }
 
 .overLayer {
-  position: absolute;
+  position: fixed;
   inset: 0;
   z-index: 30;
   display: grid;
   place-items: center;
   padding: 20px 16px 24px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   background:
     radial-gradient(ellipse at 50% 18%, rgba(40, 70, 140, 0.35), transparent 52%),
     rgba(4, 8, 18, 0.88);
@@ -676,8 +678,13 @@
   flex-direction: column;
   align-items: stretch;
   gap: 14px;
-  margin-top: 52px;
-  padding: 72px 24px 22px;
+  max-height: calc(100dvh - 40px);
+  margin-top: 0;
+  padding: 112px 24px 22px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   color: #f6e7b8;
   text-align: center;
   border: 3px solid #e0b34a;
@@ -712,6 +719,7 @@
   inset: 8px;
   pointer-events: none;
   border: 1px solid rgba(232, 196, 106, 0.45);
+  border-bottom: 0;
   border-radius: 20px;
 }
 
@@ -721,7 +729,7 @@
 
 .overCrest {
   position: absolute;
-  top: -70px;
+  top: 0;
   left: 50%;
   width: 210px;
   height: 140px;
@@ -866,6 +874,39 @@
   text-shadow: 0 0 12px rgba(80, 220, 100, 0.35);
 }
 
+.overStandingsList {
+  display: grid;
+  gap: 10px;
+  max-height: 206px;
+  padding-right: 5px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.over,
+.overStandingsList {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(224, 179, 74, 0.8) rgba(5, 12, 30, 0.7);
+}
+
+.over::-webkit-scrollbar,
+.overStandingsList::-webkit-scrollbar {
+  width: 8px;
+}
+
+.over::-webkit-scrollbar-track,
+.overStandingsList::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: rgba(5, 12, 30, 0.7);
+}
+
+.over::-webkit-scrollbar-thumb,
+.overStandingsList::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(224, 179, 74, 0.8);
+}
+
 .over[data-win="false"] .overWinners h3 {
   color: #e6c98a;
   text-shadow: none;
@@ -986,7 +1027,7 @@
   min-height: 48px;
   color: #8eb4ff;
   border: 1px solid rgba(180, 160, 90, 0.45);
-  background: transparent;
+  background: #07122e;
 }
 
 .overLeave:hover {
@@ -996,6 +1037,7 @@
 .over[data-win="false"] .overLeave {
   color: #d24a52;
   border-color: rgba(196, 161, 90, 0.45);
+  background: #0a0506;
 }
 
 .over[data-win="false"] .overLeave:hover {

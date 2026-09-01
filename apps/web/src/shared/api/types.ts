@@ -16,9 +16,15 @@ export class ApiError extends Error {
   }
 }
 
+export const DISPLAY_NAME_MAX_LENGTH = 10;
+
 export interface AuthPayload {
   username: string;
   password: string;
+}
+
+export interface RegisterPayload extends AuthPayload {
+  displayName: string;
 }
 
 export interface SessionDto {

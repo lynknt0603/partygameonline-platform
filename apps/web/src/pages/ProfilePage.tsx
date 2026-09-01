@@ -19,6 +19,7 @@ import { PageHeading } from "@/shared/components/PageHeading/PageHeading";
 import { PlayerAvatar } from "@/shared/components/PlayerAvatar/PlayerAvatar";
 import { AVATAR_ASSETS, avatarUrlForPlayer } from "@/shared/avatar/avatar";
 import { fetchPlayerStats, fetchPublicPlayerStats } from "@/shared/api/stats";
+import { DISPLAY_NAME_MAX_LENGTH } from "@/shared/api/types";
 import { useLocale, useT } from "@/shared/i18n/useT";
 import { useSessionStore } from "@/shared/state/sessionStore";
 import { Link } from "react-router-dom";
@@ -132,10 +133,9 @@ export function ProfilePage({ profileUsername }: { profileUsername?: string } = 
   };
   const bone = stats?.wheresTheBoneStats ?? {
     totalMatches: 0, matchesWon: 0, winRate: 0,
-    boneThief: { matchesPlayed: 0, matchesWon: 0, winRate: 0 },
-    yardDog: { matchesPlayed: 0, matchesWon: 0, winRate: 0 },
     whiteDog: { matchesPlayed: 0, matchesWon: 0, winRate: 0 },
-    packmate: { matchesPlayed: 0, matchesWon: 0, winRate: 0 },
+    yardTeam: { matchesPlayed: 0, matchesWon: 0, winRate: 0 },
+    boneThiefTeam: { matchesPlayed: 0, matchesWon: 0, winRate: 0 },
     elo: 5000, highestElo: 5000,
   };
 
@@ -295,7 +295,7 @@ export function ProfilePage({ profileUsername }: { profileUsername?: string } = 
                 type="text"
                 value={nameInput}
                 onChange={(e) => setNameInput(e.target.value)}
-                maxLength={32}
+                maxLength={DISPLAY_NAME_MAX_LENGTH}
                 required
                 autoFocus
               />
@@ -628,7 +628,45 @@ export function ProfilePage({ profileUsername }: { profileUsername?: string } = 
           <div className={`${styles.kpiCard} theme-card`}><div className={styles.kpiIconWrapper}><Crosshair size={22} className={styles.kpiIconTarget} /></div><div className={styles.kpiInfo}><span className={styles.kpiLabel}>{t("winRate")}</span><span className={styles.kpiValue}>{bone.winRate}%</span></div></div>
         </div>
         <div className={styles.factionGrid}>
-          {[[locale === "vi" ? "Chó Trộm Xương" : "Bone Thief", bone.boneThief], [locale === "vi" ? "Chó Canh Sân" : "Yard Dog", bone.yardDog], [locale === "vi" ? "Chó Trắng" : "White Dog", bone.whiteDog], [locale === "vi" ? "Đồng minh" : "Secret Packmate", bone.packmate]].map(([label, item]) => <div className={`${styles.factionCard} theme-card`} key={label as string}><div className={styles.factionDetails}><h4>{label as string}</h4><div className={styles.factionRow}><span>{t("matchesPlayed")}</span><strong>{(item as typeof bone.boneThief).matchesPlayed}</strong></div><div className={styles.factionRow}><span>{t("matchesWon")}</span><strong>{(item as typeof bone.boneThief).matchesWon}</strong></div><div className={styles.factionRow}><span>{t("winRate")}</span><strong>{(item as typeof bone.boneThief).winRate}%</strong></div></div></div>)}
+          {[
+            {
+              key: "white-dog",
+              label: locale === "vi" ? "Chó Trắng" : "White Dog",
+              image: "/assets/games/wheres-the-bone/white-dog.png",
+              item: bone.whiteDog,
+              titleClass: styles.boneWhiteTitle,
+              highlightClass: styles.boneWhiteHighlight,
+            },
+            {
+              key: "yard-team",
+              label: locale === "vi" ? "Phe Canh Sân" : "Yard Team",
+              image: "/assets/games/wheres-the-bone/yard-dog-1.png",
+              item: bone.yardTeam,
+              titleClass: styles.boneYardTitle,
+              highlightClass: styles.boneYardHighlight,
+            },
+            {
+              key: "bone-thief-team",
+              label: locale === "vi" ? "Phe Chó Trộm Xương" : "Bone Thief Team",
+              image: "/assets/games/wheres-the-bone/bone-thief.png",
+              item: bone.boneThiefTeam,
+              titleClass: styles.boneThiefTitle,
+              highlightClass: styles.boneThiefHighlight,
+            },
+          ].map(({ key, label, image, item, titleClass, highlightClass }) => (
+            <div className={`${styles.factionCard} theme-card`} key={key}>
+              <div className={styles.factionArtWrapper}>
+                <img src={image} alt={label} className={styles.factionArt} />
+                <div className={styles.factionArtOverlay} />
+              </div>
+              <div className={styles.factionDetails}>
+                <h4 className={titleClass}>{label}</h4>
+                <div className={styles.factionRow}><span>{t("matchesPlayed")}</span><strong>{item.matchesPlayed}</strong></div>
+                <div className={styles.factionRow}><span>{t("matchesWon")}</span><strong>{item.matchesWon}</strong></div>
+                <div className={styles.factionRow}><span>{t("winRate")}</span><strong className={highlightClass}>{item.winRate}%</strong></div>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
         </>

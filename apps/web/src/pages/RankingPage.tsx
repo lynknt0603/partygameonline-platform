@@ -7,44 +7,75 @@ import {
   type RankingBloodline,
   type RankingEntryDto,
   type RankingGameId,
+  type RankingRole,
   type RankingSort,
 } from "@/shared/api/ranking";
 import { PlayerAvatar } from "@/shared/components/PlayerAvatar/PlayerAvatar";
+import type { MessageKey } from "@/shared/i18n/messages";
+import { useT } from "@/shared/i18n/useT";
 import { useSessionStore } from "@/shared/state/sessionStore";
 import styles from "./RankingPage.module.css";
 
+type Translator = (key: MessageKey) => string;
+
 const BLOODLINES: Array<{
   id: Exclude<RankingBloodline, null>;
-  label: string;
+  labelKey: MessageKey;
   image: string;
   className: string;
 }> = [
   {
     id: "WEREWOLF",
-    label: "TOP WEREWOLF",
+    labelKey: "rankingTopWerewolf",
     image: "/assets/games/nob/bloodlines/werewolf-01.png",
     className: "werewolf",
   },
   {
     id: "VAMPIRE",
-    label: "TOP VAMPIRE",
+    labelKey: "rankingTopVampire",
     image: "/assets/games/nob/bloodlines/vampire-01.png",
     className: "vampire",
   },
   {
     id: "HALFBLOOD",
-    label: "TOP HALFBLOOD",
+    labelKey: "rankingTopHalfblood",
     image: "/assets/games/nob/bloodlines/halfblood.png",
     className: "halfblood",
   },
 ];
 
-const SORT_OPTIONS: Array<{ id: RankingSort; label: string; icon: typeof Crown }> = [
-  { id: "highestElo", label: "ELO CAO NHẤT", icon: Crown },
-  { id: "wins", label: "SỐ TRẬN THẮNG", icon: Trophy },
-  { id: "bloodlineWins", label: "ROLE NHIỀU ROUND THẮNG", icon: Shield },
-  { id: "vegetarianWinRate", label: "TOP TỶ LỆ THẮNG ĂN CHAY", icon: Leaf },
-  { id: "meatEaterWinRate", label: "TOP TỶ LỆ THẮNG ĂN THỊT", icon: Utensils },
+const WHERES_THE_BONE_ROLES: Array<{
+  id: Exclude<RankingRole, null>;
+  labelKey: MessageKey;
+  image: string;
+  className: string;
+}> = [
+  {
+    id: "WHITE_DOG",
+    labelKey: "rankingTopWhiteDog",
+    image: "/assets/games/wheres-the-bone/white-dog.png",
+    className: "whiteDog",
+  },
+  {
+    id: "YARD_TEAM",
+    labelKey: "rankingTopYardTeam",
+    image: "/assets/games/wheres-the-bone/yard-dog-1.png",
+    className: "yardDog",
+  },
+  {
+    id: "BONE_THIEF_TEAM",
+    labelKey: "rankingTopBoneThiefTeam",
+    image: "/assets/games/wheres-the-bone/bone-thief.png",
+    className: "boneThief",
+  },
+];
+
+const SORT_OPTIONS: Array<{ id: RankingSort; labelKey: MessageKey; icon: typeof Crown }> = [
+  { id: "highestElo", labelKey: "rankingHighestElo", icon: Crown },
+  { id: "wins", labelKey: "rankingMatchesWon", icon: Trophy },
+  { id: "bloodlineWins", labelKey: "rankingMostRoundWinsByRole", icon: Shield },
+  { id: "vegetarianWins", labelKey: "rankingTopVegetarian", icon: Leaf },
+  { id: "meatEaterWins", labelKey: "rankingTopMeatEater", icon: Utensils },
 ];
 
 const RANKING_GAMES: Array<{ id: RankingGameId; label: string }> = [
@@ -60,16 +91,57 @@ function formatNumber(value: number): string {
 function rankingScore(entry: RankingEntryDto, sort: RankingSort): number {
   if (sort === "wins") return entry.totalWins;
   if (sort === "bloodlineWins") return entry.bloodlineWins;
-  if (sort === "vegetarianWinRate") return entry.vegetarianWinRate ?? 0;
-  if (sort === "meatEaterWinRate") return entry.meatEaterWinRate ?? 0;
+  if (sort === "roleWins") return entry.roleWins;
+  if (sort === "vegetarianWins") return entry.vegetarianWins ?? 0;
+  if (sort === "meatEaterWins") return entry.meatEaterWins ?? 0;
   return entry.highestElo;
+}
+
+function isNotInMyPotFactionSort(sort: RankingSort): boolean {
+  return sort === "vegetarianWins" || sort === "meatEaterWins";
+}
+
+function factionWinRate(entry: RankingEntryDto, sort: RankingSort): number {
+  return sort === "vegetarianWins"
+    ? entry.vegetarianWinRate ?? 0
+    : entry.meatEaterWinRate ?? 0;
+}
+
+function factionWinsLabel(sort: RankingSort, t: Translator): string {
+  return sort === "vegetarianWins" ? t("rankingVegetarianWins") : t("rankingMeatEaterWins");
+}
+
+function roleLabel(value: string | null | undefined, t: Translator): string {
+  switch (value) {
+    case "WHITE_DOG":
+      return t("rankingWhiteDog");
+    case "YARD_TEAM":
+      return t("rankingYardTeam");
+    case "BONE_THIEF_TEAM":
+      return t("rankingBoneThiefTeam");
+    default:
+      return t("rankingRole");
+  }
+}
+
+function roleImage(value?: string | null): string {
+  switch (value) {
+    case "WHITE_DOG":
+      return "/assets/games/wheres-the-bone/white-dog.png";
+    case "BONE_THIEF_TEAM":
+      return "/assets/games/wheres-the-bone/bone-thief.png";
+    case "YARD_TEAM":
+      return "/assets/games/wheres-the-bone/yard-dog-1.png";
+    default:
+      return "/assets/games/wheres-the-bone/white-dog.png";
+  }
 }
 
 function profilePath(entry: RankingEntryDto): string {
   return `/profile/${encodeURIComponent(entry.username || entry.playerId)}`;
 }
 
-function bloodlineLabel(value?: string | null): string {
+function bloodlineLabel(value: string | null | undefined, t: Translator): string {
   switch (value) {
     case "VAMPIRE":
       return "VAMPIRE";
@@ -78,7 +150,7 @@ function bloodlineLabel(value?: string | null): string {
     case "HALFBLOOD":
       return "HALFBLOOD";
     default:
-      return "YARD DOG";
+      return t("rankingBloodline");
   }
 }
 
@@ -100,27 +172,34 @@ function PodiumCard({
   position,
   sort,
   bloodline,
+  role,
 }: {
   entry: RankingEntryDto;
   position: 1 | 2 | 3;
   sort: RankingSort;
   bloodline: RankingBloodline;
+  role: RankingRole;
 }) {
+  const t = useT();
   const isFirst = position === 1;
   const isSecond = position === 2;
 
-  let subtitle = "ELO CAO NHẤT";
+  let subtitle = t("rankingHighestElo");
   let scoreValue = rankingScore(entry, sort);
 
   if (sort === "wins") {
-    subtitle = "SỐ TRẬN THẮNG";
+    subtitle = t("rankingMatchesWon");
     scoreValue = entry.totalWins;
   } else if (sort === "bloodlineWins") {
-    subtitle = bloodline ? `ROUND THẮNG ${bloodline}` : "ROLE NHIỀU ROUND THẮNG";
-  } else if (sort === "vegetarianWinRate") {
-    subtitle = "TỶ LỆ THẮNG ĂN CHAY";
-  } else if (sort === "meatEaterWinRate") {
-    subtitle = "TỶ LỆ THẮNG ĂN THỊT";
+    subtitle = bloodline
+      ? t("rankingRoundWinsForRole").replace("{role}", bloodline)
+      : t("rankingMostRoundWinsByRole");
+  } else if (sort === "roleWins") {
+    subtitle = t("rankingMatchWinsForRole").replace("{role}", roleLabel(role ?? entry.favoriteRole, t));
+  } else if (sort === "vegetarianWins") {
+    subtitle = t("rankingTopVegetarian");
+  } else if (sort === "meatEaterWins") {
+    subtitle = t("rankingTopMeatEater");
   }
 
   return (
@@ -147,9 +226,9 @@ function PodiumCard({
 
       {/* Score with Icon */}
       <div className={styles.podiumScoreRow}>
-        {sort === "wins" ? (
+        {sort === "wins" || isNotInMyPotFactionSort(sort) ? (
           <Trophy size={16} className={isFirst ? styles.goldCup : isSecond ? styles.silverIcon : styles.bronzeCup} aria-hidden="true" />
-        ) : sort === "bloodlineWins" ? (
+        ) : sort === "bloodlineWins" || sort === "roleWins" ? (
           <Swords size={16} className={isFirst ? styles.goldCup : isSecond ? styles.silverIcon : styles.bronzeCup} aria-hidden="true" />
         ) : isFirst ? (
           <Trophy size={16} className={styles.goldCup} aria-hidden="true" />
@@ -158,7 +237,7 @@ function PodiumCard({
         ) : (
           <Trophy size={16} className={styles.bronzeCup} aria-hidden="true" />
         )}
-        <strong className={styles.podiumScore}>{formatNumber(scoreValue)}{sort.endsWith("WinRate") ? "%" : ""}</strong>
+        <strong className={styles.podiumScore}>{formatNumber(scoreValue)}</strong>
       </div>
     </article>
   );
@@ -168,12 +247,16 @@ function RankingTableRow({
   entry,
   sort,
   isNob,
+  isWheresTheBone,
 }: {
   entry: RankingEntryDto;
   sort: RankingSort;
   isNob: boolean;
+  isWheresTheBone: boolean;
 }) {
-  const image = bloodlineImage(entry.favoriteBloodline);
+  const t = useT();
+  const image = isWheresTheBone ? roleImage(entry.favoriteRole) : bloodlineImage(entry.favoriteBloodline);
+  const factionSort = isNotInMyPotFactionSort(sort);
   return (
     <div className={styles.tableRow}>
       <div className={styles.rankCell}>
@@ -189,21 +272,19 @@ function RankingTableRow({
         {formatNumber(entry.highestElo)}
       </div>
       <div className={`${styles.numberCell} ${sort === "wins" ? styles.activeCell : ""}`}>
-        {formatNumber(entry.totalWins)}
+        {factionSort ? `${formatNumber(factionWinRate(entry, sort))}%` : formatNumber(entry.totalWins)}
       </div>
-      {isNob ? (
-        <div className={`${styles.bloodlineCell} ${sort === "bloodlineWins" ? styles.activeCell : ""}`}>
+      {isNob || isWheresTheBone ? (
+        <div className={`${styles.bloodlineCell} ${sort === "bloodlineWins" || sort === "roleWins" ? styles.activeCell : ""}`}>
           <img src={image} alt="" className={styles.bloodlineThumb} aria-hidden="true" />
-          <span className={styles.bloodlineName}>{bloodlineLabel(entry.favoriteBloodline)}</span>
-          <strong className={styles.bloodlineScore}>{entry.bloodlineWins}</strong>
+          <span className={styles.bloodlineName}>
+            {isWheresTheBone ? roleLabel(entry.favoriteRole, t) : bloodlineLabel(entry.favoriteBloodline, t)}
+          </span>
+          <strong className={styles.bloodlineScore}>{isWheresTheBone ? entry.roleWins : entry.bloodlineWins}</strong>
         </div>
       ) : (
-        <div className={`${styles.numberCell} ${sort === "vegetarianWinRate" || sort === "meatEaterWinRate" ? styles.activeCell : ""}`}>
-          {sort === "vegetarianWinRate"
-            ? `${entry.vegetarianWinRate ?? 0}%`
-            : sort === "meatEaterWinRate"
-              ? `${entry.meatEaterWinRate ?? 0}%`
-              : formatNumber(entry.elo)}
+        <div className={`${styles.numberCell} ${factionSort ? styles.activeCell : ""}`}>
+          {factionSort ? formatNumber(rankingScore(entry, sort)) : formatNumber(entry.elo)}
         </div>
       )}
     </div>
@@ -211,26 +292,38 @@ function RankingTableRow({
 }
 
 export function RankingPage() {
-  const currentDisplayName = useSessionStore((state) => state.session?.displayName) || "You";
+  const t = useT();
+  const currentDisplayName = useSessionStore((state) => state.session?.displayName) || t("you");
 
   const [gameId, setGameId] = useState<RankingGameId>("night-of-bloodlines");
   const [sort, setSort] = useState<RankingSort>("highestElo");
   const [bloodline, setBloodline] = useState<RankingBloodline>(null);
+  const [role, setRole] = useState<RankingRole>(null);
   const [page, setPage] = useState(0);
 
   const isNob = gameId === "night-of-bloodlines";
   const isNotInMyPot = gameId === "not-in-my-pot";
+  const isWheresTheBone = gameId === "wheres-the-bone";
+  const isFactionRanking = isNotInMyPotFactionSort(sort);
+  const selectedGameName = RANKING_GAMES.find((game) => game.id === gameId)?.label ?? gameId;
   const visibleSortOptions = SORT_OPTIONS.filter((option) =>
     isNob
-      ? option.id !== "vegetarianWinRate" && option.id !== "meatEaterWinRate"
+      ? option.id !== "vegetarianWins" && option.id !== "meatEaterWins"
       : isNotInMyPot
         ? option.id !== "bloodlineWins"
         : option.id === "highestElo" || option.id === "wins"
   );
 
   const ranking = useQuery({
-    queryKey: ["ranking", gameId, sort, bloodline, page],
-    queryFn: () => fetchRanking({ gameId, sort, bloodline: isNob ? bloodline : null, page, size: 7 }),
+    queryKey: ["ranking", gameId, sort, bloodline, role, page],
+    queryFn: () => fetchRanking({
+      gameId,
+      sort,
+      bloodline: isNob ? bloodline : null,
+      role: isWheresTheBone ? role : null,
+      page,
+      size: 7,
+    }),
   });
 
   const podium = ranking.data?.podium ?? [];
@@ -249,9 +342,16 @@ export function RankingPage() {
     setPage(0);
   };
 
+  const selectRole = (nextRole: RankingRole) => {
+    setRole(nextRole);
+    setSort("roleWins");
+    setPage(0);
+  };
+
   const selectGame = (nextGameId: RankingGameId) => {
     setGameId(nextGameId);
     setBloodline(null);
+    setRole(null);
     setSort("highestElo");
     setPage(0);
   };
@@ -265,17 +365,17 @@ export function RankingPage() {
     <div className={styles.pageContainer}>
       <div className={styles.board}>
         {/* Left Sidebar */}
-        <aside className={styles.sidebar} aria-label="Ranking filters">
+        <aside className={styles.sidebar} aria-label={t("rankingFilters")}>
           <div className={styles.brandLockup}>
-            <strong>RANKING</strong>
+            <strong>{t("rankingBrand")}</strong>
           </div>
 
           <label className={styles.gameSelector}>
-            <span>TRÒ CHƠI</span>
+            <span>{t("rankingGame")}</span>
             <select
               value={gameId}
               onChange={(event) => selectGame(event.target.value as RankingGameId)}
-              aria-label="Chọn bảng xếp hạng theo trò chơi"
+              aria-label={t("rankingSelectGame")}
             >
               {RANKING_GAMES.map((game) => (
                 <option key={game.id} value={game.id}>
@@ -285,21 +385,22 @@ export function RankingPage() {
             </select>
           </label>
 
-          <div className={styles.filterList} role="tablist" aria-label="Ranking sort">
-            {visibleSortOptions.map(({ id, label, icon: Icon }) => (
+          <div className={styles.filterList} role="tablist" aria-label={t("rankingSort")}>
+            {visibleSortOptions.map(({ id, labelKey, icon: Icon }) => (
               <button
                 key={id}
                 type="button"
-                className={`${styles.filterButton} ${sort === id && bloodline === null ? styles.filterActive : ""}`}
+                className={`${styles.filterButton} ${sort === id && bloodline === null && role === null ? styles.filterActive : ""}`}
                 onClick={() => {
                   setBloodline(null);
+                  setRole(null);
                   selectSort(id);
                 }}
                 role="tab"
-                aria-selected={sort === id && bloodline === null}
+                aria-selected={sort === id && bloodline === null && role === null}
               >
                 <Icon size={20} className={styles.filterIcon} aria-hidden="true" />
-                <span>{label}</span>
+                <span>{t(labelKey)}</span>
               </button>
             ))}
           </div>
@@ -316,72 +417,86 @@ export function RankingPage() {
                 <div className={styles.bloodlineCrestWrapper}>
                   <img src={item.image} alt="" className={styles.bloodlineCrestImg} aria-hidden="true" />
                 </div>
-                <span className={styles.bloodlineFilterLabel}>{item.label}</span>
+                <span className={styles.bloodlineFilterLabel}>{t(item.labelKey)}</span>
                 <ChevronRight size={16} className={styles.bloodlineChevron} aria-hidden="true" />
               </button>
               ))}
             </div>
-          ) : (
-            <div className={styles.notInMyPotSidebarNote}>
-              <span>NOT IN MY POT</span>
-              <p>ELO và thành tích được tính độc lập với Night of Bloodlines.</p>
+          ) : isWheresTheBone ? (
+            <div className={`${styles.bloodlineFilters} ${styles.roleFilters}`}>
+              {WHERES_THE_BONE_ROLES.map((item) => (
+                <button
+                  type="button"
+                  key={item.id}
+                  className={`${styles.bloodlineFilter} ${styles[item.className]} ${role === item.id ? styles.bloodlineActive : ""}`}
+                  onClick={() => selectRole(item.id)}
+                >
+                  <div className={styles.bloodlineCrestWrapper}>
+                    <img src={item.image} alt="" className={styles.bloodlineCrestImg} aria-hidden="true" />
+                  </div>
+                  <span className={styles.bloodlineFilterLabel}>{t(item.labelKey)}</span>
+                  <ChevronRight size={16} className={styles.bloodlineChevron} aria-hidden="true" />
+                </button>
+              ))}
             </div>
-          )}
+          ) : null}
         </aside>
 
         {/* Right Main Content */}
         <main className={styles.content}>
           <header className={styles.header}>
             <div>
-              <h2 className={styles.headerTitle}>BẢNG XẾP HẠNG</h2>
+              <h2 className={styles.headerTitle}>{t("rankingTitle")}</h2>
               <p className={styles.headerGameName}>
-                {isNob ? "Night of Bloodlines" : "Not In My Pot"}
+                {selectedGameName}
               </p>
             </div>
           </header>
 
           {ranking.isLoading ? (
             <div className={styles.emptyNotice}>
-              <p>Đang tải dữ liệu xếp hạng…</p>
+              <p>{t("rankingLoading")}</p>
             </div>
           ) : isEmpty ? (
             <div className={styles.emptyNotice}>
-              <p>Chưa có người chơi hoàn tất trận {isNob ? "NOB" : "Not In My Pot"} nào.</p>
-              <span>Hãy vào phòng và chơi ván đầu tiên để bắt đầu ghi danh lên bảng xếp hạng!</span>
+              <p>{t("rankingEmpty").replace("{game}", selectedGameName)}</p>
+              <span>{t("rankingEmptyHint")}</span>
             </div>
           ) : (
             <>
               {/* Top 3 Podium Cards (Order: 2, 1, 3) */}
               {podium.length > 0 ? (
-                <section className={styles.podium} aria-label="Top 3 players">
-                  {top2 ? <PodiumCard entry={top2} position={2} sort={sort} bloodline={bloodline} /> : <div className={styles.podiumPlaceholder} />}
-                  {top1 ? <PodiumCard entry={top1} position={1} sort={sort} bloodline={bloodline} /> : <div className={styles.podiumPlaceholder} />}
-                  {top3 ? <PodiumCard entry={top3} position={3} sort={sort} bloodline={bloodline} /> : <div className={styles.podiumPlaceholder} />}
+                <section className={styles.podium} aria-label={t("rankingTopPlayers")}>
+                  {top2 ? <PodiumCard entry={top2} position={2} sort={sort} bloodline={bloodline} role={role} /> : <div className={styles.podiumPlaceholder} />}
+                  {top1 ? <PodiumCard entry={top1} position={1} sort={sort} bloodline={bloodline} role={role} /> : <div className={styles.podiumPlaceholder} />}
+                  {top3 ? <PodiumCard entry={top3} position={3} sort={sort} bloodline={bloodline} role={role} /> : <div className={styles.podiumPlaceholder} />}
                 </section>
               ) : null}
 
               {/* Leaderboard Table (Ranks 4-10) */}
               {entries.length > 0 ? (
-                <section className={styles.tableCard} aria-label="Leaderboard table">
+                <section className={styles.tableCard} aria-label={t("rankingLeaderboard")}>
                   <div className={styles.tableHeader}>
-                    <span>HẠNG</span>
-                    <span>NGƯỜI CHƠI</span>
-                    <span className={sort === "highestElo" ? styles.activeHeader : ""}>ELO CAO NHẤT</span>
-                    <span className={sort === "wins" ? styles.activeHeader : ""}>SỐ TRẬN THẮNG</span>
-                    <span className={sort === "bloodlineWins" || sort === "vegetarianWinRate" || sort === "meatEaterWinRate" ? styles.activeHeader : ""}>
+                    <span>{t("rankingRank")}</span>
+                    <span>{t("rankingPlayer")}</span>
+                    <span className={sort === "highestElo" ? styles.activeHeader : ""}>{t("rankingHighestElo")}</span>
+                    <span className={sort === "wins" ? styles.activeHeader : ""}>
+                      {isFactionRanking ? t("winRate") : t("rankingMatchesWon")}
+                    </span>
+                    <span className={sort === "bloodlineWins" || sort === "roleWins" || isFactionRanking ? styles.activeHeader : ""}>
                       {isNob
-                        ? "ROLE NHIỀU ROUND THẮNG"
-                        : sort === "vegetarianWinRate"
-                          ? "TỶ LỆ THẮNG ĂN CHAY"
-                          : sort === "meatEaterWinRate"
-                            ? "TỶ LỆ THẮNG ĂN THỊT"
-                            : "ELO HIỆN TẠI"}
+                        ? t("rankingMostRoundWinsByRole")
+                        : isWheresTheBone
+                          ? t("rankingRoleWins")
+                          : isFactionRanking
+                            ? factionWinsLabel(sort, t)
+                            : t("rankingCurrentElo")}
                     </span>
                   </div>
 
                   <div className={styles.tableBody}>
                     {entries.map((entry) => (
-                      <RankingTableRow key={entry.playerId} entry={entry} sort={sort} isNob={isNob} />
+                      <RankingTableRow key={entry.playerId} entry={entry} sort={sort} isNob={isNob} isWheresTheBone={isWheresTheBone} />
                     ))}
                   </div>
                 </section>
@@ -389,11 +504,11 @@ export function RankingPage() {
 
               {/* User's Rank Bottom Bar (HẠNG CỦA BẠN) */}
               {me ? (
-                <section className={styles.meCard} aria-label="Your rank">
+                <section className={styles.meCard} aria-label={t("rankingYourRank")}>
                   <div className={styles.meRankCol}>
                     <div className={styles.meLabel}>
-                      <span>HẠNG</span>
-                      <span>CỦA BẠN</span>
+                      <span>{t("rankingRank")}</span>
+                      <span>{t("rankingYours")}</span>
                     </div>
                     <span className={styles.meRankNumber}>{me.rank}</span>
                   </div>
@@ -401,7 +516,7 @@ export function RankingPage() {
                   <div className={styles.meNameCol}>
                     <Link className={styles.meNameLink} to={profilePath(me)}>
                       <PlayerAvatar playerId={me.playerId} displayName={me.displayName || currentDisplayName} avatarUrl={me.avatarUrl} size={38} />
-                      <span className={styles.meNameText}>{me.displayName || "You"}</span>
+                      <span className={styles.meNameText}>{me.displayName || currentDisplayName}</span>
                     </Link>
                   </div>
 
@@ -409,27 +524,27 @@ export function RankingPage() {
                     {formatNumber(me.highestElo)}
                   </div>
                   <div className={`${styles.meWinsCol} ${sort === "wins" ? styles.activeMeNumber : ""}`}>
-                    {formatNumber(me.totalWins)}
+                    {isFactionRanking
+                      ? `${formatNumber(factionWinRate(me, sort))}%`
+                      : formatNumber(me.totalWins)}
                   </div>
 
-                  {isNob ? (
-                    <div className={`${styles.meBloodlineCol} ${sort === "bloodlineWins" ? styles.activeMeNumber : ""}`}>
+                  {isNob || isWheresTheBone ? (
+                    <div className={`${styles.meBloodlineCol} ${sort === "bloodlineWins" || sort === "roleWins" ? styles.activeMeNumber : ""}`}>
                       <img
-                        src={bloodlineImage(me.favoriteBloodline)}
+                        src={isWheresTheBone ? roleImage(me.favoriteRole) : bloodlineImage(me.favoriteBloodline)}
                         alt=""
                         className={styles.bloodlineThumb}
                         aria-hidden="true"
                       />
-                      <span className={styles.bloodlineName}>{bloodlineLabel(me.favoriteBloodline)}</span>
-                      <strong className={styles.bloodlineScore}>{me.bloodlineWins}</strong>
+                      <span className={styles.bloodlineName}>
+                        {isWheresTheBone ? roleLabel(me.favoriteRole, t) : bloodlineLabel(me.favoriteBloodline, t)}
+                      </span>
+                      <strong className={styles.bloodlineScore}>{isWheresTheBone ? me.roleWins : me.bloodlineWins}</strong>
                     </div>
                   ) : (
-                    <div className={`${styles.meEloCol} ${sort === "vegetarianWinRate" || sort === "meatEaterWinRate" ? styles.activeMeNumber : ""}`}>
-                      {sort === "vegetarianWinRate"
-                        ? `${me.vegetarianWinRate ?? 0}%`
-                        : sort === "meatEaterWinRate"
-                          ? `${me.meatEaterWinRate ?? 0}%`
-                          : formatNumber(me.elo)}
+                    <div className={`${styles.meEloCol} ${isFactionRanking ? styles.activeMeNumber : ""}`}>
+                      {isFactionRanking ? formatNumber(rankingScore(me, sort)) : formatNumber(me.elo)}
                     </div>
                   )}
                 </section>
@@ -443,7 +558,7 @@ export function RankingPage() {
                     disabled={page === 0}
                     onClick={() => setPage((current) => Math.max(0, current - 1))}
                   >
-                    Trước
+                    {t("rankingPrevious")}
                   </button>
                   <span>
                     {page + 1} / {ranking.data.totalPages}
@@ -453,7 +568,7 @@ export function RankingPage() {
                     disabled={page + 1 >= ranking.data.totalPages}
                     onClick={() => setPage((current) => current + 1)}
                   >
-                    Sau
+                    {t("rankingNext")}
                   </button>
                 </div>
               ) : null}

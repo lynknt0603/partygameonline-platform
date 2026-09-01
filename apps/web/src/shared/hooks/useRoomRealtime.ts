@@ -24,6 +24,7 @@ export function useRoomRealtime(roomId: string | undefined, options: Options = {
   const navigate = useNavigate();
   const location = useLocation();
   const playerId = useSessionStore((state) => state.session?.playerId);
+  const refreshSession = useSessionStore((state) => state.refresh);
   const optionsRef = useRef(options);
   optionsRef.current = options;
   const pathRef = useRef(location.pathname);
@@ -58,6 +59,15 @@ export function useRoomRealtime(roomId: string | undefined, options: Options = {
         return;
       }
       const payload = message.payload ?? {};
+      if (message.type === "PLAYER_LEFT" && playerId && payload.playerId === playerId) {
+        // A host kick is broadcast as a player-left event to every remaining
+        // member and to the removed player. Leave the lobby immediately for
+        // the removed player instead of attempting to rejoin it.
+        void queryClient.removeQueries({ queryKey: ["room", normalized], exact: true });
+        void refreshSession();
+        navigate("/rooms", { replace: true });
+        return;
+      }
       // The room object is included in state-change events, but refetch as
       // well so a host is corrected even if an older client/proxy drops the
       // nested snapshot or delivers it out of order. React Query only
@@ -131,5 +141,5 @@ export function useRoomRealtime(roomId: string | undefined, options: Options = {
       unsubStatus();
       unsubscribe();
     };
-  }, [roomId, playerId, queryClient, navigate]);
+  }, [roomId, playerId, queryClient, navigate, refreshSession]);
 }

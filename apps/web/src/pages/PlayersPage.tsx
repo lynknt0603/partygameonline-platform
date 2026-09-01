@@ -82,6 +82,7 @@ export function PlayersPage() {
                 <PlayerAvatar
                   playerId={player.playerId}
                   displayName={player.displayName}
+                  avatarUrl={player.avatarUrl}
                   size={52}
                 />
                 <span className={styles.resultCopy}>

@@ -41,10 +41,9 @@ export interface PlayerStatsDto {
     totalMatches: number;
     matchesWon: number;
     winRate: number;
-    boneThief: FactionStats;
-    yardDog: FactionStats;
     whiteDog: FactionStats;
-    packmate: FactionStats;
+    yardTeam: FactionStats;
+    boneThiefTeam: FactionStats;
     elo: number;
     highestElo: number;
   };
@@ -116,10 +115,9 @@ export const DEFAULT_PLAYER_STATS: PlayerStatsDto = {
     totalMatches: 0,
     matchesWon: 0,
     winRate: 0,
-    boneThief: { matchesPlayed: 0, matchesWon: 0, winRate: 0 },
-    yardDog: { matchesPlayed: 0, matchesWon: 0, winRate: 0 },
     whiteDog: { matchesPlayed: 0, matchesWon: 0, winRate: 0 },
-    packmate: { matchesPlayed: 0, matchesWon: 0, winRate: 0 },
+    yardTeam: { matchesPlayed: 0, matchesWon: 0, winRate: 0 },
+    boneThiefTeam: { matchesPlayed: 0, matchesWon: 0, winRate: 0 },
     elo: 5000,
     highestElo: 5000,
   },
@@ -138,4 +136,3 @@ export async function fetchPlayerStats(): Promise<PlayerStatsDto> {
 export async function fetchPublicPlayerStats(username: string): Promise<PlayerStatsDto> {
   return api<PlayerStatsDto>(`/api/v1/profile/${encodeURIComponent(username)}`);
 }
-

@@ -4,6 +4,7 @@ export interface PlayerSearchResultDto {
   playerId: string;
   username?: string | null;
   displayName: string;
+  avatarUrl?: string | null;
 }
 
 export async function searchPlayers(query: string, limit = 20): Promise<PlayerSearchResultDto[]> {

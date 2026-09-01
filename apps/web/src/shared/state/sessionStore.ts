@@ -10,7 +10,7 @@ import {
   updateDisplayName as updateDisplayNameRequest,
   updateAvatar as updateAvatarRequest,
 } from "@/shared/api/session";
-import type { AuthPayload, SessionDto } from "@/shared/api/types";
+import type { AuthPayload, RegisterPayload, SessionDto } from "@/shared/api/types";
 
 interface SessionState {
   session: SessionDto | null;
@@ -22,7 +22,7 @@ interface SessionState {
   updateDisplayName: (displayName: string, hideGameStats?: boolean) => Promise<void>;
   setAvatar: (avatarKey: string) => Promise<void>;
   login: (payload: AuthPayload) => Promise<SessionDto>;
-  register: (payload: AuthPayload) => Promise<SessionDto>;
+  register: (payload: RegisterPayload) => Promise<SessionDto>;
   logout: () => Promise<void>;
 }
 
@@ -84,7 +84,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     set({ session, ready: true, error: null });
     return session;
   },
-  register: async (payload: AuthPayload) => {
+  register: async (payload: RegisterPayload) => {
     const session = await registerUser(payload);
     set({ session, ready: true, error: null });
     return session;

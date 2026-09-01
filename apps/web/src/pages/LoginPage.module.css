@@ -98,6 +98,12 @@
   color: var(--text-secondary);
 }
 
+.fieldHint {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  text-align: right;
+}
+
 .input {
   min-height: 44px;
   padding: 0 var(--space-3);

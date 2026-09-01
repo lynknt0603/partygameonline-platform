@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, LogOut, Sparkles, Swords, Trophy, Volume2, VolumeX } from "lucide-react";
 import { ConfirmDialog } from "@/shared/components/ConfirmDialog/ConfirmDialog";
 import { PlayerAvatar } from "@/shared/components/PlayerAvatar/PlayerAvatar";
+import { fetchRoom } from "@/shared/api/rooms";
 import { useLeaveRoom } from "@/shared/hooks/useRooms";
 import type { MessageKey } from "@/shared/i18n/messages";
 import { useLocale, useT } from "@/shared/i18n/useT";
@@ -128,6 +130,7 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
   const t = useT();
   const locale = useLocale();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const leave = useLeaveRoom();
   const sound = useNobPrefs((state) => state.sound);
   const animations = useNobPrefs((state) => state.animations);
@@ -152,6 +155,7 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
   const [seatCards, setSeatCards] = useState<SeatCardBoard | null>(null);
   const [inspectShrunk, setInspectShrunk] = useState(false);
   const [hunterChoicesReady, setHunterChoicesReady] = useState(false);
+  const [returningToLobby, setReturningToLobby] = useState(false);
 
   const phase = view?.phase ?? "Connecting";
   const phaseKey = `${view?.roundNumber ?? view?.round ?? 0}:${phase}`;
@@ -210,6 +214,28 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
     ? (revealedMoonStealByOption[moonStealReveal.optionId] ?? null)
     : null;
   const frozen = busy || (finished && !isSummary);
+
+  const returnToLobby = useCallback(async () => {
+    if (returningToLobby) {
+      return;
+    }
+    setReturningToLobby(true);
+    setInspectMode(null);
+    setConfirmLeave(false);
+    const normalizedRoomId = room.id.toUpperCase();
+    try {
+      let freshRoom = await fetchRoom(normalizedRoomId);
+      for (let attempt = 0; freshRoom.status !== "WAITING" && attempt < 20; attempt += 1) {
+        await new Promise((resolve) => window.setTimeout(resolve, 100));
+        freshRoom = await fetchRoom(normalizedRoomId);
+      }
+      queryClient.setQueryData(["room", normalizedRoomId], freshRoom);
+      navigate(`/rooms/${freshRoom.id}`, { replace: true });
+    } catch {
+      await queryClient.invalidateQueries({ queryKey: ["room", normalizedRoomId] });
+      navigate(`/rooms/${normalizedRoomId}`, { replace: true });
+    }
+  }, [navigate, queryClient, returningToLobby, room.id]);
 
   const seats = useMemo<NobPlayerPublic[]>(() => {
     if (view?.players?.length) {
@@ -797,7 +823,7 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
             {t("viewRole")}
           </button>
           <button type="button" className={styles.textBtn} onClick={() => setInspectMode("cards")}>
-            {t("viewCards")}
+            {t("viewRoundOrder")}
           </button>
         </div>
       </header>
@@ -1417,7 +1443,7 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
       />
       <NobSeatCardsZoom board={seatCards} onClose={() => setSeatCards(null)} />
 
-      {phase === "GAME_OVER" || (finished && !isSummary) ? (
+      {!returningToLobby && (phase === "GAME_OVER" || (finished && !isSummary)) ? (
         <div className={styles.overLayer} data-win={youWon ? "true" : "false"}>
           <div className={styles.over} data-win={youWon ? "true" : "false"} role="dialog" aria-labelledby="nob-game-over-title">
             <img
@@ -1462,44 +1488,51 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
                 <Trophy size={18} aria-hidden="true" />
                 {t("finalStandings")}
               </h3>
-              {finalStandings.map(({ seat, score, rank }) => {
-                const eloDisplay = formatCurrentElo(seat);
-                return (
-                  <div
-                    key={seat.playerId}
-                    className={styles.overWinner}
-                    data-winner={winners.includes(seat.playerId) ? "true" : "false"}
-                  >
-                    <span className={styles.overRank}>#{rank}</span>
-                    <PlayerAvatar
-                      playerId={seat.playerId}
-                      displayName={seat.displayName}
-                      avatarUrl={seat.avatarUrl}
-                      size={44}
-                      className={styles.overAvatar}
-                      decorative
-                    />
-                    <span className={styles.overPlayerDetails}>
-                      <strong>
-                        {seat.displayName}
-                        <small className={styles.overMoonScore}>
-                          {t("moonMarkScore").replace("{count}", String(score))}
-                        </small>
-                      </strong>
-                      {eloDisplay ? (
-                        <small
-                          className={styles.overElo}
-                          data-positive={seat.eloDelta! > 0 ? "true" : seat.eloDelta! < 0 ? "false" : "neutral"}
-                        >
-                          {t("eloRating")}: {eloDisplay}
-                        </small>
-                      ) : null}
-                    </span>
-                  </div>
-                );
-              })}
+              <div className={styles.overStandingsList}>
+                {finalStandings.map(({ seat, score, rank }) => {
+                  const eloDisplay = formatCurrentElo(seat);
+                  return (
+                    <div
+                      key={seat.playerId}
+                      className={styles.overWinner}
+                      data-winner={winners.includes(seat.playerId) ? "true" : "false"}
+                    >
+                      <span className={styles.overRank}>#{rank}</span>
+                      <PlayerAvatar
+                        playerId={seat.playerId}
+                        displayName={seat.displayName}
+                        avatarUrl={seat.avatarUrl}
+                        size={44}
+                        className={styles.overAvatar}
+                        decorative
+                      />
+                      <span className={styles.overPlayerDetails}>
+                        <strong>
+                          {seat.displayName}
+                          <small className={styles.overMoonScore}>
+                            {t("moonMarkScore").replace("{count}", String(score))}
+                          </small>
+                        </strong>
+                        {eloDisplay ? (
+                          <small
+                            className={styles.overElo}
+                            data-positive={seat.eloDelta! > 0 ? "true" : seat.eloDelta! < 0 ? "false" : "neutral"}
+                          >
+                            {t("eloRating")}: {eloDisplay}
+                          </small>
+                        ) : null}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
             </section>
-            <button type="button" className={styles.overPlay} onClick={() => navigate(`/rooms/${room.id}`)}>
+            <button
+              type="button"
+              className={styles.overPlay}
+              disabled={returningToLobby}
+              onClick={() => void returnToLobby()}
+            >
               <Swords size={18} aria-hidden="true" />
               {t("playAgain")}
             </button>

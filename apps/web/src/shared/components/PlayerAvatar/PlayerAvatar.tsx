@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { avatarUrlForPlayer, initialsForAvatar } from "@/shared/avatar/avatar";
 import { useSessionStore } from "@/shared/state/sessionStore";
 import styles from "./PlayerAvatar.module.css";
@@ -26,6 +26,10 @@ export function PlayerAvatar({
   );
   const src = avatarUrlForPlayer(playerId, sessionAvatarUrl ?? avatarUrl);
   const classes = [styles.avatar, className].filter(Boolean).join(" ");
+
+  useEffect(() => {
+    setFailed(false);
+  }, [src]);
 
   if (failed) {
     return (

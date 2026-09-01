@@ -1,4 +1,5 @@
-import { Crown, Plus } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ChevronDown, Crown, ExternalLink, Plus, UserRound, UserX } from "lucide-react";
 import type { LobbySeat } from "@/shared/lobby/roomView";
 import { useT } from "@/shared/i18n/useT";
 import { PlayerAvatar } from "@/shared/components/PlayerAvatar/PlayerAvatar";
@@ -15,6 +16,8 @@ interface PlayerSeatProps {
 
 export function PlayerSeat({ player, position = "bottom", compact = false, onKick }: PlayerSeatProps) {
   const t = useT();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   const empty = player.state === "empty";
   const label = empty ? t("openSeat") : player.isYou ? t("you") : player.name;
   const statusText =
@@ -25,6 +28,30 @@ export function PlayerSeat({ player, position = "bottom", compact = false, onKic
         : player.state === "disconnected"
           ? `⚠ ${t("reconnecting")}`
           : "";
+
+  useEffect(() => {
+    if (!menuOpen) {
+      return;
+    }
+
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [menuOpen]);
 
   return (
     <div
@@ -53,18 +80,57 @@ export function PlayerSeat({ player, position = "bottom", compact = false, onKic
         )}
       </div>
       <div className={styles.meta}>
-        <p className={styles.name}>{label}</p>
+        {empty ? (
+          <p className={styles.name}>{label}</p>
+        ) : (
+          <div className={styles.playerMenu} ref={menuRef}>
+            <button
+              type="button"
+              className={styles.nameButton}
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen((open) => !open)}
+            >
+              <span>{label}</span>
+              <ChevronDown size={13} aria-hidden="true" />
+            </button>
+            {menuOpen ? (
+              <div className={styles.playerMenuPopover} role="menu">
+                <a
+                  href={`/profile/${encodeURIComponent(player.id)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  role="menuitem"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <UserRound size={16} aria-hidden="true" />
+                  <span>{t("viewPlayerProfile")}</span>
+                  <ExternalLink size={13} className={styles.externalIcon} aria-hidden="true" />
+                </a>
+                {onKick && !player.isYou ? (
+                  <button
+                    type="button"
+                    className={styles.menuKick}
+                    role="menuitem"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onKick(player.id);
+                    }}
+                  >
+                    <UserX size={16} aria-hidden="true" />
+                    <span>{t("kick")}</span>
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+        )}
         {statusText ? (
           <p className={styles.status} data-ready={player.state === "ready"}>
             {statusText}
           </p>
         ) : null}
       </div>
-      {onKick && !empty && !player.isYou ? (
-        <button type="button" className={styles.kick} onClick={() => onKick(player.id)}>
-          {t("kick")}
-        </button>
-      ) : null}
     </div>
   );
 }
