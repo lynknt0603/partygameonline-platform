@@ -214,6 +214,9 @@ function cardLabel(card: NotInMyPotCard, locale: "vi" | "en"): string {
 }
 
 function phaseLabel(phase: string, locale: "vi" | "en"): string {
+  if (phase === "ROLE_REVEAL") {
+    return locale === "vi" ? "Đang xem vai và bài" : "Reviewing role and hand";
+  }
   if (phase === "PLAYING") {
     return locale === "vi" ? "Đang nấu" : "Cooking in progress";
   }
@@ -362,6 +365,7 @@ function NimpCard({
   compact = false,
   interactive = true,
   selected = false,
+  selectionOrder,
   disabled = false,
   onClick,
   showScore = true,
@@ -371,6 +375,7 @@ function NimpCard({
   compact?: boolean;
   interactive?: boolean;
   selected?: boolean;
+  selectionOrder?: number;
   disabled?: boolean;
   onClick?: () => void;
   showScore?: boolean;
@@ -386,6 +391,7 @@ function NimpCard({
     .join(" ");
   const content = (
     <>
+      {selectionOrder ? <span className={styles.cardSelectionOrder}>{selectionOrder}</span> : null}
       <img className={styles.cardImage} src={meta.art} alt="" loading="eager" decoding="async" />
       <span className={styles.cardFooter}>
         <strong>{locale === "vi" ? meta.labelVi : meta.labelEn}</strong>
@@ -403,7 +409,14 @@ function NimpCard({
       className={className}
       onClick={onClick}
       disabled={disabled}
-      aria-label={locale === "vi" ? `Chọn lá ${meta.labelVi}` : `Select ${meta.labelEn} card`}
+      aria-pressed={selected}
+      aria-label={selectionOrder
+        ? locale === "vi"
+          ? `Lá ${meta.labelVi}, thứ tự trả lại số ${selectionOrder}. Bấm lại để bỏ chọn`
+          : `${meta.labelEn} card, return order ${selectionOrder}. Click again to deselect`
+        : locale === "vi"
+          ? `Chọn lá ${meta.labelVi}`
+          : `Select ${meta.labelEn} card`}
     >
       {content}
     </button>
@@ -787,7 +800,6 @@ export function NotInMyPotPlayPage({
   const navigate = useNavigate();
   const leave = useLeaveRoom();
   const [showRole, setShowRole] = useState(false);
-  const [roleSeen, setRoleSeen] = useState(false);
   const [showRules, setShowRules] = useState(false);
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
   const [logCollapsed, setLogCollapsed] = useState(false);
@@ -805,6 +817,7 @@ export function NotInMyPotPlayPage({
   const [activeMotion, setActiveMotion] = useState<TableMotionItem | null>(null);
   const [motionQueue, setMotionQueue] = useState<TableMotionItem[]>([]);
   const motionCursor = useRef<{ roomId: string; eventCount: number } | null>(null);
+  const initialRoleRevealKey = useRef<string | null>(null);
 
   useEffect(() => {
     const images = NOT_IN_MY_POT_PRELOAD_ASSETS.map((src) => {
@@ -821,11 +834,24 @@ export function NotInMyPotPlayPage({
   }, []);
 
   useEffect(() => {
-    if (view?.myRole && !roleSeen) {
-      setRoleSeen(true);
-      setShowRole(true);
+    if (view?.phase !== "ROLE_REVEAL" || !view.myRole || !view.turnDeadline) {
+      return;
     }
-  }, [roleSeen, view?.myRole]);
+    const revealKey = `${view.roomId}:${view.turnDeadline}`;
+    if (initialRoleRevealKey.current === revealKey) {
+      return;
+    }
+    initialRoleRevealKey.current = revealKey;
+    const autoCloseAt = new Date(view.turnDeadline).getTime() - 5_000;
+    const closeDelay = autoCloseAt - Date.now();
+    if (closeDelay <= 0) {
+      setShowRole(false);
+      return;
+    }
+    setShowRole(true);
+    const timer = window.setTimeout(() => setShowRole(false), closeDelay);
+    return () => window.clearTimeout(timer);
+  }, [view?.myRole, view?.phase, view?.roomId, view?.turnDeadline]);
 
   useEffect(() => {
     setNoticeHidden(false);
@@ -877,6 +903,15 @@ export function NotInMyPotPlayPage({
   }, [selectedHandCardId, view]);
 
   useEffect(() => {
+    if (view?.canAct) {
+      return;
+    }
+    setSelectedHandCardId(null);
+    setSelectedAction(null);
+    setSelectedActionTarget(null);
+  }, [view?.canAct, view?.currentPlayerId, view?.turnNumber]);
+
+  useEffect(() => {
     if (!view?.finished) {
       setRevealCompletedVersion(null);
     }
@@ -912,6 +947,9 @@ export function NotInMyPotPlayPage({
   const latestActionEventKey = latestActionEvent ? `${view?.roomId ?? room.id}:${latestActionEventIndex}` : null;
   const latestIngredientEvent = events.find((event) => event.type === "INGREDIENT_DECLARED") ?? null;
   const turnSecondsRemaining = view && !view.finished && view.currentPlayerId
+    ? remainingSeconds(view.turnDeadline)
+    : null;
+  const preparationSecondsRemaining = view && !view.finished && view.phase === "ROLE_REVEAL"
     ? remainingSeconds(view.turnDeadline)
     : null;
   // Keep `now` in the component so the countdown updates even when the server is quiet.
@@ -975,12 +1013,26 @@ export function NotInMyPotPlayPage({
       return;
     }
     if (isIngredient(card)) {
-      setSelectedHandCardId((current) => current === card.cardId ? null : card.cardId);
+      const nextCardId = selectedHandCardId === card.cardId ? null : card.cardId;
+      setSelectedHandCardId(nextCardId);
+      sendCommand({
+        type: "SET_PREFERRED_CARD",
+        ...(nextCardId ? { cardId: nextCardId } : {}),
+      });
       return;
     }
     setSelectedHandCardId(null);
     setSelectedActionTarget(null);
     setSelectedAction(card);
+    sendCommand({ type: "SET_PREFERRED_CARD", cardId: card.cardId });
+  };
+
+  const closeSelectedAction = () => {
+    setSelectedAction(null);
+    setSelectedActionTarget(null);
+    if (view?.canAct) {
+      sendCommand({ type: "SET_PREFERRED_CARD" });
+    }
   };
 
   const playSelectedIngredient = () => {
@@ -1038,7 +1090,9 @@ export function NotInMyPotPlayPage({
     );
   }
 
-    const selectedHandCard = view.myHand.find((card) => card.cardId === selectedHandCardId) ?? null;
+  const selectedHandCard = view.canAct
+    ? view.myHand.find((card) => card.cardId === selectedHandCardId) ?? null
+    : null;
   const actionType = typeof latestActionEvent?.payload.actionType === "string" ? latestActionEvent.payload.actionType : null;
   const actionActor = latestActionEvent ? playerName(view.players, latestActionEvent.payload.playerId, locale) : null;
   const actionCard = actionType ? {
@@ -1071,7 +1125,7 @@ export function NotInMyPotPlayPage({
             </div>
             <div className={styles.topTools}>
               <div className={`${styles.gameStatus} ${view.finished ? styles.statusFinished : styles.statusLive}`}><span className={styles.statusDot} /> {view.finished ? (locale === "vi" ? "Đã xong" : "Finished") : phaseLabel(view.phase, locale)}</div>
-              <button type="button" className={styles.topButton} onClick={() => { setRoleSeen(true); setShowRole(true); }}><ShieldCheck size={16} /> <span>{locale === "vi" ? "Vai của tôi" : "My role"}</span></button>
+              <button type="button" className={styles.topButton} onClick={() => setShowRole(true)}><ShieldCheck size={16} /> <span>{locale === "vi" ? "Vai của tôi" : "My role"}</span></button>
               <button type="button" className={styles.topIconButton} onClick={() => setShowRules(true)} aria-label={locale === "vi" ? "Luật chơi" : "Rules"}><BookOpen size={17} /></button>
               <button type="button" className={styles.collapseHeaderButton} onClick={() => setHeaderCollapsed(true)} aria-label={locale === "vi" ? "Thu nhỏ thanh điều khiển" : "Collapse game controls"}><ChevronUp size={17} /></button>
             </div>
@@ -1127,7 +1181,16 @@ export function NotInMyPotPlayPage({
 
               </div>
 
-              {turnSecondsRemaining !== null ? (
+              {preparationSecondsRemaining !== null ? (
+                <div className={styles.tablePreparationTimer} aria-live="polite">
+                  <ShieldCheck size={15} />
+                  <span>
+                    <strong>{locale === "vi" ? "Xem vai trò và bài" : "Review your role and hand"}</strong>
+                    <small>{locale === "vi" ? "Lượt đầu bắt đầu sau thời gian chuẩn bị" : "The first turn begins after preparation"}</small>
+                  </span>
+                  <em>{preparationSecondsRemaining}s</em>
+                </div>
+              ) : turnSecondsRemaining !== null ? (
                 <div className={styles.tableTurnTimer} aria-live="polite">
                   <Clock3 size={14} />
                   <span>{locale === "vi" ? "Thời gian lượt" : "Turn time"}</span>
@@ -1197,7 +1260,9 @@ export function NotInMyPotPlayPage({
                 <ShoppingBasket size={16} />
                 <span>
                   <strong>{locale === "vi" ? "Đi chợ gấp" : "Emergency shopping"}</strong>
-                  <small>{locale === "vi" ? `Chọn đúng ${pending?.requiredCardCount ?? 2} lá để trả lại chồng bài.` : `Choose exactly ${pending?.requiredCardCount ?? 2} cards to return to the deck.`}</small>
+                  <small>{locale === "vi"
+                    ? `Chọn đúng ${pending?.requiredCardCount ?? 2} lá: ① lá chọn đầu nằm trên cùng chồng rút; ② lá chọn sau nằm ngay dưới. Bấm lại để bỏ chọn/đổi thứ tự.`
+                    : `Choose exactly ${pending?.requiredCardCount ?? 2} cards: ① first selected goes on top of the draw pile; ② second selected sits directly below. Click again to deselect/reorder.`}</small>
                 </span>
                 <em>{returnIds.length}/{pending?.requiredCardCount ?? 2}</em>
               </div>
@@ -1211,6 +1276,9 @@ export function NotInMyPotPlayPage({
                     card={card}
                     locale={locale}
                     selected={shoppingReturnPending ? returnIds.includes(card.cardId) : card.cardId === selectedHandCardId}
+                    selectionOrder={shoppingReturnPending && returnIds.includes(card.cardId)
+                      ? returnIds.indexOf(card.cardId) + 1
+                      : undefined}
                     disabled={shoppingReturnPending ? busy || !returnable || Boolean(movingCard) || revealInProgress : !view.canAct || busy || Boolean(pending) || Boolean(movingCard) || revealInProgress}
                     onClick={() => shoppingReturnPending ? toggleReturn(card.cardId) : onHandCard(card)}
                   />
@@ -1227,7 +1295,7 @@ export function NotInMyPotPlayPage({
                   </button>
                 </>
               ) : null}
-              {selectedHandCard && isIngredient(selectedHandCard) ? <button type="button" className={styles.playCardButton} disabled={busy || Boolean(movingCard)} onClick={playSelectedIngredient}><Flame size={17} /> {locale === "vi" ? "ĐÁNH LÁ NÀY" : "PLAY THIS CARD"}</button> : null}
+              {view.canAct && selectedHandCard && isIngredient(selectedHandCard) ? <button type="button" className={styles.playCardButton} disabled={busy || Boolean(movingCard)} onClick={playSelectedIngredient}><Flame size={17} /> {locale === "vi" ? "ĐÁNH LÁ NÀY" : "PLAY THIS CARD"}</button> : null}
               {view.canDeclarePotReady ? <button type="button" className={styles.readyButton} disabled={busy || Boolean(movingCard)} onClick={() => setShowPotReady(true)}><ShieldCheck size={17} /> {locale === "vi" ? "Mở nồi tính điểm" : "Reveal Pot and Calculate Score"}</button> : null}
             </div> : null}
           </section>
@@ -1261,13 +1329,13 @@ export function NotInMyPotPlayPage({
         </ModalShell>
       ) : null}
 
-      {selectedAction ? <ActionCardModal card={selectedAction} players={view.players} locale={locale} selectedTargetId={selectedActionTarget} onSelectTarget={setSelectedActionTarget} onConfirm={confirmAction} onClose={() => { setSelectedAction(null); setSelectedActionTarget(null); }} busy={busy} /> : null}
+      {selectedAction && view.canAct ? <ActionCardModal card={selectedAction} players={view.players} locale={locale} selectedTargetId={selectedActionTarget} onSelectTarget={setSelectedActionTarget} onConfirm={confirmAction} onClose={closeSelectedAction} busy={busy} /> : null}
 
       {pending && pendingForYou && pending.type !== "RETURN_SHOPPING_CARDS" ? <PendingActionModal pending={pending} inspectedCards={view.privateInspectedCards} hand={view.myHand} players={view.players} locale={locale} returnIds={returnIds} onToggleReturn={toggleReturn} onTarget={(playerId) => { submit({ type: "SELECT_TARGET", targetPlayerId: playerId }); }} onAcknowledgeSpoon={() => { submit({ type: "ACKNOWLEDGE_SLOTTED_SPOON" }); }} onSubmitReturn={() => { submit({ type: "RETURN_SHOPPING_CARDS", cardIds: returnIds }); }} busy={busy} /> : null}
 
       {showPotReady ? <ModalShell title={locale === "vi" ? "Mở nồi tính điểm?" : "Reveal Pot and Calculate Score?"} onClose={() => setShowPotReady(false)}><div className={styles.readyModal}><div className={styles.readyIcon}><ShieldCheck size={26} /></div><h3>{locale === "vi" ? "Mở nồi và tính điểm ngay?" : "Reveal the pot and calculate its score now?"}</h3><p>{locale === "vi" ? `Máy chủ sẽ mở nồi và so sánh điểm với mục tiêu ${view.targetScore}. Hành động này kết thúc ván.` : `The server will reveal the pot and compare it with the ${view.targetScore}-point target. This ends the game.`}</p></div><div className={styles.modalFooter}><button type="button" className={styles.ghostButton} onClick={() => setShowPotReady(false)}>{locale === "vi" ? "Chưa" : "Not yet"}</button><button type="button" className={styles.primaryButton} disabled={busy} onClick={() => { submit({ type: "DECLARE_POT_READY" }); setShowPotReady(false); }}><Check size={16} /> {locale === "vi" ? "Mở nồi tính điểm" : "Reveal Pot and Calculate Score"}</button></div></ModalShell> : null}
 
-      {showRules ? <ModalShell title={locale === "vi" ? "Luật nhanh — Not In My Pot!" : "Quick rules — Not In My Pot!"} onClose={() => setShowRules(false)} wide><div className={styles.rulesGrid}><div><span className={styles.rulesNumber}>01</span><h3>{locale === "vi" ? "Bỏ nguyên liệu" : "Play an ingredient"}</h3><p>{locale === "vi" ? "Mỗi lá nguyên liệu có loại và điểm cố định: Rau củ +1, Đậu phụ 0, Thịt −2. Máy chủ lấy đúng giá trị trên lá." : "Every ingredient has a fixed type and score: Vegetable +1, Tofu 0, Meat −2. The server uses the card's actual value."}</p></div><div><span className={styles.rulesNumber}>02</span><h3>{locale === "vi" ? "Dùng action" : "Use actions"}</h3><p>{locale === "vi" ? "Đuổi người, vớt nồi, xem lại bài, đi chợ gấp hoặc đổ rác để phá kế hoạch." : "Send someone out, scoop the pot, inspect cards, shop in an emergency, or trash a hand."}</p></div><div><span className={styles.rulesNumber}>03</span><h3>{locale === "vi" ? "Nồi đạt mục tiêu" : "Hit the target"}</h3><p>{locale === "vi" ? "Người ăn chay có thể bấm Mở nồi tính điểm ở đầu lượt để mở điểm thật." : "A Vegetarian may press Reveal Pot and Calculate Score at the start of their turn to reveal the true score."}</p></div><div><span className={styles.rulesNumber}>04</span><h3>{locale === "vi" ? "Cửa nhà" : "Door marks"}</h3><p>{locale === "vi" ? "Một người bị mời ra 3 lần sẽ bị loại và lộ vai. Suy luận cẩn thận." : "A player sent out three times is expelled and reveals their role. Deduce carefully."}</p></div></div><div className={styles.rulesPrivacy}><EyeOff size={17} /><span>{locale === "vi" ? "Thông tin riêng: vai, bài trên tay và các lá bạn xem chỉ được gửi cho chính bạn." : "Private data: your role, hand, and inspected cards are only projected to you."}</span></div></ModalShell> : null}
+      {showRules ? <ModalShell title={locale === "vi" ? "Luật nhanh — Not In My Pot!" : "Quick rules — Not In My Pot!"} onClose={() => setShowRules(false)} wide><div className={styles.rulesGrid}><div><span className={styles.rulesNumber}>01</span><h3>{locale === "vi" ? "Bỏ nguyên liệu" : "Play an ingredient"}</h3><p>{locale === "vi" ? "Mỗi lá nguyên liệu có loại và điểm cố định: Rau củ +1, Đậu phụ 0, Thịt −2. Máy chủ lấy đúng giá trị trên lá." : "Every ingredient has a fixed type and score: Vegetable +1, Tofu 0, Meat −2. The server uses the card's actual value."}</p></div><div><span className={styles.rulesNumber}>02</span><h3>{locale === "vi" ? "Dùng action" : "Use actions"}</h3><p>{locale === "vi" ? "Đuổi người, vớt nồi, xem lại bài, đi chợ gấp hoặc đổ rác để phá kế hoạch." : "Send someone out, scoop the pot, inspect cards, shop in an emergency, or trash a hand."}</p></div><div><span className={styles.rulesNumber}>03</span><h3>{locale === "vi" ? "Nồi đạt mục tiêu" : "Hit the target"}</h3><p>{locale === "vi" ? "Người ăn chay có thể bấm Mở nồi tính điểm ở đầu lượt để mở điểm thật." : "A Vegetarian may press Reveal Pot and Calculate Score at the start of their turn to reveal the true score."}</p></div><div><span className={styles.rulesNumber}>04</span><h3>{locale === "vi" ? "Mời ra khỏi nhà" : "Out You Go"}</h3><p>{locale === "vi" ? "Một người bị mời ra 3 lần sẽ bị loại và lộ vai. Suy luận cẩn thận." : "A player sent out three times is expelled and reveals their role. Deduce carefully."}</p></div></div><div className={styles.rulesPrivacy}><EyeOff size={17} /><span>{locale === "vi" ? "Thông tin riêng: vai, bài trên tay và các lá bạn xem chỉ được gửi cho chính bạn." : "Private data: your role, hand, and inspected cards are only projected to you."}</span></div></ModalShell> : null}
 
       {revealInProgress ? <PotRevealSequence cards={view.finalPot} targetScore={view.targetScore} locale={locale} onComplete={() => setRevealCompletedVersion(view.stateVersion)} /> : null}
 
