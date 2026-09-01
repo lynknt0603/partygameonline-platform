@@ -853,6 +853,25 @@ button.gameCard:hover:not(:disabled) {
   box-shadow: 0 0 0 3px rgba(211, 154, 54, 0.26), 0 13px 20px rgba(68, 42, 18, 0.27);
 }
 
+.cardSelectionOrder {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 4;
+  display: grid;
+  width: 27px;
+  height: 27px;
+  place-items: center;
+  border: 2px solid #fff8dd;
+  border-radius: 50%;
+  background: #bd592f;
+  color: #fff9e9;
+  box-shadow: 0 3px 8px rgba(73, 35, 15, 0.32);
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1;
+}
+
 .cardDisabled {
   filter: grayscale(0.35) saturate(0.7);
   opacity: 0.56;
@@ -5002,6 +5021,49 @@ button.gameCard.cardSelected:hover:not(:disabled) {
   text-align: right;
 }
 
+.tablePreparationTimer {
+  position: relative;
+  z-index: 9;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  margin-top: 7px;
+  padding: 5px 10px;
+  border: 1px solid rgba(180, 126, 28, 0.38);
+  border-radius: 12px;
+  background: rgba(255, 248, 218, 0.96);
+  color: #71511f;
+  box-shadow: 0 4px 10px rgba(82, 47, 20, 0.13);
+}
+
+.tablePreparationTimer > span {
+  display: grid;
+  gap: 1px;
+  text-align: left;
+}
+
+.tablePreparationTimer strong {
+  font-size: 9px;
+  line-height: 1.15;
+}
+
+.tablePreparationTimer small {
+  color: #99733a;
+  font-size: 7px;
+  line-height: 1.15;
+}
+
+.tablePreparationTimer em {
+  min-width: 30px;
+  color: #a3442c;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
 @media (min-width: 621px) {
   .seatRing {
     inset: 54px 14px 18px;
@@ -5128,6 +5190,12 @@ button.gameCard.cardSelected:hover:not(:disabled) {
   .tableTurnTimer {
     min-height: 24px;
     margin-top: 5px;
+  }
+
+  .tablePreparationTimer {
+    min-height: 30px;
+    margin-top: 5px;
+    padding: 4px 8px;
   }
 
 }
@@ -5273,7 +5341,19 @@ button.gameCard.cardSelected:hover:not(:disabled) {
 }
 
 .sideHandDock .shoppingReturnPrompt small {
+  overflow: visible;
+  line-height: 1.25;
+  text-overflow: clip;
   white-space: normal;
+}
+
+.sideHandDock .cardSelectionOrder {
+  top: 3px;
+  right: 3px;
+  width: 21px;
+  height: 21px;
+  border-width: 1.5px;
+  font-size: 11px;
 }
 
 .sideHandDock .actionDock {
@@ -5318,5 +5398,18 @@ button.gameCard.cardSelected:hover:not(:disabled) {
     flex: 0 0 205px;
     min-height: 205px;
     border-radius: 0 0 14px 14px;
+  }
+}
+
+@media (max-width: 620px) {
+  /* On phones, keep the playable hand above the activity log. */
+  .sideHandDock,
+  .sidePanelHandOnly .sideHandDock {
+    order: 1;
+  }
+
+  .logPane,
+  .logPaneCollapsed {
+    order: 2;
   }
 }

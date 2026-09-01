@@ -7,6 +7,7 @@ export interface NotInMyPotCommand {
   type:
     | "PLAY_INGREDIENT"
     | "PLAY_ACTION"
+    | "SET_PREFERRED_CARD"
     | "SELECT_TARGET"
     | "ACKNOWLEDGE_SLOTTED_SPOON"
     | "RETURN_SHOPPING_CARDS"

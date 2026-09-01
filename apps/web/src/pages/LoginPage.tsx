@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { PageHeading } from "@/shared/components/PageHeading/PageHeading";
 import { useT } from "@/shared/i18n/useT";
 import { useSessionStore } from "@/shared/state/sessionStore";
-import { ApiError } from "@/shared/api/types";
+import { ApiError, DISPLAY_NAME_MAX_LENGTH } from "@/shared/api/types";
 import { safeReturnTo } from "@/shared/auth/memberAccess";
 import styles from "./LoginPage.module.css";
 
@@ -22,6 +22,7 @@ export function LoginPage({ defaultTab = "login" }: LoginPageProps) {
 
   // Form states
   const [username, setUsername] = useState("");
+  const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [guestName, setGuestName] = useState("");
@@ -49,6 +50,15 @@ export function LoginPage({ defaultTab = "login" }: LoginPageProps) {
     }
 
     if (tab === "register") {
+      const trimmedDisplayName = displayName.trim();
+      if (!trimmedDisplayName) {
+        setErrorMessage(t("displayNameRequired"));
+        return;
+      }
+      if (trimmedDisplayName.length > DISPLAY_NAME_MAX_LENGTH) {
+        setErrorMessage(t("displayNameTooLong"));
+        return;
+      }
       if (password !== confirmPassword) {
         setErrorMessage(t("passwordMismatch"));
         return;
@@ -60,7 +70,7 @@ export function LoginPage({ defaultTab = "login" }: LoginPageProps) {
       if (tab === "login") {
         await login({ username: trimmedUser, password });
       } else {
-        await register({ username: trimmedUser, password });
+        await register({ username: trimmedUser, password, displayName: displayName.trim() });
       }
       navigate(returnTo, { replace: true });
     } catch (err) {
@@ -152,6 +162,29 @@ export function LoginPage({ defaultTab = "login" }: LoginPageProps) {
               disabled={loading}
             />
           </div>
+
+          {tab === "register" && (
+            <div className={styles.field}>
+              <label htmlFor="displayName" className={styles.label}>
+                {t("displayName")}
+              </label>
+              <input
+                id="displayName"
+                type="text"
+                className={`${styles.input} theme-input`}
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder={t("displayNamePlaceholder")}
+                autoComplete="nickname"
+                maxLength={DISPLAY_NAME_MAX_LENGTH}
+                required
+                disabled={loading}
+              />
+              <span className={styles.fieldHint}>
+                {t("displayNameHint").replace("{count}", String(displayName.length))}
+              </span>
+            </div>
+          )}
 
           <div className={styles.field}>
             <label htmlFor="password" className={styles.label}>
@@ -255,7 +288,7 @@ export function LoginPage({ defaultTab = "login" }: LoginPageProps) {
               value={guestName}
               onChange={(e) => setGuestName(e.target.value)}
               placeholder={t("guestNameLabel")}
-              maxLength={24}
+              maxLength={DISPLAY_NAME_MAX_LENGTH}
               disabled={guestLoading}
             />
             <button

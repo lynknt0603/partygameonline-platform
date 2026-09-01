@@ -197,31 +197,6 @@
 .boneThief .bloodlineFilterLabel { color: #fb7185; }
 .cursedDog .bloodlineFilterLabel { color: #a78bfa; }
 
-.notInMyPotSidebarNote {
-  margin-top: auto;
-  padding: 18px 14px;
-  border: 1px solid #4c351c;
-  border-radius: var(--radius-sm);
-  background:
-    radial-gradient(circle at 85% 15%, rgba(212, 175, 55, 0.14), transparent 42%),
-    rgba(25, 16, 8, 0.72);
-}
-
-.notInMyPotSidebarNote span {
-  color: #ffd97d;
-  font-family: var(--font-display, serif);
-  font-size: 0.85rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-}
-
-.notInMyPotSidebarNote p {
-  margin: 8px 0 0;
-  color: #a99b8b;
-  font-size: 0.72rem;
-  line-height: 1.5;
-}
-
 /* Right Main Content */
 .content {
   display: flex;
@@ -730,10 +705,6 @@
   .bloodlineCrestWrapper { width: 30px; height: 38px; }
   .bloodlineFilterLabel { font-size: 0.62rem; }
   .bloodlineChevron { display: none; }
-  .notInMyPotSidebarNote {
-    margin-top: 0;
-  }
-
   .content {
     padding: var(--space-4) var(--space-3);
   }

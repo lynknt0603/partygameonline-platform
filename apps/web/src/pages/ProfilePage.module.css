@@ -419,6 +419,30 @@
   color: #c084fc !important;
 }
 
+.boneWhiteTitle,
+.boneYardTitle,
+.boneThiefTitle {
+  margin: 0 0 4px;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.boneWhiteTitle,
+.boneWhiteHighlight {
+  color: #e2e8f0 !important;
+}
+
+.boneYardTitle,
+.boneYardHighlight {
+  color: #fbbf24 !important;
+}
+
+.boneThiefTitle,
+.boneThiefHighlight {
+  color: #fb7185 !important;
+}
+
 /* Realtime Footer Note */
 .sectionFooterNote {
   display: flex;
