@@ -8,12 +8,22 @@ interface CsrfBootstrap {
 let csrf: CsrfBootstrap | null = null;
 let csrfPromise: Promise<CsrfBootstrap> | null = null;
 
+const API_BASE = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
+
+function resolveUrl(path: string): string {
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    return path;
+  }
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return `${API_BASE}${normalizedPath}`;
+}
+
 export async function ensureCsrf(): Promise<CsrfBootstrap> {
   if (csrf) {
     return csrf;
   }
   if (!csrfPromise) {
-    csrfPromise = fetch("/api/v1/csrf", { credentials: "include" })
+    csrfPromise = fetch(resolveUrl("/api/v1/csrf"), { credentials: "include" })
       .then(async (response) => {
         if (!response.ok) {
           throw new ApiError(response.status, "CSRF_BOOTSTRAP_FAILED", "SERVER_UNREACHABLE");
@@ -52,7 +62,7 @@ async function requestJson<T>(path: string, init: RequestInit, retryCsrf: boolea
   }
   let response: Response;
   try {
-    response = await fetch(path, { ...init, method, headers, credentials: "include" });
+    response = await fetch(resolveUrl(path), { ...init, method, headers, credentials: "include" });
   } catch {
     throw new ApiError(0, "SERVER_UNREACHABLE", "SERVER_UNREACHABLE");
   }
