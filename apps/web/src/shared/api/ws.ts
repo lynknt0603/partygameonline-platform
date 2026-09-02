@@ -25,8 +25,15 @@ export class RealtimeSocket {
       return;
     }
     this.setStatus(this.attempts > 0 || this.status === "reconnecting" ? "reconnecting" : "connecting");
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const socket = new WebSocket(`${protocol}//${window.location.host}/ws`);
+    const wsBase = (import.meta.env.VITE_WS_URL || "").trim().replace(/\/+$/, "");
+    let wsUrl: string;
+    if (wsBase) {
+      wsUrl = wsBase.endsWith("/ws") ? wsBase : `${wsBase}/ws`;
+    } else {
+      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      wsUrl = `${protocol}//${window.location.host}/ws`;
+    }
+    const socket = new WebSocket(wsUrl);
     this.socket = socket;
     socket.addEventListener("open", () => {
       if (this.socket !== socket) {
