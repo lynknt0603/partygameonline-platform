@@ -15,16 +15,16 @@ const roomId = isCleanMode ? null : arg2?.toUpperCase();
 const botCount = Math.min(10, Math.max(1, parseInt(process.argv[3] || '7', 10)));
 
 const BOT_NAMES = [
-  '🤖 Bot_Alpha',
-  '🤖 Bot_Bravo',
-  '🤖 Bot_Charlie',
-  '🤖 Bot_Delta',
-  '🤖 Bot_Echo',
-  '🤖 Bot_Foxtrot',
-  '🤖 Bot_Golf',
-  '🤖 Bot_Hotel',
-  '🤖 Bot_India',
-  '🤖 Bot_Juliet'
+  '🤖 Alpha',
+  '🤖 Bravo',
+  '🤖 Charlie',
+  '🤖 Delta',
+  '🤖 Echo',
+  '🤖 Fox',
+  '🤖 Golf',
+  '🤖 Hotel',
+  '🤖 India',
+  '🤖 Juliet'
 ];
 
 if (!isCleanMode && !roomId) {
@@ -65,7 +65,8 @@ async function getCsrfToken(cookies) {
 async function authenticateBot(index) {
   const username = `bot_player_${index + 1}`;
   const password = `password123`;
-  const name = BOT_NAMES[index] || `🤖 Bot_${index + 1}`;
+  const rawName = BOT_NAMES[index] || `🤖 Bot_${index + 1}`;
+  const name = rawName.slice(0, 10);
   let { csrfToken, cookies } = await getCsrfToken({});
 
   // 1. Đăng ký hoặc Đăng nhập tài khoản Member
@@ -76,7 +77,7 @@ async function authenticateBot(index) {
       'Cookie': cookieString(cookies),
       'X-XSRF-TOKEN': csrfToken
     },
-    body: JSON.stringify({ username, password })
+    body: JSON.stringify({ username, password, displayName: name })
   });
   cookies = extractCookies(authRes, cookies);
 
