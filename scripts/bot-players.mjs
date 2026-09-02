@@ -3,12 +3,15 @@
  * Tự động chơi Not In My Pot và ƯU TIÊN đánh thẻ OUT_OF_HOUSE (Đuổi Khỏi Nhà / Out You Go!)
  * 
  * Cách dùng: node scripts/bot-players.mjs <ROOM_ID> [SỐ_LƯỢNG_BOT=7]
+ * Bắt buộc: BOT_PASSWORD=<mật khẩu bot> (và BOT_ORIGIN nếu chạy khác localhost)
  * Hoặc dọn sạch phòng cũ cho tất cả bot: node scripts/bot-players.mjs --clean
  * Ví dụ: node scripts/bot-players.mjs ABCD 7
  */
 
 const BASE_URL = process.env.BACKEND_URL || 'http://localhost:8080';
 const WS_URL = BASE_URL.replace(/^http/, 'ws') + '/ws';
+const BOT_PASSWORD = process.env.BOT_PASSWORD;
+const BOT_ORIGIN = process.env.BOT_ORIGIN || 'http://localhost:5173';
 const arg2 = process.argv[2]?.trim();
 const isCleanMode = arg2 === '--clean' || arg2 === 'clean';
 const roomId = isCleanMode ? null : arg2?.toUpperCase();
@@ -32,6 +35,11 @@ if (!isCleanMode && !roomId) {
   console.log('👉 Cách dùng: node scripts/bot-players.mjs <MÃ_PHÒNG> [SỐ_BOT]');
   console.log('👉 Dọn sạch bot kẹt: node scripts/bot-players.mjs --clean');
   console.log('👉 Ví dụ: node scripts/bot-players.mjs ABCD 7\n');
+  process.exit(1);
+}
+
+if (!BOT_PASSWORD) {
+  console.error('❌ Thiếu BOT_PASSWORD. Không dùng mật khẩu mặc định; hãy đặt biến môi trường BOT_PASSWORD.');
   process.exit(1);
 }
 
@@ -64,7 +72,7 @@ async function getCsrfToken(cookies) {
 
 async function authenticateBot(index) {
   const username = `bot_player_${index + 1}`;
-  const password = `password123`;
+  const password = BOT_PASSWORD;
   const rawName = BOT_NAMES[index] || `🤖 Bot_${index + 1}`;
   const name = rawName.slice(0, 10);
   let { csrfToken, cookies } = await getCsrfToken({});
@@ -394,7 +402,7 @@ async function createBot(index, targetRoomId) {
     const ws = new WebSocket(WS_URL, {
       headers: {
         'Cookie': cookieString(bot.cookies),
-        'Origin': 'http://localhost:5173'
+        'Origin': BOT_ORIGIN
       }
     });
 
