@@ -1,5 +1,4 @@
 import { useEffect, useRef, type ReactNode } from "react";
-import { clearCsrf } from "@/shared/api/http";
 import { realtime } from "@/shared/api/ws";
 import { useSessionStore } from "@/shared/state/sessionStore";
 import { useT } from "@/shared/i18n/useT";
@@ -52,7 +51,6 @@ export function SessionBootstrap({ children }: { children: ReactNode }) {
           type="button"
           className={styles.retry}
           onClick={() => {
-            clearCsrf();
             void bootstrap();
           }}
         >

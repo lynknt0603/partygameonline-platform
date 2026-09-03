@@ -1,12 +1,5 @@
 import { ApiError, type ApiErrorBody } from "./types";
-
-interface CsrfBootstrap {
-  headerName: string;
-  token: string;
-}
-
-let csrf: CsrfBootstrap | null = null;
-let csrfPromise: Promise<CsrfBootstrap> | null = null;
+import { readAccessToken } from "./tokenStorage";
 
 const API_BASE = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
 
@@ -18,36 +11,11 @@ function resolveUrl(path: string): string {
   return `${API_BASE}${normalizedPath}`;
 }
 
-export async function ensureCsrf(): Promise<CsrfBootstrap> {
-  if (csrf) {
-    return csrf;
-  }
-  if (!csrfPromise) {
-    csrfPromise = fetch(resolveUrl("/api/v1/csrf"), { credentials: "include" })
-      .then(async (response) => {
-        if (!response.ok) {
-          throw new ApiError(response.status, "CSRF_BOOTSTRAP_FAILED", "SERVER_UNREACHABLE");
-        }
-        const body = (await response.json()) as CsrfBootstrap;
-        csrf = body;
-        return body;
-      })
-      .finally(() => {
-        csrfPromise = null;
-      });
-  }
-  return csrfPromise;
-}
-
-export function clearCsrf(): void {
-  csrf = null;
-}
-
 export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
-  return requestJson<T>(path, init, true);
+  return requestJson<T>(path, init);
 }
 
-async function requestJson<T>(path: string, init: RequestInit, retryCsrf: boolean): Promise<T> {
+async function requestJson<T>(path: string, init: RequestInit): Promise<T> {
   const method = (init.method ?? "GET").toUpperCase();
   const headers = new Headers(init.headers);
   if (!headers.has("Accept")) {
@@ -56,13 +24,13 @@ async function requestJson<T>(path: string, init: RequestInit, retryCsrf: boolea
   if (init.body && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
-  if (method !== "GET" && method !== "HEAD" && method !== "OPTIONS") {
-    const token = await ensureCsrf();
-    headers.set(token.headerName, token.token);
+  const accessToken = readAccessToken();
+  if (accessToken && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${accessToken}`);
   }
   let response: Response;
   try {
-    response = await fetch(resolveUrl(path), { ...init, method, headers, credentials: "include" });
+    response = await fetch(resolveUrl(path), { ...init, method, headers });
   } catch {
     throw new ApiError(0, "SERVER_UNREACHABLE", "SERVER_UNREACHABLE");
   }
@@ -82,10 +50,6 @@ async function requestJson<T>(path: string, init: RequestInit, retryCsrf: boolea
     const body = (data ?? {}) as ApiErrorBody;
     const code = body.errorCode ?? "ERROR";
     const message = body.message ?? response.statusText;
-    if (retryCsrf && response.status === 403 && /csrf/i.test(`${code} ${message}`)) {
-      clearCsrf();
-      return requestJson<T>(path, init, false);
-    }
     throw new ApiError(response.status, code, message);
   }
   return data as T;

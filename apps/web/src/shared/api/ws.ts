@@ -1,4 +1,5 @@
 import type { WsEnvelope } from "./types";
+import { readAccessToken } from "./tokenStorage";
 
 export type WsListener = (message: WsEnvelope) => void;
 export type RealtimeStatus = "idle" | "connecting" | "open" | "reconnecting";
@@ -33,7 +34,13 @@ export class RealtimeSocket {
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
       wsUrl = `${protocol}//${window.location.host}/ws`;
     }
-    const socket = new WebSocket(wsUrl);
+    const accessToken = readAccessToken();
+    if (!accessToken) {
+      this.setStatus("reconnecting");
+      this.scheduleReconnect();
+      return;
+    }
+    const socket = new WebSocket(wsUrl, ["boardverse", `bearer.${accessToken}`]);
     this.socket = socket;
     socket.addEventListener("open", () => {
       if (this.socket !== socket) {

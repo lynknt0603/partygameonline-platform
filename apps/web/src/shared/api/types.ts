@@ -33,6 +33,7 @@ export interface SessionDto {
   kind: string;
   avatarUrl?: string | null;
   currentRoomId?: string | null;
+  accessToken: string;
 }
 
 export interface GameDto {

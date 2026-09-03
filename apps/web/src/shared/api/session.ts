@@ -1,4 +1,5 @@
-import { api, clearCsrf, ensureCsrf } from "./http";
+import { api } from "./http";
+import { clearAccessToken, readAccessToken, storeAccessToken } from "./tokenStorage";
 import { DISPLAY_NAME_MAX_LENGTH, type AuthPayload, type RegisterPayload, type SessionDto } from "./types";
 
 const NAME_KEY = "pgo.displayName";
@@ -6,6 +7,7 @@ const SESSION_KEY = "pgo.session";
 export function cacheSession(session: SessionDto): void {
   try {
     localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    storeAccessToken(session.accessToken);
     storeDisplayName(session.displayName);
   } catch {
     /* ignore quota */
@@ -19,7 +21,8 @@ export function cachedSession(): SessionDto | null {
       return null;
     }
     const parsed = JSON.parse(raw) as Partial<SessionDto>;
-    if (typeof parsed.playerId !== "string" || typeof parsed.displayName !== "string") {
+    const accessToken = typeof parsed.accessToken === "string" ? parsed.accessToken : readAccessToken();
+    if (typeof parsed.playerId !== "string" || typeof parsed.displayName !== "string" || !accessToken) {
       return null;
     }
     return {
@@ -28,6 +31,7 @@ export function cachedSession(): SessionDto | null {
       kind: typeof parsed.kind === "string" ? parsed.kind : "GUEST",
       avatarUrl: typeof parsed.avatarUrl === "string" ? parsed.avatarUrl : null,
       currentRoomId: typeof parsed.currentRoomId === "string" ? parsed.currentRoomId : null,
+      accessToken,
     };
   } catch {
     return null;
@@ -47,6 +51,7 @@ export function clearStoredIdentity(): void {
   try {
     localStorage.removeItem(SESSION_KEY);
     localStorage.removeItem(NAME_KEY);
+    clearAccessToken();
   } catch {
     /* ignore unavailable storage */
   }
@@ -110,12 +115,13 @@ export async function endSession(): Promise<void> {
     await api<void>("/api/v1/session", { method: "DELETE" });
   } finally {
     clearStoredIdentity();
-    clearCsrf();
   }
 }
 
 export async function bootstrapSession(): Promise<SessionDto> {
-  await ensureCsrf();
+  if (!readAccessToken()) {
+    return createGuest("Player");
+  }
   try {
     const fetchedSession = await fetchSession();
     const session = fetchedSession.kind === "MEMBER"

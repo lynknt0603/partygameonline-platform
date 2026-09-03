@@ -3,7 +3,7 @@
  * Tự động chơi Not In My Pot và ƯU TIÊN đánh thẻ OUT_OF_HOUSE (Đuổi Khỏi Nhà / Out You Go!)
  * 
  * Cách dùng: node scripts/bot-players.mjs <ROOM_ID> [SỐ_LƯỢNG_BOT=7]
- * Bắt buộc: BOT_PASSWORD=<mật khẩu bot> (và BOT_ORIGIN nếu chạy khác localhost)
+ * Bắt buộc: BOT_PASSWORD=<mật khẩu bot>
  * Hoặc dọn sạch phòng cũ cho tất cả bot: node scripts/bot-players.mjs --clean
  * Ví dụ: node scripts/bot-players.mjs ABCD 7
  */
@@ -11,7 +11,6 @@
 const BASE_URL = process.env.BACKEND_URL || 'http://localhost:8080';
 const WS_URL = BASE_URL.replace(/^http/, 'ws') + '/ws';
 const BOT_PASSWORD = process.env.BOT_PASSWORD;
-const BOT_ORIGIN = process.env.BOT_ORIGIN || 'http://localhost:5173';
 const arg2 = process.argv[2]?.trim();
 const isCleanMode = arg2 === '--clean' || arg2 === 'clean';
 const roomId = isCleanMode ? null : arg2?.toUpperCase();
@@ -43,31 +42,11 @@ if (!BOT_PASSWORD) {
   process.exit(1);
 }
 
-function extractCookies(response, currentCookies = {}) {
-  const setCookieHeaders = response.headers.getSetCookie 
-    ? response.headers.getSetCookie() 
-    : [response.headers.get('set-cookie')].filter(Boolean);
-
-  for (const header of setCookieHeaders) {
-    const parts = header.split(';')[0].split('=');
-    if (parts.length >= 2) {
-      currentCookies[parts[0].trim()] = parts.slice(1).join('=').trim();
-    }
-  }
-  return currentCookies;
-}
-
-function cookieString(cookieObj) {
-  return Object.entries(cookieObj)
-    .map(([k, v]) => `${k}=${v}`)
-    .join('; ');
-}
-
-async function getCsrfToken(cookies) {
-  const csrfRes = await fetch(`${BASE_URL}/api/v1/csrf`);
-  const updatedCookies = extractCookies(csrfRes, { ...cookies });
-  const csrfData = await csrfRes.json();
-  return { csrfToken: csrfData.token, cookies: updatedCookies };
+function authHeaders(bot, json = false) {
+  return {
+    ...(json ? { 'Content-Type': 'application/json' } : {}),
+    'Authorization': `Bearer ${bot.accessToken}`
+  };
 }
 
 async function authenticateBot(index) {
@@ -75,31 +54,22 @@ async function authenticateBot(index) {
   const password = BOT_PASSWORD;
   const rawName = BOT_NAMES[index] || `🤖 Bot_${index + 1}`;
   const name = rawName.slice(0, 10);
-  let { csrfToken, cookies } = await getCsrfToken({});
-
   // 1. Đăng ký hoặc Đăng nhập tài khoản Member
   let authRes = await fetch(`${BASE_URL}/api/v1/auth/register`, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
-      'Cookie': cookieString(cookies),
-      'X-XSRF-TOKEN': csrfToken
+      'Content-Type': 'application/json'
     },
     body: JSON.stringify({ username, password, displayName: name })
   });
-  cookies = extractCookies(authRes, cookies);
-
   if (!authRes.ok) {
     authRes = await fetch(`${BASE_URL}/api/v1/auth/login`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Cookie': cookieString(cookies),
-        'X-XSRF-TOKEN': csrfToken
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({ username, password })
     });
-    cookies = extractCookies(authRes, cookies);
   }
 
   if (!authRes.ok) {
@@ -107,41 +77,47 @@ async function authenticateBot(index) {
     throw new Error(`Đăng nhập Member thất bại: ${errBody}`);
   }
 
+  const authData = await authRes.json();
+  const bot = { name, username, playerId: authData.playerId, accessToken: authData.accessToken };
+
   // 2. Cập nhật Display Name
-  await fetch(`${BASE_URL}/api/v1/profile/me`, {
+  const profileRes = await fetch(`${BASE_URL}/api/v1/profile/me`, {
     method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      'Cookie': cookieString(cookies),
-      'X-XSRF-TOKEN': csrfToken
-    },
+    headers: authHeaders(bot, true),
     body: JSON.stringify({ displayName: name })
   });
+  if (profileRes.ok) {
+    const profile = await profileRes.json();
+    bot.accessToken = profile.accessToken || bot.accessToken;
+  }
 
   // 3. Lấy thông tin session hiện tại (PlayerId)
   let playerId = null;
   try {
     const meRes = await fetch(`${BASE_URL}/api/v1/session/me`, {
-      headers: { 'Cookie': cookieString(cookies) }
+      headers: authHeaders(bot)
     });
     if (meRes.ok) {
       const meData = await meRes.json();
       playerId = meData.playerId;
+      bot.accessToken = meData.accessToken || bot.accessToken;
     }
   } catch {
     // ignore
   }
 
-  return { name, username, playerId, cookies, csrfToken };
+  bot.playerId = playerId || bot.playerId;
+  return bot;
 }
 
 async function checkAndLeaveCurrentRoom(bot) {
   try {
     const meRes = await fetch(`${BASE_URL}/api/v1/session/me`, {
-      headers: { 'Cookie': cookieString(bot.cookies) }
+      headers: authHeaders(bot)
     });
     if (!meRes.ok) return null;
     const meData = await meRes.json();
+    bot.accessToken = meData.accessToken || bot.accessToken;
     if (meData.playerId) {
       bot.playerId = meData.playerId;
     }
@@ -151,9 +127,7 @@ async function checkAndLeaveCurrentRoom(bot) {
       await fetch(`${BASE_URL}/api/v1/rooms/${currentRoomId}/leave`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Cookie': cookieString(bot.cookies),
-          'X-XSRF-TOKEN': bot.csrfToken
+          ...authHeaders(bot, true)
         }
       });
       return currentRoomId;
@@ -356,9 +330,7 @@ async function createBot(index, targetRoomId) {
     let joinRes = await fetch(`${BASE_URL}/api/v1/rooms/${targetRoomId}/join`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Cookie': cookieString(bot.cookies),
-        'X-XSRF-TOKEN': bot.csrfToken
+        ...authHeaders(bot, true)
       }
     });
 
@@ -369,9 +341,7 @@ async function createBot(index, targetRoomId) {
         joinRes = await fetch(`${BASE_URL}/api/v1/rooms/${targetRoomId}/join`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'Cookie': cookieString(bot.cookies),
-            'X-XSRF-TOKEN': bot.csrfToken
+            ...authHeaders(bot, true)
           }
         });
       }
@@ -391,20 +361,13 @@ async function createBot(index, targetRoomId) {
     await fetch(`${BASE_URL}/api/v1/rooms/${targetRoomId}/ready`, {
       method: 'PUT',
       headers: {
-        'Content-Type': 'application/json',
-        'Cookie': cookieString(bot.cookies),
-        'X-XSRF-TOKEN': bot.csrfToken
+        ...authHeaders(bot, true)
       },
       body: JSON.stringify({ ready: true })
     });
 
     // 4. Kết nối WebSocket
-    const ws = new WebSocket(WS_URL, {
-      headers: {
-        'Cookie': cookieString(bot.cookies),
-        'Origin': BOT_ORIGIN
-      }
-    });
+    const ws = new WebSocket(WS_URL, ["boardverse", `bearer.${bot.accessToken}`]);
 
     bot.ws = ws;
     bot.targetRoomId = targetRoomId;
@@ -422,7 +385,7 @@ async function createBot(index, targetRoomId) {
           setTimeout(async () => {
             try {
               const snapRes = await fetch(`${BASE_URL}/api/v1/games/not-in-my-pot/rooms/${targetRoomId}/snapshot`, {
-                headers: { 'Cookie': cookieString(bot.cookies) }
+                headers: authHeaders(bot)
               });
               if (snapRes.ok) {
                 const snapView = await snapRes.json();
