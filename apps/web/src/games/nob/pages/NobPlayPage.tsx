@@ -9,7 +9,7 @@ import { useLeaveRoom } from "@/shared/hooks/useRooms";
 import type { MessageKey } from "@/shared/i18n/messages";
 import { useLocale, useT } from "@/shared/i18n/useT";
 import type { RoomView } from "@/shared/lobby/roomView";
-import { NOB_BRANDING, NOB_UI } from "../assets/nobAssetManifest";
+import { NOB_UI } from "../assets/nobAssetManifest";
 import {
   getNobBloodlineArt,
   getNobBloodlineCardBack,
@@ -159,6 +159,7 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
 
   const phase = view?.phase ?? "Connecting";
   const phaseKey = `${view?.roundNumber ?? view?.round ?? 0}:${phase}`;
+  const phaseIntro = view?.phaseState === "PHASE_INTRO";
   const finished = Boolean(view?.finished || phase === "GAME_OVER" || room.status === "finished");
   const pending = view?.myPendingDecision ?? null;
   const alreadyActed = actedKey === phaseKey || Boolean(view?.submittedPlayerIds?.includes(view.you));
@@ -213,7 +214,7 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
   const revealedMoonStealValue = moonStealReveal
     ? (revealedMoonStealByOption[moonStealReveal.optionId] ?? null)
     : null;
-  const frozen = busy || (finished && !isSummary);
+  const frozen = busy || phaseIntro || (finished && !isSummary);
 
   const returnToLobby = useCallback(async () => {
     if (returningToLobby) {
@@ -779,7 +780,6 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
     <div
       className={`${styles.page} ${reducedMotion ? styles.reduced : ""}`}
       style={{
-        backgroundImage: `url(${NOB_BRANDING.visualIdentity})`,
         ["--nob-resolve-ms" as string]: `${resolveMs}ms`,
         ["--nob-announce-ms" as string]: `${announceMs}ms`,
       }}
@@ -832,6 +832,23 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
         <p className={`${styles.announce} ${fx ? styles[`fx_${fx}`] : ""}`} role="status">
           {announceLine}
         </p>
+      ) : null}
+
+      {phaseIntro ? (
+        <div className={styles.phaseIntro} role="status" aria-live="polite">
+          <p className={styles.phaseIntroKicker}>{room.name}</p>
+          <h2>
+            {locale === "vi" ? "Vòng" : "Round"} {view?.roundNumber ?? view?.round ?? 1}
+          </h2>
+          <strong>{formatNobPhase(phase, t)}</strong>
+          <p>{t("phaseIntroHint")}</p>
+          <NobCountdown
+            deadline={deadline}
+            serverTime={view?.serverTime}
+            remainingMs={remain}
+            reducedMotion={reducedMotion}
+          />
+        </div>
       ) : null}
 
       {isSummary && view ? (

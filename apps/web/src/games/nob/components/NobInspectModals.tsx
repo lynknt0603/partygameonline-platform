@@ -29,12 +29,13 @@ export function NobInspectModals({ view, roleOpen, cardsOpen, onClose }: NobInsp
   const guide = known && bloodline ? bloodlineGuide(bloodline.type, locale) : null;
   const roundOrder = locale === "vi"
     ? [
-        "Chọn bài (Draft cards) · 2 lượt",
-        "Kẻ Theo Dõi (Shadow Stalker)",
-        "Tiên Tri (Blood Seer)",
-        "Kẻ Hóa Hình (Shapeshifter)",
-        "Sát Thủ Hoang Dã (Feral Killer)",
-        "Thợ Săn (Hunter)",
+        "Chọn bài đợt 1",
+        "Chọn bài đợt 2",
+        "Kẻ Theo Dõi",
+        "Tiên Tri",
+        "Kẻ Hóa Hình",
+        "Sát Thủ Hoang Dã",
+        "Thợ Săn",
       ]
     : ["Draft cards (2 picks)", "Shadow Stalker", "Blood Seer", "Shapeshifter", "Feral Killer", "Hunter"];
 
@@ -81,7 +82,7 @@ export function NobInspectModals({ view, roleOpen, cardsOpen, onClose }: NobInsp
           </div>
         ) : (
           <div className={styles.roundOrder}>
-            <p>{locale === "vi" ? "Các giai đoạn được gọi lần lượt trong mỗi round:" : "Phases are called in this order each round:"}</p>
+            <p>{locale === "vi" ? "Các giai đoạn được gọi lần lượt trong mỗi vòng:" : "Phases are called in this order each round:"}</p>
             <ol>
               {roundOrder.map((phase) => <li key={phase}>{phase}</li>)}
             </ol>

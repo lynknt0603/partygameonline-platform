@@ -57,6 +57,9 @@ function NobCardComponent({
       ) : (
         <img className={styles.art} src={art} alt="" draggable={false} />
       )}
+      {face === "up" && locale === "vi" && !compact ? (
+        <span className={styles.localizedName} aria-hidden="true">{label}</span>
+      ) : null}
       {face === "up" && tooltip && !compact ? <span className={styles.caption} aria-hidden="true">{tooltip}</span> : null}
     </button>
   );
