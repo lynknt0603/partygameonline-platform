@@ -12,10 +12,20 @@ function resolveUrl(path: string): string {
 }
 
 export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
+  return (await requestJson<T>(path, init)).data;
+}
+
+export interface ApiResponseResult<T> {
+  data: T;
+  status: number;
+  etag: string | null;
+}
+
+export async function apiResponse<T>(path: string, init: RequestInit = {}): Promise<ApiResponseResult<T>> {
   return requestJson<T>(path, init);
 }
 
-async function requestJson<T>(path: string, init: RequestInit): Promise<T> {
+async function requestJson<T>(path: string, init: RequestInit): Promise<ApiResponseResult<T>> {
   const method = (init.method ?? "GET").toUpperCase();
   const headers = new Headers(init.headers);
   if (!headers.has("Accept")) {
@@ -34,8 +44,11 @@ async function requestJson<T>(path: string, init: RequestInit): Promise<T> {
   } catch {
     throw new ApiError(0, "SERVER_UNREACHABLE", "SERVER_UNREACHABLE");
   }
+  if (response.status === 304) {
+    return { data: undefined as T, status: response.status, etag: response.headers.get("ETag") };
+  }
   if (response.status === 204) {
-    return undefined as T;
+    return { data: undefined as T, status: response.status, etag: response.headers.get("ETag") };
   }
   const text = await response.text();
   let data: unknown = null;
@@ -52,5 +65,5 @@ async function requestJson<T>(path: string, init: RequestInit): Promise<T> {
     const message = body.message ?? response.statusText;
     throw new ApiError(response.status, code, message);
   }
-  return data as T;
+  return { data: data as T, status: response.status, etag: response.headers.get("ETag") };
 }

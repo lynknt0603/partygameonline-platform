@@ -5,6 +5,7 @@ import { NOT_IN_MY_POT_ID, NotInMyPotPlayPage, useNotInMyPotGame } from "@/games
 import { WHERES_THE_BONE_ID, WheresTheBonePlayPage, useWheresTheBoneGame } from "@/games/wheresTheBone";
 import { ConnectionStatusBadge } from "@/shared/components/ConnectionStatusBadge/ConnectionStatusBadge";
 import { cacheSession } from "@/shared/api/session";
+import { useRealtimeStatus } from "@/shared/hooks/useRealtimeStatus";
 import { useRoomRealtime } from "@/shared/hooks/useRoomRealtime";
 import { useRoom } from "@/shared/hooks/useRooms";
 import { useSessionStore } from "@/shared/state/sessionStore";
@@ -14,6 +15,7 @@ export function GamePage() {
   const roomQuery = useRoom(roomId);
   const room = roomQuery.data;
   const session = useSessionStore((state) => state.session);
+  const realtimeStatus = useRealtimeStatus();
   const [view, setView] = useState<NobView | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [rejectCode, setRejectCode] = useState<string | null>(null);
@@ -60,16 +62,20 @@ export function GamePage() {
       }
     };
     void pull();
-    // Realtime is the fast path, but a dropped GAME_EVENTS frame must not
-    // leave every player looking at a paused/stale table until a hard reload.
-    // The version check above makes this safe alongside websocket updates and
-    // also lets the game recover while the socket is reconnecting.
-    const pollId = window.setInterval(() => void pull(), 2000);
+    // WebSocket is authoritative while healthy. Only poll as a two-second
+    // fallback while it is unavailable so a reconnecting player cannot remain
+    // stuck on a stale table. The pull above also performs one final resync
+    // whenever the socket becomes open again.
+    const pollId = realtimeStatus === "open"
+      ? null
+      : window.setInterval(() => void pull(), 2000);
     return () => {
       cancelled = true;
-      window.clearInterval(pollId);
+      if (pollId !== null) {
+        window.clearInterval(pollId);
+      }
     };
-  }, [isNob, room?.status, roomId]);
+  }, [isNob, realtimeStatus, room?.status, roomId]);
 
   useRoomRealtime(isNob ? roomId : undefined, {
     onView: (next) => {
