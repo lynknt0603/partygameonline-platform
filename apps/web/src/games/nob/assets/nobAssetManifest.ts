@@ -67,6 +67,7 @@ export const NOB_BLOODLINE_CARD_BACK = `${ROOT}/bloodlines/bloodline-card-back.p
 
 export const NOB_BRANDING = {
   visualIdentity: `${ROOT}/branding/visual-identity.png`,
+  tableBackground: `${ROOT}/branding/table-background.png`,
 } as const;
 
 export const NOB_UI = {

@@ -9,7 +9,7 @@ import { useLeaveRoom } from "@/shared/hooks/useRooms";
 import type { MessageKey } from "@/shared/i18n/messages";
 import { useLocale, useT } from "@/shared/i18n/useT";
 import type { RoomView } from "@/shared/lobby/roomView";
-import { NOB_UI } from "../assets/nobAssetManifest";
+import { NOB_BRANDING, NOB_UI } from "../assets/nobAssetManifest";
 import {
   getNobBloodlineArt,
   getNobBloodlineCardBack,
@@ -797,6 +797,7 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
     <div
       className={`${styles.page} ${reducedMotion ? styles.reduced : ""}`}
       style={{
+        backgroundImage: `linear-gradient(180deg, rgba(7, 4, 4, 0.14), rgba(7, 3, 3, 0.34)), url(${NOB_BRANDING.tableBackground})`,
         ["--nob-resolve-ms" as string]: `${resolveMs}ms`,
         ["--nob-announce-ms" as string]: `${announceMs}ms`,
       }}
