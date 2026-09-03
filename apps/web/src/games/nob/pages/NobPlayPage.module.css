@@ -1215,16 +1215,16 @@
 }
 
 .fx_ELIMINATE {
-  animation: nobFlash var(--nob-announce-ms, 3000ms) ease;
+  animation: nobFlash var(--nob-announce-ms, 5000ms) ease;
 }
 
 .fx_VEIL {
-  animation: nobFlip var(--nob-announce-ms, 3000ms) ease;
+  animation: nobFlip var(--nob-announce-ms, 5000ms) ease;
 }
 
 .fx_SACRIFICE,
 .fx_LAST_HOPE {
-  animation: nobGlow var(--nob-announce-ms, 3000ms) ease;
+  animation: nobGlow var(--nob-announce-ms, 5000ms) ease;
 }
 
 .lastHope {

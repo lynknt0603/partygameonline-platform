@@ -37,7 +37,7 @@ export function NobInspectModals({ view, roleOpen, cardsOpen, onClose }: NobInsp
         "Sát Thủ Hoang Dã",
         "Thợ Săn",
       ]
-    : ["Draft cards (2 picks)", "Shadow Stalker", "Blood Seer", "Shapeshifter", "Feral Killer", "Hunter"];
+    : ["Draft cards (pick 1)", "Draft cards (pick 2)", "Shadow Stalker", "Blood Seer", "Shapeshifter", "Feral Killer", "Hunter"];
 
   return (
     <div className={styles.layer}>
@@ -84,7 +84,12 @@ export function NobInspectModals({ view, roleOpen, cardsOpen, onClose }: NobInsp
           <div className={styles.roundOrder}>
             <p>{locale === "vi" ? "Các giai đoạn được gọi lần lượt trong mỗi vòng:" : "Phases are called in this order each round:"}</p>
             <ol>
-              {roundOrder.map((phase) => <li key={phase}>{phase}</li>)}
+              {roundOrder.map((phase, index) => (
+                <li key={phase}>
+                  <span className={styles.orderIndex}>{locale === "vi" ? `Lượt ${index + 1}` : `Turn ${index + 1}`}</span>
+                  <span>{phase}</span>
+                </li>
+              ))}
             </ol>
           </div>
         )}

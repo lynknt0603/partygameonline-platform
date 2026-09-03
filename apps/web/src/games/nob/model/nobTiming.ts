@@ -18,12 +18,13 @@ export const NOB_DEFAULT_TIMING: NobTiming = {
   hunterDecisionSeconds: 30,
   reactionDecisionSeconds: 10,
   resolutionCardDisplayMs: 2500,
-  announcementDisplayMs: 3000,
+  announcementDisplayMs: 5000,
   roundSummarySeconds: 30,
 };
 
 export const NOB_GAMEPLAY_PRESETS = [10, 15, 20, 30, 45, 60, 90, 120] as const;
 export const NOB_REACTION_PRESETS = [5, 10, 15, 20, 30] as const;
+export const NOB_ANNOUNCEMENT_PRESETS = [3, 4, 5, 6, 8, 10, 12, 15] as const;
 
 export function parseNobTiming(value: unknown): NobTiming {
   const record = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
@@ -43,7 +44,7 @@ export function parseNobTiming(value: unknown): NobTiming {
     hunterDecisionSeconds: num("hunterDecisionSeconds", 30, 10, 120),
     reactionDecisionSeconds: num("reactionDecisionSeconds", 10, 5, 30),
     resolutionCardDisplayMs: num("resolutionCardDisplayMs", 2500, 500, 10_000),
-    announcementDisplayMs: num("announcementDisplayMs", 3000, 500, 15_000),
+    announcementDisplayMs: num("announcementDisplayMs", 5000, 500, 15_000),
     roundSummarySeconds: num("roundSummarySeconds", 30, 10, 120),
   };
 }

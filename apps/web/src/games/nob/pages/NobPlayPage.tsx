@@ -80,6 +80,21 @@ function formatNobPhase(phase: string, t: (key: MessageKey) => string): string {
   }
 }
 
+const NOB_TURN_PHASES = [
+  "DRAFT_PICK_1",
+  "DRAFT_PICK_2",
+  "SHADOW_STALKER",
+  "BLOOD_SEER",
+  "SHAPESHIFTER",
+  "FERAL_KILLER",
+  "HUNTER",
+] as const;
+
+function phaseTurnNumber(phase: string): number | null {
+  const index = (NOB_TURN_PHASES as readonly string[]).indexOf(phase);
+  return index >= 0 ? index + 1 : null;
+}
+
 function optionLabel(option: string, t: (key: MessageKey) => string, pendingType?: string | null): string {
   if (option === "SPARE") {
     return t("spare");
@@ -158,6 +173,7 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
   const [returningToLobby, setReturningToLobby] = useState(false);
 
   const phase = view?.phase ?? "Connecting";
+  const turnNumber = phaseTurnNumber(phase);
   const phaseKey = `${view?.roundNumber ?? view?.round ?? 0}:${phase}`;
   const phaseIntro = view?.phaseState === "PHASE_INTRO";
   const finished = Boolean(view?.finished || phase === "GAME_OVER" || room.status === "finished");
@@ -504,11 +520,12 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
       setInspectShrunk(false);
       return;
     }
-    const until = reveal.displayUntil ? Date.parse(reveal.displayUntil) : Date.now() + 3000;
-    const wait = Number.isFinite(until) ? Math.max(0, until - Date.now()) : 3000;
+    const fallbackAnnouncementMs = timing.announcementDisplayMs;
+    const until = reveal.displayUntil ? Date.parse(reveal.displayUntil) : Date.now() + fallbackAnnouncementMs;
+    const wait = Number.isFinite(until) ? Math.max(0, until - Date.now()) : fallbackAnnouncementMs;
     const timer = window.setTimeout(() => setInspectShrunk(true), wait);
     return () => window.clearTimeout(timer);
-  }, [hunterPending, pending?.decisionId, reveal, reveal?.targetPlayerId, reveal?.cardCode, reveal?.displayUntil, reducedMotion]);
+  }, [hunterPending, pending?.decisionId, reveal, reveal?.targetPlayerId, reveal?.cardCode, reveal?.displayUntil, reducedMotion, timing.announcementDisplayMs]);
 
   const send = useCallback(
     (payload: Record<string, unknown>, lockPhase = false) => {
@@ -838,7 +855,7 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
         <div className={styles.phaseIntro} role="status" aria-live="polite">
           <p className={styles.phaseIntroKicker}>{room.name}</p>
           <h2>
-            {locale === "vi" ? "Vòng" : "Round"} {view?.roundNumber ?? view?.round ?? 1}
+            {locale === "vi" ? "Lượt" : "Turn"} {turnNumber ?? (view?.roundNumber ?? view?.round ?? 1)}
           </h2>
           <strong>{formatNobPhase(phase, t)}</strong>
           <p>{t("phaseIntroHint")}</p>

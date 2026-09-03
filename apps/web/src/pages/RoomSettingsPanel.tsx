@@ -5,6 +5,7 @@ import { WHERES_THE_BONE_ID } from "@/games/wheresTheBone";
 import { WHERES_THE_BONE_DEFAULT_SETTINGS, type WheresTheBoneSettings } from "@/games/wheresTheBone/model/wheresTheBoneSettings";
 import {
   NOB_DEFAULT_TIMING,
+  NOB_ANNOUNCEMENT_PRESETS,
   NOB_GAMEPLAY_PRESETS,
   NOB_REACTION_PRESETS,
   type NobTiming,
@@ -144,6 +145,13 @@ export function RoomSettingsPanel({ room, minCap, maxCap, isHost, onClose, onClo
               presets={NOB_REACTION_PRESETS}
               disabled={!canEdit}
               onChange={(next) => setNob((current) => ({ ...current, reactionDecisionSeconds: next }))}
+            />
+            <TimerRow
+              label={`${t("nobAnnouncementSeconds")} · ${Math.round(nob.announcementDisplayMs / 1000)}s`}
+              value={Math.round(nob.announcementDisplayMs / 1000)}
+              presets={NOB_ANNOUNCEMENT_PRESETS}
+              disabled={!canEdit}
+              onChange={(next) => setNob((current) => ({ ...current, announcementDisplayMs: next * 1000 }))}
             />
             {!canEdit ? <p className={styles.bubble}>{waiting ? t("nobTimersHostOnly") : t("nobTimersLocked")}</p> : null}
           </section>
