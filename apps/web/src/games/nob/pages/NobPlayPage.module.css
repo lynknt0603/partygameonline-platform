@@ -1328,6 +1328,85 @@
 }
 
 @media (max-width: 768px) {
+  .hud {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "leave title timer"
+      "tools tools tools";
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px 6px;
+  }
+
+  .leave {
+    grid-area: leave;
+    min-height: 34px;
+    padding: 0 8px;
+    gap: 4px;
+    border-radius: 7px;
+    font-size: 10px;
+    line-height: 1.05;
+  }
+
+  .leave svg {
+    width: 13px;
+    height: 13px;
+  }
+
+  .hud > div:not(.hudTools) {
+    grid-area: title;
+    min-width: 0;
+  }
+
+  .hud h1 {
+    overflow: hidden;
+    font-size: 0.96rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .hud p {
+    overflow: hidden;
+    font-size: 9px;
+    line-height: 1.1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .hud > span {
+    grid-area: timer;
+    min-width: 3.4rem;
+    min-height: 32px;
+    padding: 0 7px;
+    border-radius: 7px;
+    font-size: 11px;
+  }
+
+  .hudTools {
+    grid-area: tools;
+    display: grid;
+    grid-template-columns: 32px 32px minmax(0, 1fr) minmax(0, 1fr);
+    width: 100%;
+    gap: 4px;
+    margin-left: 0;
+  }
+
+  .iconBtn,
+  .textBtn {
+    min-width: 0;
+    min-height: 30px;
+    padding: 0 5px;
+    border-radius: 6px;
+    font-size: 10px;
+    line-height: 1.1;
+  }
+
+  .iconBtn {
+    width: auto;
+    padding: 0;
+  }
+
   .body {
     flex-direction: column;
   }
@@ -1379,5 +1458,51 @@
   .detail {
     flex-direction: column;
     align-items: center;
+  }
+}
+
+@media (max-width: 380px) {
+  .hud {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 5px;
+    padding: 6px 8px 5px;
+  }
+
+  .leave {
+    min-height: 30px;
+    padding: 0 6px;
+    font-size: 9px;
+  }
+
+  .leave svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .hud h1 {
+    font-size: 0.88rem;
+  }
+
+  .hud p {
+    font-size: 8px;
+  }
+
+  .hud > span {
+    min-width: 3rem;
+    min-height: 29px;
+    padding: 0 5px;
+    font-size: 10px;
+  }
+
+  .hudTools {
+    grid-template-columns: 29px 29px minmax(0, 1fr) minmax(0, 1fr);
+    gap: 3px;
+  }
+
+  .iconBtn,
+  .textBtn {
+    min-height: 27px;
+    padding: 0 3px;
+    font-size: 9px;
   }
 }
