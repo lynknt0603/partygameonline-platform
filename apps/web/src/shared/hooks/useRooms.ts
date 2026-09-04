@@ -19,10 +19,11 @@ export function useRooms() {
 
 export function useRoom(roomId: string | undefined) {
   const normalized = roomId?.toUpperCase();
+  const isDemo = roomId?.toLowerCase().includes("demo");
   return useQuery({
     queryKey: ["room", normalized],
     queryFn: () => fetchRoom(normalized!),
-    enabled: Boolean(normalized),
+    enabled: Boolean(normalized) && !isDemo,
     select: toRoomView,
   });
 }
@@ -84,9 +85,14 @@ export function usePlayGame() {
       void refresh();
       navigate(`/rooms/${room.id}`);
     },
-    onError: (error) => {
+    onError: (error, gameId) => {
       if (error instanceof ApiError && (error.errorCode === "MEMBER_LOGIN_REQUIRED" || error.errorCode === "UNAUTHENTICATED")) {
         navigate(memberLoginPath());
+        return;
+      }
+      if (error instanceof ApiError && error.errorCode === "SERVER_UNREACHABLE") {
+        navigate(`/play/demo-${gameId}`);
+        return;
       }
     },
   });

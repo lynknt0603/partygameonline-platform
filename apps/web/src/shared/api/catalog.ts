@@ -14,6 +14,17 @@ interface Presentation {
 }
 
 const PRESENTATION: Record<string, Presentation> = {
+  "blood-bound": {
+    displayName: "Blood Bound",
+    displayNameVi: "Blood Bound (Gia Tộc Huyết Chiến)",
+    genre: "Hidden role • deduction",
+    genreVi: "Ẩn vai • suy luận đấu trí",
+    summary: "Two rival clans clash in the shadows. Identify the enemy Leader, but beware of wrongful capture.",
+    summaryVi: "Hai gia tộc Hoa Hồng và Quái Thú đối đầu trong bóng tối. Tìm và bắt giữ Thủ lĩnh đối phương, cẩn trọng bắt nhầm.",
+    durationMin: 15,
+    durationMax: 30,
+    theme: { id: "blood-bound-gothic", name: "Blood Gothic", prefersDarkCanvas: true, hudVariant: "platform" },
+  },
   "night-of-bloodlines": {
     displayName: "Night of Bloodlines",
     displayNameVi: "Đêm huyết thống",

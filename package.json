@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "npm run dev --prefix apps/web",
     "build": "npm run build --prefix apps/web",
-    "typecheck": "npm run typecheck --prefix apps/web"
+    "typecheck": "npm run typecheck --prefix apps/web",
+    "test": "npm run test --prefix apps/web",
+    "scaffold:game": "node scripts/scaffold-game.mjs"
   }
 }

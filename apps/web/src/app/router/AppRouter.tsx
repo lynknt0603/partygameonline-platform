@@ -20,7 +20,8 @@ function MemberOnly({ children }: { children: ReactNode }) {
   const session = useSessionStore((state) => state.session);
   const location = useLocation();
 
-  if (session?.kind !== "MEMBER") {
+  const isDemo = location.pathname.toLowerCase().includes("demo");
+  if (session?.kind !== "MEMBER" && !isDemo) {
     return (
       <Navigate
         to={memberLoginPath(`${location.pathname}${location.search}${location.hash}`)}

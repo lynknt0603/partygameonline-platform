@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Navigate, useParams } from "react-router-dom";
 import { fetchNobSnapshot, NOB_CATALOGUE_ID, NobPlayPage, parseNobView, type NobView } from "@/games/nob";
+import { BLOOD_BOUND_ID, BloodBoundPlayPage } from "@/games/bloodBound";
 import { NOT_IN_MY_POT_ID, NotInMyPotPlayPage, useNotInMyPotGame } from "@/games/notInMyPot";
 import { WHERES_THE_BONE_ID, WheresTheBonePlayPage, useWheresTheBoneGame } from "@/games/wheresTheBone";
 import { ConnectionStatusBadge } from "@/shared/components/ConnectionStatusBadge/ConnectionStatusBadge";
@@ -95,6 +96,16 @@ export function GamePage() {
     },
   });
 
+  const isDemoBloodBound = roomId.toLowerCase().includes("blood-bound") || roomId.toLowerCase().includes("bloodbound");
+  if (isDemoBloodBound) {
+    return (
+      <>
+        <ConnectionStatusBadge />
+        <BloodBoundPlayPage roomId={roomId} room={room} />
+      </>
+    );
+  }
+
   if (roomQuery.isPending) {
     return <main aria-live="polite">Loading game…</main>;
   }
@@ -133,6 +144,14 @@ export function GamePage() {
             rejectCode={wheresTheBone.rejectCode}
             sendCommand={wheresTheBone.sendCommand}
           />
+        </>
+      );
+    }
+    if (room.gameId === BLOOD_BOUND_ID) {
+      return (
+        <>
+          <ConnectionStatusBadge />
+          <BloodBoundPlayPage roomId={roomId} room={room} />
         </>
       );
     }

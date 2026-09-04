@@ -60,7 +60,17 @@ npm run typecheck
 npm run typecheck
 ```
 
-### 2. Production Build
+### 2. Automated Unit Tests
+
+```bash
+# Run all unit tests
+npm run test
+
+# Run tests in watch mode (from apps/web)
+cd apps/web && npm run test:watch
+```
+
+### 3. Production Build
 
 ```bash
 # From apps/web directory
