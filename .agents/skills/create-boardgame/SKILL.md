@@ -116,9 +116,11 @@ Phải cung cấp tối thiểu 4 hàm chuẩn:
    - `start<Game>Game(roomId)`: Gọi endpoint POST để host bắt đầu ván đấu.
    - `fetch<Game>Snapshot(roomId)`: Lấy snapshot qua HTTP khi cần fallback.
    - `send<Game>Command(roomId, command, expectedVersion)`: Gửi action qua WebSocket (`realtime.send("GAME_ACTION", ...)`).
-2. **Client Simulation Fallback (Cho PlayPage):**
-   - Tạo sẵn danh sách Bot mẫu (`🤖 Bot Alfa`, `🤖 Bot Bravo`,...) khi chưa có phòng hoặc đang test đơn lẻ.
+2. **Client Simulation Fallback & AI Bot (Cho PlayPage):**
+   - Tạo hàm bù đắp người chơi (`ensureFullPlayerList`) để tự động thêm Bot khi chơi 1 mình (Solo) hoặc phòng không đủ số người tối thiểu.
+   - Xây dựng bộ não AI (`model/<gameId>Bot.ts`) với các hàm suy luận hành động, phân tích rủi ro, và ghi nhận lý do quyết định (`reasoning`).
    - Sử dụng `useState` bọc `init<Game>Game` và `process<Game>Action` để người dùng có thể click tương tác và chơi thử ngay trên giao diện mà không cần phụ thuộc vào server backend.
+   - **Bảo mật Production**: Luôn kiểm tra `const canDebug = isDemo || import.meta.env.DEV`. Không bao giờ kích hoạt vòng lặp Bot hay công cụ soi bài (God View) trong các phòng Live Multiplayer giữa người thật.
 
 ---
 

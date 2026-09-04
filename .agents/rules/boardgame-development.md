@@ -22,3 +22,8 @@ These rules apply across the entire workspace for developing tabletop and party 
 
 5. **Client Simulation Fallback**:
    - Every PlayPage must include self-contained mock/bot simulation state so that users and developers can playtest the game immediately without needing an active backend server.
+
+6. **Production Security & Debug Guards**:
+   - Debug utilities (God View secret identity badges, AI reasoning logs, auto-play takeover) must only be accessible when `canDebug = isDemo || import.meta.env.DEV`.
+   - In production multiplayer rooms (`!isDemo`), client-side bot loops and God View must be completely disabled to prevent cheating and preserve fair play.
+
