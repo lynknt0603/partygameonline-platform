@@ -14,7 +14,6 @@ apps/web/tmp-shots/
 *.bundle
 
 # AI, Agent & Prompt files
-GEMINI.md
 MEMORY.md
 prompts/
 promt/
