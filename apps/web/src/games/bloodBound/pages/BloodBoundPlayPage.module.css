@@ -75,39 +75,86 @@
   background: rgba(255, 255, 255, 0.12);
 }
 
+/* 2. Action Banners */
+.actionBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 24px;
+  background: linear-gradient(90deg, rgba(30, 20, 45, 0.96), rgba(45, 20, 35, 0.96));
+  border-bottom: 1px solid rgba(255, 77, 109, 0.35);
+  font-size: 0.85rem;
+  color: #f8fafc;
+  z-index: 15;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.actionBannerIntervene {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 24px;
+  background: linear-gradient(90deg, rgba(45, 20, 25, 0.96), rgba(30, 15, 35, 0.96));
+  border-bottom: 1px solid rgba(239, 68, 68, 0.5);
+  font-size: 0.85rem;
+  color: #f8fafc;
+  z-index: 15;
+  flex-shrink: 0;
+}
+
+.btnIntervene {
+  background: #dc2626;
+  color: white;
+  border: 1px solid #f87171;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  transition: background 0.2s;
+}
+
+.btnIntervene:hover {
+  background: #b91c1c;
+}
+
+/* 3. Main Arena (Radial Table + Sidebar) */
+.mainArena,
 .mainBoard {
   flex: 1;
   display: flex;
-  position: relative;
+  flex-direction: row;
+  min-height: 0;
   overflow: hidden;
+  position: relative;
+  width: 100%;
 }
 
+.tableArena,
 .tableArea {
   flex: 1;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
   position: relative;
-  padding: 24px;
+  min-width: 0;
+  min-height: 0;
+  padding: 12px 16px;
+  overflow: hidden;
 }
 
-.seatsGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-  width: 100%;
-  max-width: 1000px;
-  z-index: 2;
-}
-
-/* Chiếc bàn tròn / bầu dục trung tâm */
+/* Central Radial Table Wrapper */
 .tableWrapper {
   position: relative;
   width: 100%;
-  max-width: min(1120px, 94vw);
-  height: min(720px, calc(100vh - 170px));
-  min-height: 540px;
+  max-width: 960px;
+  height: 100%;
+  max-height: calc(100vh - 200px);
+  aspect-ratio: 16 / 10.5;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -115,24 +162,23 @@
 
 .pokerTable {
   position: absolute;
-  width: 88%;
-  height: 86%;
+  inset: 6px;
   border-radius: 50% / 46%;
-  background: radial-gradient(ellipse at center, #1c1328 0%, #110a1b 60%, #08030d 100%);
+  background: radial-gradient(ellipse at center, #1e132c 0%, #120b1c 65%, #07030c 100%);
   border: 7px solid #451a03;
   outline: 2px solid #d97706;
   box-shadow: 
-    inset 0 0 70px rgba(0, 0, 0, 0.9),
+    inset 0 0 70px rgba(0, 0, 0, 0.92),
     inset 0 0 30px rgba(245, 158, 11, 0.18),
-    0 18px 48px rgba(0, 0, 0, 0.75);
+    0 14px 40px rgba(0, 0, 0, 0.8);
   pointer-events: none;
   z-index: 1;
 }
 
+.tableSvgOverlay,
 .tableOverlaySvg {
   position: absolute;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100%;
   height: 100%;
   pointer-events: none;
@@ -141,53 +187,54 @@
 
 .seatsRoundArea {
   position: absolute;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100%;
   height: 100%;
   z-index: 4;
   pointer-events: none;
 }
 
+/* Individual Round Seat Cards */
 .seatCardRound {
   position: absolute;
-  width: 204px;
-  background: rgba(22, 17, 30, 0.94);
-  backdrop-filter: blur(10px);
+  width: 172px;
+  background: rgba(20, 15, 28, 0.94);
+  backdrop-filter: blur(8px);
   border: 1.5px solid rgba(255, 255, 255, 0.16);
-  border-radius: 12px;
-  padding: 8px 10px;
+  border-radius: 10px;
+  padding: 6px 8px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  gap: 4px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: auto;
-  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.65);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.65);
   transform: translate(-50%, -50%);
   user-select: none;
+  z-index: 5;
 }
 
 .seatCardRound:hover {
   border-color: rgba(255, 255, 255, 0.35);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.75);
-  z-index: 6;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.75);
+  z-index: 7;
 }
 
 .seatCardRound.isDagger {
   border-color: #f59e0b;
-  box-shadow: 0 0 20px rgba(245, 158, 11, 0.45);
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.45);
 }
 
 .seatCardRound.isTarget {
   border-color: #ef4444;
-  box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.5);
   animation: pulse 1.5s infinite;
 }
 
 .seatCardRound.isYou {
   border-color: #38bdf8;
   background: rgba(14, 28, 48, 0.95);
-  box-shadow: 0 0 18px rgba(56, 189, 248, 0.4);
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.4);
 }
 
 .seatCardRound.isLeftNeighbor {
@@ -198,15 +245,82 @@
   border-color: #f59e0b;
 }
 
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+.seatAvatarRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.seatAvatarFrame {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0f0a18;
+}
+
+.frameRose {
+  border: 2px solid #f43f5e;
+  box-shadow: 0 0 6px rgba(244, 63, 94, 0.45);
+}
+
+.frameFan {
+  border: 2px solid #10b981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.45);
+}
+
+.frameInquisitor {
+  border: 2px solid #f59e0b;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.45);
+}
+
+.frameMystery {
+  border: 2px solid rgba(168, 85, 247, 0.45);
+  box-shadow: 0 0 6px rgba(168, 85, 247, 0.25);
+}
+
+.seatAvatarImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.seatAvatarInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.seatName {
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: #f1f5f9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .seatRelationBadge {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  font-size: 0.65rem;
+  gap: 2px;
+  font-size: 0.58rem;
   font-weight: 700;
-  padding: 1px 5px;
-  border-radius: 4px;
-  line-height: 1.2;
+  padding: 1px 4px;
+  border-radius: 3px;
+  line-height: 1.1;
+  width: fit-content;
 }
 
 .badgeYou {
@@ -227,149 +341,21 @@
   border: 1px solid #f59e0b;
 }
 
-/* Seat Card Character Avatar Layout */
-.seatAvatarRow {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-
-.seatAvatarFrame {
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  border-radius: 50%;
-  overflow: hidden;
-  background: #0f0a18;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.25s ease;
-}
-
-.frameRose {
-  border: 2px solid #f43f5e;
-  box-shadow: 0 0 8px rgba(244, 63, 94, 0.45);
-}
-
-.frameFan {
-  border: 2px solid #10b981;
-  box-shadow: 0 0 8px rgba(16, 185, 129, 0.45);
-}
-
-.frameInquisitor {
-  border: 2px solid #f59e0b;
-  box-shadow: 0 0 8px rgba(245, 158, 11, 0.45);
-}
-
-.frameMystery {
-  border: 2px solid rgba(168, 85, 247, 0.45);
-  box-shadow: 0 0 6px rgba(168, 85, 247, 0.25);
-}
-
-.seatAvatarImg {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 50%;
-}
-
-.seatAvatarInfo {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
 .seatDaggerShield {
   display: flex;
-  gap: 4px;
   align-items: center;
+  gap: 3px;
+  margin-left: auto;
 }
 
-/* Bottom HUD Portrait */
-.myPortraitContainer {
-  position: relative;
-  width: 52px;
-  height: 52px;
-  min-width: 52px;
-  border-radius: 50%;
-  border: 2.5px solid #f59e0b;
-  box-shadow: 0 0 14px rgba(245, 158, 11, 0.4);
-  background: #0f0a18;
-}
-
-.myPortraitImg {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.myClanBadgeOverlay {
-  position: absolute;
-  bottom: -4px;
-  right: -5px;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: #0d0a14;
-  border: 1.5px solid rgba(255, 255, 255, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
-}
-
-.seatCard {
-  background: rgba(26, 21, 35, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 12px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  transition: all 0.25s ease;
-  position: relative;
-}
-
-.seatCard.isDagger {
-  border-color: #f59e0b;
-  box-shadow: 0 0 16px rgba(245, 158, 11, 0.3);
-}
-
-.seatCard.isTarget {
-  border-color: #ef4444;
-  box-shadow: 0 0 16px rgba(239, 68, 68, 0.35);
-  animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.02); }
-}
-
-.seatHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.seatName {
-  font-weight: 600;
-  font-size: 0.95rem;
-  color: #f1f5f9;
-}
-
-/* Khối Vết Thương (Wound Section) hiển thị rõ ràng 0/4 */
+/* Wounds Section (0/4) */
 .woundSection {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  background: rgba(0, 0, 0, 0.25);
-  padding: 5px 8px;
-  border-radius: 8px;
+  gap: 2px;
+  background: rgba(0, 0, 0, 0.32);
+  padding: 3px 6px;
+  border-radius: 6px;
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
@@ -377,206 +363,232 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 4px;
 }
 
 .woundTitle {
-  font-size: 0.72rem;
+  font-size: 0.65rem;
   font-weight: 600;
   color: #fda4af;
-  display: flex;
-  align-items: center;
-  gap: 3px;
 }
 
-.woundValue {
-  font-size: 0.78rem;
+.woundStatusBadge {
+  font-size: 0.58rem;
   font-weight: 800;
-  color: #f8fafc;
+  padding: 1px 4px;
+  border-radius: 3px;
 }
 
-.woundDanger {
-  color: #ef4444 !important;
-  text-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
+.statusNormal {
+  background: rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+}
+
+.statusCritical {
+  background: rgba(245, 158, 11, 0.25);
+  color: #fde68a;
+  border: 1px solid #f59e0b;
 }
 
 .statusCaptured {
-  font-size: 0.62rem;
-  font-weight: 800;
-  padding: 1px 5px;
-  border-radius: 4px;
   background: #dc2626;
   color: white;
-  letter-spacing: 0.5px;
   animation: pulse 1s infinite;
 }
 
-.statusDanger {
-  font-size: 0.62rem;
-  font-weight: 800;
-  padding: 1px 5px;
-  border-radius: 4px;
-  background: #f59e0b;
-  color: #1a0a03;
-  letter-spacing: 0.5px;
-}
-
+.woundBar,
 .woundsTrack {
   display: flex;
-  gap: 6px;
+  gap: 4px;
   align-items: center;
+  justify-content: center;
+  padding-top: 1px;
 }
 
 .woundPip {
-  width: 20px;
-  height: 20px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
-  border: 1.5px solid rgba(255, 255, 255, 0.22);
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
   background: rgba(255, 255, 255, 0.06);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.25s ease;
+  transition: all 0.2s;
 }
 
-.woundPip.filled {
-  background: transparent;
-  border-color: transparent;
-  filter: drop-shadow(0 0 7px rgba(239, 68, 68, 0.85));
+.pipActive {
+  background: #ef4444;
+  border-color: #f87171;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.8);
 }
 
-.woundHint {
-  font-size: 0.65rem;
-  color: #94a3b8;
-  line-height: 1.2;
+.pipCaptured {
+  background: #991b1b;
+  border-color: #dc2626;
+  box-shadow: 0 0 8px #dc2626;
 }
 
-/* Khối Manh Mối (Tokens Section) */
-.tokensSection {
+/* Tokens Area */
+.tokenArea {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
+  padding: 2px 4px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 5px;
 }
 
-.tokensHeader {
-  font-size: 0.68rem;
+.tokenAreaHeader {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.6rem;
   color: #94a3b8;
   font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 4px;
 }
 
-.noTokensText {
-  font-size: 0.68rem;
-  color: #64748b;
-  font-style: italic;
-  padding: 2px 0;
-}
-
-.tokensRow {
+.tokenRow {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
-  min-height: 22px;
+  gap: 3px;
+  align-items: center;
+  min-height: 16px;
 }
 
-.tokenBadge {
-  padding: 2px 7px;
-  border-radius: 6px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  line-height: 1.2;
+.tokenEmpty {
+  font-size: 0.6rem;
+  color: #64748b;
+  font-style: italic;
+}
+
+.clueTokenChip {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  cursor: help;
-  transition: transform 0.15s ease;
+  gap: 2px;
+  font-size: 0.64rem;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 4px;
+  line-height: 1.1;
 }
 
-.tokenBadge:hover {
-  transform: translateY(-1px);
-}
-
-.tokenRed {
-  background: rgba(220, 38, 38, 0.22);
+.chipRose {
+  background: rgba(220, 38, 38, 0.25);
   color: #fca5a5;
   border: 1px solid #ef4444;
-  box-shadow: 0 0 8px rgba(239, 68, 68, 0.25);
 }
 
-.tokenGreen {
-  background: rgba(16, 185, 129, 0.22);
+.chipFan {
+  background: rgba(16, 185, 129, 0.25);
   color: #a7f3d0;
   border: 1px solid #10b981;
-  box-shadow: 0 0 8px rgba(16, 185, 129, 0.25);
 }
 
-.tokenYellow {
-  background: rgba(245, 158, 11, 0.22);
-  color: #fde68a;
-  border: 1px solid #f59e0b;
-  box-shadow: 0 0 8px rgba(245, 158, 11, 0.25);
-}
-
-.tokenRank {
-  background: rgba(56, 189, 248, 0.22);
+.chipRank {
+  background: rgba(56, 189, 248, 0.25);
   color: #bae6fd;
   border: 1px solid #38bdf8;
-  box-shadow: 0 0 8px rgba(56, 189, 248, 0.25);
 }
 
-.tokenCrest {
+.chipCrest {
   background: rgba(168, 85, 247, 0.25);
   color: #e9d5ff;
   border: 1px solid #c084fc;
-  box-shadow: 0 0 8px rgba(168, 85, 247, 0.3);
 }
 
-.arenaCenter {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: rgba(15, 11, 23, 0.92);
-  border: 1px solid rgba(255, 77, 109, 0.4);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
-  border-radius: 16px;
-  padding: 24px 32px;
-  text-align: center;
-  max-width: 460px;
-  width: 90%;
-  z-index: 10;
+.chipMystery {
+  background: rgba(245, 158, 11, 0.25);
+  color: #fde68a;
+  border: 1px solid #f59e0b;
 }
 
-.arenaTitle {
-  font-size: 1.2rem;
+.targetActionBtn {
+  width: 100%;
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  color: white;
+  border: 1px solid #ef4444;
+  border-radius: 6px;
+  padding: 3px 6px;
+  font-size: 0.72rem;
   font-weight: 700;
-  margin-bottom: 8px;
-  color: #f8fafc;
+  cursor: pointer;
+  margin-top: 2px;
+  transition: transform 0.15s;
 }
 
-.arenaSubtitle {
-  font-size: 0.9rem;
-  color: #94a3b8;
-  margin-bottom: 20px;
+.targetActionBtn:hover {
+  transform: scale(1.02);
+  background: #ef4444;
 }
 
-.actionButtons {
+/* 4. Bottom HUD */
+.bottomHud {
+  height: 76px;
+  min-height: 76px;
+  background: rgba(13, 10, 18, 0.96);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 8px 20px;
   display: flex;
-  gap: 12px;
-  justify-content: center;
-  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 20;
+  flex-shrink: 0;
 }
 
+.myIdentityBox {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.myCardVisual {
+  position: relative;
+  width: 46px;
+  height: 46px;
+}
+
+.myCardGlow {
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(244, 63, 94, 0.4), transparent 70%);
+  pointer-events: none;
+}
+
+.myCardFrame {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid #f43f5e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0f0a18;
+}
+
+.myCardImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.myCardInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Global Button Styles */
 .btnPrimary {
   background: #dc2626;
   color: white;
   border: none;
-  padding: 10px 20px;
+  padding: 8px 16px;
   border-radius: 8px;
   font-weight: 600;
+  font-size: 0.85rem;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   transition: background 0.2s;
 }
 
@@ -588,32 +600,19 @@
   background: rgba(255, 255, 255, 0.1);
   color: white;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 10px 20px;
+  padding: 8px 16px;
   border-radius: 8px;
   font-weight: 600;
+  font-size: 0.85rem;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   transition: all 0.2s;
 }
 
 .btnSecondary:hover {
   background: rgba(255, 255, 255, 0.16);
-}
-
-.bottomHud {
-  background: rgba(13, 10, 18, 0.9);
-  backdrop-filter: blur(10px);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 12px 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  z-index: 10;
-}
-
-.myCardBox {
-  display: flex;
-  align-items: center;
-  gap: 14px;
 }
 
 .clanEmblem {
@@ -950,10 +949,11 @@
 }
 
 /* 6. Right Sidebar: Log Box & Guide Panel */
+.logSidebar,
 .logBox {
-  width: 350px;
-  min-width: 320px;
-  max-width: 380px;
+  width: 330px;
+  min-width: 290px;
+  max-width: 350px;
   height: 100%;
   background: rgba(15, 11, 23, 0.94);
   backdrop-filter: blur(14px);
@@ -962,14 +962,17 @@
   flex-direction: column;
   z-index: 10;
   box-shadow: -4px 0 24px rgba(0, 0, 0, 0.5);
+  flex-shrink: 0;
 }
 
+.logHeader,
 .logTabs {
   display: flex;
   background: rgba(0, 0, 0, 0.45);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   padding: 6px;
   gap: 4px;
+  flex-shrink: 0;
 }
 
 .logTabBtn {

@@ -6,7 +6,8 @@ dist/
 .env.*
 !.env.example
 apps/web/dist/
-apps/server/target/
+# Backend repository (independent git repo)
+apps/server/
 .idea/
 .vscode/
 *.tsbuildinfo

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Navigate, useParams } from "react-router-dom";
 import { fetchNobSnapshot, NOB_CATALOGUE_ID, NobPlayPage, parseNobView, type NobView } from "@/games/nob";
-import { BLOOD_BOUND_ID, BloodBoundPlayPage } from "@/games/bloodBound";
+import { BLOOD_BOUND_ID, BloodBoundPlayPage, useBloodBoundGame } from "@/games/bloodBound";
 import { NOT_IN_MY_POT_ID, NotInMyPotPlayPage, useNotInMyPotGame } from "@/games/notInMyPot";
 import { WHERES_THE_BONE_ID, WheresTheBonePlayPage, useWheresTheBoneGame } from "@/games/wheresTheBone";
 import { ConnectionStatusBadge } from "@/shared/components/ConnectionStatusBadge/ConnectionStatusBadge";
@@ -23,8 +23,10 @@ export function GamePage() {
   const isNob = room?.gameId === NOB_CATALOGUE_ID;
   const isNotInMyPot = room?.gameId === NOT_IN_MY_POT_ID;
   const isWheresTheBone = room?.gameId === WHERES_THE_BONE_ID;
+  const isBloodBound = room?.gameId === BLOOD_BOUND_ID;
   const notInMyPot = useNotInMyPotGame(roomId, Boolean(isNotInMyPot && room?.status === "in_game"));
   const wheresTheBone = useWheresTheBoneGame(roomId, Boolean(isWheresTheBone && room?.status === "in_game"));
+  const bloodBound = useBloodBoundGame(roomId, Boolean(isBloodBound && room?.status === "in_game"));
 
   useEffect(() => {
     if (session && roomId) {
@@ -151,7 +153,16 @@ export function GamePage() {
       return (
         <>
           <ConnectionStatusBadge />
-          <BloodBoundPlayPage roomId={roomId} room={room} />
+          <BloodBoundPlayPage
+            roomId={roomId}
+            room={room}
+            view={bloodBound.view}
+            snapshotPending={bloodBound.snapshotPending}
+            snapshotError={bloodBound.snapshotError}
+            notice={bloodBound.notice}
+            rejectCode={bloodBound.rejectCode}
+            sendCommand={bloodBound.sendCommand}
+          />
         </>
       );
     }
