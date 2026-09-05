@@ -131,11 +131,15 @@ Phải cung cấp tối thiểu 4 hàm chuẩn:
    - **Bố cục vòng tròn ghế / danh sách ghế ngồi:** Hiển thị rõ ràng avatar, tên, trạng thái (sống/chết, thẻ bài lộ diện, lượt đi hiện tại).
    - **Bảng điều khiển hành động (Action HUD):** Nút hành động nổi bật, hiển thị theo phase hiện tại.
    - **Khay thông tin & Nhật ký:** Hiển thị role card bí mật của cá nhân, thời gian đếm ngược (Countdown), và nhật ký hoạt động gần nhất.
-2. **Nguyên tắc Styling & CSS Modules (`<Game>PlayPage.module.css`):**
    - Sử dụng CSS Design Tokens của nền tảng: `var(--bg)`, `var(--surface)`, `var(--brand)`, `var(--on-brand)`, `var(--text)`, `var(--text-muted)`.
    - **Mobile-first:** Đảm bảo hiển thị đẹp và không vỡ layout ở màn hình từ **360px**.
    - **Touch target:** Kích thước tối thiểu cho các nút/thẻ bài chạm cảm ứng là `44px x 44px`.
    - Đảm bảo độ tương phản AA (dùng `var(--on-brand)` cho text trên nền nút màu `--brand`).
+3. **4 Tiêu chuẩn Thiết kế UI/UX nâng cao (Rút ra từ thực tế người dùng):**
+   - **Đồng bộ màu sắc gia tộc (Clan Visual Identity):** Tông màu chủ đạo của phe (Rose = Đỏ thẫm, Fan = Xanh lục ngọc bích, Inquisitor = Vàng kim) phải bao trùm toàn bộ assets của phe đó (áo choàng, mắt, quạt, ngọc, vũ khí). Tuyệt đối không để lẫn màu đối lập.
+   - **Không vẽ chibi cho game kỳ bí (Zero-Chibi Invariant):** Game thể loại ma cà rồng/ma sói/chiến thuật u tối cấm dùng nét chibi hoạt hình má hồng. Phải dùng phong cách **Dark Gothic Fantasy**, Heraldic Vector hoặc trang trọng, sắc sảo.
+   - **Lấp đầy khoảng trống màn hình & Minh bạch chỉ số:** Không để bàn chơi cô lập giữa màn hình đen. Mở rộng kích thước bàn (`max-width: min(1120px, 94vw)`), thẻ ghế `200px+`. Không viết tắt chỉ số mơ hồ (ví dụ `0/4` phải ghi rõ `🩸 Vết thương: 0/4`, có thanh máu trực quan, giải thích rõ "chịu 4 đòn sẽ bị bắt giữ", trạng thái nguy kịch). Tích hợp Sidebar bên phải (Sổ tay hướng dẫn, Sự kiện, Log AI).
+   - **Hệ thống âm thanh Web Audio API thuần:** Luôn tích hợp bộ phát âm thanh tổng hợp Web Audio API (chém kiếm, trúng đòn, lật thẻ, khiên, can thiệp, thắng/thua) kèm nút Bật/Tắt âm thanh trên Header lưu vào LocalStorage qua Zustand.
 
 ---
 

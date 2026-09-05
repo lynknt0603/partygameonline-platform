@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <radialGradient id="rose-alc-bg" cx="50%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#4c0519"/>
+      <stop offset="60%" stop-color="#190207"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </radialGradient>
+    <linearGradient id="rose-potion" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fda4af"/>
+      <stop offset="50%" stop-color="#f43f5e"/>
+      <stop offset="100%" stop-color="#881337"/>
+    </linearGradient>
+    <filter id="rose-alc-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#f43f5e" flood-opacity="0.6"/>
+    </filter>
+  </defs>
+
+  <circle cx="64" cy="64" r="60" fill="url(#rose-alc-bg)" stroke="#f43f5e" stroke-width="3" filter="url(#rose-alc-glow)"/>
+  <circle cx="64" cy="64" r="54" fill="none" stroke="rgba(244, 63, 94, 0.3)" stroke-width="1.2" stroke-dasharray="3 3"/>
+
+  <!-- Áo choàng học sĩ giả kim màu đỏ nhung -->
+  <path d="M 28 128 L 42 84 L 64 88 L 86 84 L 100 128 Z" fill="#24030a" stroke="#881337" stroke-width="1.5"/>
+
+  <!-- Mũ trùm học sĩ & tóc xám thông thái -->
+  <path d="M 38 48 C 36 26 48 18 64 18 C 80 18 92 26 90 48 C 94 62 88 74 88 74 L 40 74 C 40 74 34 62 38 48 Z" 
+        fill="#3b0712" stroke="#e11d48" stroke-width="1.5"/>
+  <path d="M 46 48 C 46 66 52 74 64 78 C 76 74 82 66 82 48 C 82 38 76 34 64 34 C 52 34 46 38 46 48 Z" 
+        fill="#fce7f3" stroke="#9f1239" stroke-width="1.2"/>
+
+  <!-- Kính đo quang học kim loại đỏ đồng -->
+  <circle cx="54" cy="50" r="7" fill="#1e0307" stroke="#e11d48" stroke-width="1.8"/>
+  <circle cx="54" cy="50" r="4.5" fill="#f43f5e" opacity="0.6"/>
+  <circle cx="74" cy="50" r="7" fill="#1e0307" stroke="#e11d48" stroke-width="1.8"/>
+  <circle cx="74" cy="50" r="4.5" fill="#f43f5e" opacity="0.6"/>
+  <line x1="61" y1="50" x2="67" y2="50" stroke="#fda4af" stroke-width="2"/>
+
+  <!-- Bình dược chất máu đỏ hồi sinh (Blood Elixir Flask) -->
+  <g transform="translate(64, 102)">
+    <!-- Cổ bình thủy tinh -->
+    <rect x="-4" y="-22" width="8" height="8" fill="#fda4af" stroke="#881337" stroke-width="1"/>
+    <!-- Thân bình tam giác phát sáng -->
+    <path d="M -4 -14 L -16 6 C -18 10 -14 14 0 14 C 14 14 18 10 16 6 L 4 -14 Z" 
+          fill="url(#rose-potion)" stroke="#fda4af" stroke-width="1.5" filter="url(#rose-alc-glow)"/>
+    <!-- Bọt khí hồi phục dược chất -->
+    <circle cx="-3" cy="2" r="2" fill="#ffffff" opacity="0.8"/>
+    <circle cx="4" cy="-2" r="1.5" fill="#ffffff" opacity="0.8"/>
+    <circle cx="1" cy="6" r="1.8" fill="#ffffff" opacity="0.7"/>
+  </g>
+
+  <!-- Rank 4 -->
+  <circle cx="64" cy="116" r="10" fill="#24030a" stroke="#f43f5e" stroke-width="1.5"/>
+  <text x="64" y="120" text-anchor="middle" fill="#fda4af" font-size="11" font-weight="900" font-family="serif">IV</text>
+</svg>

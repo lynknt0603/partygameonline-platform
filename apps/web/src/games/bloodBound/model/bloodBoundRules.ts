@@ -21,41 +21,112 @@ export interface GameInitResult {
   secretCards: Record<string, BloodBoundCard>;
 }
 
+export interface InitBloodBoundOptions {
+  shuffle?: boolean;
+  assignedRoles?: Record<string, { clan: BloodClan; rank: BloodBoundRoleRank }>;
+  startingDaggerPlayerId?: string;
+}
+
 /**
- * Khởi tạo trận đấu Blood Bound với luật chia bài nguyên bản (Rose vs Beast)
+ * Khởi tạo trận đấu Blood Bound với luật chia bài nguyên bản (Rose vs Fan, kèm Inquisitor)
  */
 export function initBloodBoundGame(
   roomId: string,
   playersInfo: PlayerInitInfo[],
   viewingPlayerId: string,
+  options?: InitBloodBoundOptions,
 ): GameInitResult {
   const count = playersInfo.length;
   const half = Math.floor(count / 2);
 
   const secretCards: Record<string, BloodBoundCard> = {};
 
-  // Phân chia vai trò: 1 đến half cho Rose, 1 đến half cho Beast
-  playersInfo.forEach((p, idx) => {
-    let clan: BloodClan;
-    let rank: BloodBoundRoleRank;
+  if (!options?.shuffle && !options?.assignedRoles) {
+    // 1. Phân chia vai trò tất định (giữ nguyên cho unit test)
+    playersInfo.forEach((p, idx) => {
+      let clan: BloodClan;
+      let rank: BloodBoundRoleRank;
 
-    if (idx < half) {
-      clan = "ROSE";
-      rank = Math.min(8, idx + 1) as BloodBoundRoleRank;
-    } else if (idx < half * 2) {
-      clan = "BEAST";
-      rank = Math.min(8, idx - half + 1) as BloodBoundRoleRank;
-    } else {
-      clan = "INQUISITOR";
-      rank = 8;
+      if (idx < half) {
+        clan = "ROSE";
+        rank = Math.min(8, idx + 1) as BloodBoundRoleRank;
+      } else if (idx < half * 2) {
+        clan = "FAN";
+        rank = Math.min(8, idx - half + 1) as BloodBoundRoleRank;
+      } else {
+        clan = "INQUISITOR";
+        rank = 8;
+      }
+
+      secretCards[p.playerId] = {
+        clan,
+        rank,
+        roleInfo: BLOOD_BOUND_ROLES[rank],
+      };
+    });
+  } else {
+    // 2. Phân chia vai trò ngẫu nhiên hoặc chỉ định vai trò cho người chơi test
+    const deck: Array<{ clan: BloodClan; rank: BloodBoundRoleRank }> = [];
+    for (let r = 1; r <= half; r++) {
+      deck.push({ clan: "ROSE", rank: Math.min(8, r) as BloodBoundRoleRank });
+      deck.push({ clan: "FAN", rank: Math.min(8, r) as BloodBoundRoleRank });
+    }
+    if (count % 2 === 1) {
+      deck.push({ clan: "INQUISITOR", rank: 8 });
     }
 
-    secretCards[p.playerId] = {
-      clan,
-      rank,
-      roleInfo: BLOOD_BOUND_ROLES[rank],
-    };
-  });
+    const assignedPlayerIds = new Set<string>();
+    if (options?.assignedRoles) {
+      for (const [pid, role] of Object.entries(options.assignedRoles)) {
+        if (playersInfo.some((p) => p.playerId === pid)) {
+          secretCards[pid] = {
+            clan: role.clan,
+            rank: role.rank,
+            roleInfo: BLOOD_BOUND_ROLES[role.rank],
+          };
+          assignedPlayerIds.add(pid);
+
+          // Rút thẻ tương ứng ra khỏi bộ bài
+          const deckIdx = deck.findIndex((c) => c.clan === role.clan && c.rank === role.rank);
+          if (deckIdx >= 0) {
+            deck.splice(deckIdx, 1);
+          } else {
+            const sameClanIdx = deck.findIndex((c) => c.clan === role.clan);
+            if (sameClanIdx >= 0) {
+              deck.splice(sameClanIdx, 1);
+            } else {
+              deck.pop();
+            }
+          }
+        }
+      }
+    }
+
+    // Xáo trộn các lá bài còn lại
+    if (options?.shuffle !== false) {
+      for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+      }
+    }
+
+    // Chia đều cho các người chơi còn lại
+    playersInfo.forEach((p) => {
+      if (!assignedPlayerIds.has(p.playerId)) {
+        const card = deck.shift() ?? { clan: "ROSE", rank: 1 as BloodBoundRoleRank };
+        secretCards[p.playerId] = {
+          clan: card.clan,
+          rank: card.rank,
+          roleInfo: BLOOD_BOUND_ROLES[card.rank],
+        };
+      }
+    });
+  }
+
+  const startingDaggerPlayerId =
+    options?.startingDaggerPlayerId && playersInfo.some((p) => p.playerId === options.startingDaggerPlayerId)
+      ? options.startingDaggerPlayerId
+      : playersInfo[0]?.playerId ?? "";
 
   const players: BloodBoundPlayerPublic[] = playersInfo.map((p, idx) => ({
     playerId: p.playerId,
@@ -67,7 +138,7 @@ export function initBloodBoundGame(
     hasRevealedRank: false,
     hasUsedAbility: false,
     isShielded: false,
-    isDaggerHolder: idx === 0,
+    isDaggerHolder: p.playerId === startingDaggerPlayerId,
   }));
 
   const viewerCard = secretCards[viewingPlayerId] ?? null;
@@ -86,7 +157,7 @@ export function initBloodBoundGame(
     you: viewingPlayerId,
     phase: "LOOK_LEFT",
     roundNumber: 1,
-    daggerHolderPlayerId: playersInfo[0]?.playerId ?? "",
+    daggerHolderPlayerId: startingDaggerPlayerId,
     currentTargetPlayerId: null,
     intervenedByPlayerId: null,
     players,
@@ -316,7 +387,7 @@ export function processWoundReveal(
       hasRevealedRank = true;
       break;
     case "COLOR":
-      tokenValue = secret.clan === "ROSE" ? "RED" : secret.clan === "BEAST" ? "BLUE" : "GRAY";
+      tokenValue = secret.clan === "ROSE" ? "RED" : secret.clan === "FAN" ? "GREEN" : "YELLOW";
       break;
     case "CREST":
       tokenValue = `${secret.clan}-CREST`;
@@ -434,6 +505,11 @@ export function applyRoleAbility(
   let logTextVi = "";
 
   switch (roleRank) {
+    case 1: // Leader: Bị động, kiên cường giữ vững sĩ khí
+      logText = `Leader ${actor.displayName} rallies the clan with unwavering resolve!`;
+      logTextVi = `Thủ Lĩnh ${actor.displayName} kiên cường cổ vũ toàn gia tộc!`;
+      break;
+
     case 2: // Assassin: Gây ngay 1 vết thương lên mục tiêu
       if (targetPlayerId) {
         updatedPlayers = view.players.map((p) => {
@@ -445,6 +521,23 @@ export function applyRoleAbility(
         const target = view.players.find((p) => p.playerId === targetPlayerId);
         logText = `Assassin ${actor.displayName} strikes ${target?.displayName ?? "target"}, dealing 1 direct wound!`;
         logTextVi = `Sát thủ ${actor.displayName} xuất chiêu, gây ngay 1 vết thương lên ${target?.displayName ?? "mục tiêu"}!`;
+      }
+      break;
+
+    case 3: // Harlequin: Tung ảo ảnh, gắn thêm Token Manh Mối Dấu Hỏi (?) cho mục tiêu
+      if (targetPlayerId) {
+        updatedPlayers = view.players.map((p) => {
+          if (p.playerId === targetPlayerId) {
+            return {
+              ...p,
+              revealedTokens: [...p.revealedTokens, { type: "QUESTION" as ClueTokenType, value: "?" }],
+            };
+          }
+          return p;
+        });
+        const target = view.players.find((p) => p.playerId === targetPlayerId);
+        logText = `Harlequin ${actor.displayName} casts an illusion on ${target?.displayName ?? "target"}, adding a Mystery (?) token!`;
+        logTextVi = `Tắc Kè Hoa ${actor.displayName} tung ảo ảnh lên ${target?.displayName ?? "mục tiêu"}, gắn thêm Token Dấu Hỏi (?)!`;
       }
       break;
 
@@ -462,6 +555,23 @@ export function applyRoleAbility(
       }
       break;
 
+    case 5: // Mentalist: Ép đối phương để lộ manh mối phù hiệu
+      if (targetPlayerId) {
+        updatedPlayers = view.players.map((p) => {
+          if (p.playerId === targetPlayerId) {
+            return {
+              ...p,
+              revealedTokens: [...p.revealedTokens, { type: "CREST" as ClueTokenType, value: "MENTALIST_EYE" }],
+            };
+          }
+          return p;
+        });
+        const target = view.players.find((p) => p.playerId === targetPlayerId);
+        logText = `Mentalist ${actor.displayName} peers into the thoughts of ${target?.displayName ?? "target"}, forcing a clue token reveal!`;
+        logTextVi = `Thần Trí ${actor.displayName} dùng ngoại cảm nhìn thấu ${target?.displayName ?? "mục tiêu"}, ép lộ phù hiệu manh mối!`;
+      }
+      break;
+
     case 6: // Guardian: Ban khiên chắn bảo vệ
       if (targetPlayerId) {
         updatedPlayers = view.players.map((p) => {
@@ -473,6 +583,28 @@ export function applyRoleAbility(
         const target = view.players.find((p) => p.playerId === targetPlayerId);
         logText = `Guardian ${actor.displayName} grants an Aegis Shield to ${target?.displayName ?? "target"}.`;
         logTextVi = `Hộ vệ ${actor.displayName} ban khiên bảo vệ cho ${target?.displayName ?? "mục tiêu"}.`;
+      }
+      break;
+
+    case 7: // Berserker: Cuồng nộ phản đòn 1 vết thương
+      if (targetPlayerId) {
+        updatedPlayers = view.players.map((p) => {
+          if (p.playerId === targetPlayerId) {
+            return { ...p, wounds: Math.min(4, p.wounds + 1) };
+          }
+          return p;
+        });
+        const target = view.players.find((p) => p.playerId === targetPlayerId);
+        logText = `Berserker ${actor.displayName} unleashes wrath, dealing 1 wound to ${target?.displayName ?? "target"}!`;
+        logTextVi = `Cuồng Nộ ${actor.displayName} bộc phát thịnh nộ, gây 1 vết thương lên ${target?.displayName ?? "mục tiêu"}!`;
+      }
+      break;
+
+    case 8: // Courtesan / Inquisitor: Mưu kế thao túng
+      if (targetPlayerId) {
+        const target = view.players.find((p) => p.playerId === targetPlayerId);
+        logText = `${actor.displayName} uses high intrigue upon ${target?.displayName ?? "target"}!`;
+        logTextVi = `${actor.displayName} kích hoạt mưu lược Rank 8 lên ${target?.displayName ?? "mục tiêu"}!`;
       }
       break;
 

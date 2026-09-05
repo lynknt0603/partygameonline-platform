@@ -21,17 +21,53 @@ describe("Blood Bound Rules - Game Initialization", () => {
     { playerId: "p6", displayName: "Frank" },
   ];
 
-  it("divides players equally into Rose and Beast clans", () => {
+  it("divides players equally into Rose and Fan clans", () => {
     const { view, secretCards } = initBloodBoundGame("room-bb-1", players, "p1");
     expect(view.players).toHaveLength(6);
     expect(view.phase).toBe("LOOK_LEFT");
     expect(view.daggerHolderPlayerId).toBe("p1");
 
-    // 3 Rose, 3 Beast
+    // 3 Rose, 3 Fan
     const roseCount = Object.values(secretCards).filter((c) => c.clan === "ROSE").length;
-    const beastCount = Object.values(secretCards).filter((c) => c.clan === "BEAST").length;
+    const fanCount = Object.values(secretCards).filter((c) => c.clan === "FAN").length;
     expect(roseCount).toBe(3);
-    expect(beastCount).toBe(3);
+    expect(fanCount).toBe(3);
+  });
+
+  it("supports MAX 8 players (4 Rose vs 4 Fan)", () => {
+    const eightPlayers = [
+      ...players,
+      { playerId: "p7", displayName: "Grace" },
+      { playerId: "p8", displayName: "Heidi" },
+    ];
+    const { view, secretCards } = initBloodBoundGame("room-bb-max", eightPlayers, "p1");
+    expect(view.players).toHaveLength(8);
+    const roseCount = Object.values(secretCards).filter((c) => c.clan === "ROSE").length;
+    const fanCount = Object.values(secretCards).filter((c) => c.clan === "FAN").length;
+    expect(roseCount).toBe(4);
+    expect(fanCount).toBe(4);
+
+    // Both clans have Leader (Rank 1)
+    const roseLeader = Object.values(secretCards).find((c) => c.clan === "ROSE" && c.rank === 1);
+    const fanLeader = Object.values(secretCards).find((c) => c.clan === "FAN" && c.rank === 1);
+    expect(roseLeader).toBeDefined();
+    expect(fanLeader).toBeDefined();
+  });
+
+  it("supports 7 players with Inquisitor role (3 Rose, 3 Fan, 1 Inquisitor)", () => {
+    const sevenPlayers = [
+      ...players,
+      { playerId: "p7", displayName: "Grace" },
+    ];
+    const { view, secretCards } = initBloodBoundGame("room-bb-inq", sevenPlayers, "p1");
+    expect(view.players).toHaveLength(7);
+    const roseCount = Object.values(secretCards).filter((c) => c.clan === "ROSE").length;
+    const fanCount = Object.values(secretCards).filter((c) => c.clan === "FAN").length;
+    const inqCount = Object.values(secretCards).filter((c) => c.clan === "INQUISITOR").length;
+    expect(roseCount).toBe(3);
+    expect(fanCount).toBe(3);
+    expect(inqCount).toBe(1);
+    expect(secretCards["p7"].clan).toBe("INQUISITOR");
   });
 
   it("provides secret left-neighbor clue at start", () => {
@@ -126,7 +162,7 @@ describe("Blood Bound Rules - Wound Assignment & Victory Evaluation", () => {
 
     expect(p4?.wounds).toBe(1);
     expect(p4?.revealedTokens[0].type).toBe("COLOR");
-    expect(p4?.revealedTokens[0].value).toBe("BLUE");
+    expect(p4?.revealedTokens[0].value).toBe("GREEN");
     expect(woundedView.daggerHolderPlayerId).toBe("p4"); // p4 now holds the dagger!
     expect(woundedView.phase).toBe("ATTACK_CHOICE");
   });
@@ -195,8 +231,8 @@ describe("Blood Bound Rules - Wound Assignment & Victory Evaluation", () => {
 
     expect(gameOverView.phase).toBe("GAME_OVER");
     expect(gameOverView.capturedPlayerId).toBe("p5");
-    // p1 (ROSE) attacked, but p5 is NOT the leader -> BEAST clan wins!
-    expect(gameOverView.winnerClan).toBe("BEAST");
+    // p1 (ROSE) attacked, but p5 is NOT the leader -> FAN clan wins!
+    expect(gameOverView.winnerClan).toBe("FAN");
   });
 });
 
@@ -227,5 +263,59 @@ describe("Blood Bound Rules - Character Abilities", () => {
     const nextView = applyRoleAbility(view, "p1", 6, "p2");
     const p2 = nextView.players.find((p) => p.playerId === "p2");
     expect(p2?.isShielded).toBe(true);
+  });
+
+  it("Harlequin ability places a mystery question token", () => {
+    const { view } = initBloodBoundGame("room-bb-1", players, "p1");
+    const nextView = applyRoleAbility(view, "p1", 3, "p2");
+    const p2 = nextView.players.find((p) => p.playerId === "p2");
+    expect(p2?.revealedTokens.some((t) => t.type === "QUESTION")).toBe(true);
+  });
+
+  it("Mentalist ability forces clue token reveal", () => {
+    const { view } = initBloodBoundGame("room-bb-1", players, "p1");
+    const nextView = applyRoleAbility(view, "p1", 5, "p2");
+    const p2 = nextView.players.find((p) => p.playerId === "p2");
+    expect(p2?.revealedTokens.some((t) => t.type === "CREST")).toBe(true);
+  });
+
+  it("Berserker ability deals 1 retaliatory wound", () => {
+    const { view } = initBloodBoundGame("room-bb-1", players, "p1");
+    const nextView = applyRoleAbility(view, "p1", 7, "p2");
+    const p2 = nextView.players.find((p) => p.playerId === "p2");
+    expect(p2?.wounds).toBe(1);
+  });
+});
+
+describe("Blood Bound Rules - Role Customization & Shuffling", () => {
+  const sixPlayers = [
+    { playerId: "p1", displayName: "Alice" },
+    { playerId: "p2", displayName: "Bob" },
+    { playerId: "p3", displayName: "Charlie" },
+    { playerId: "p4", displayName: "David" },
+    { playerId: "p5", displayName: "Eve" },
+    { playerId: "p6", displayName: "Frank" },
+  ];
+
+  it("allows assigning a specific role (e.g. Assassin) to human player", () => {
+    const { secretCards } = initBloodBoundGame("room-bb-custom", sixPlayers, "p1", {
+      assignedRoles: {
+        p1: { clan: "FAN", rank: 2 },
+      },
+    });
+
+    expect(secretCards["p1"].clan).toBe("FAN");
+    expect(secretCards["p1"].rank).toBe(2);
+    expect(secretCards["p1"].roleInfo.roleName).toBe("Assassin");
+  });
+
+  it("allows specifying a custom starting dagger holder", () => {
+    const { view } = initBloodBoundGame("room-bb-dagger", sixPlayers, "p1", {
+      startingDaggerPlayerId: "p3",
+    });
+
+    expect(view.daggerHolderPlayerId).toBe("p3");
+    expect(view.players.find((p) => p.playerId === "p3")?.isDaggerHolder).toBe(true);
+    expect(view.players.find((p) => p.playerId === "p1")?.isDaggerHolder).toBe(false);
   });
 });

@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <radialGradient id="fan-alc-bg" cx="50%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#064e3b"/>
+      <stop offset="50%" stop-color="#022c22"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </radialGradient>
+    <linearGradient id="fan-potion" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#a7f3d0"/>
+      <stop offset="40%" stop-color="#34d399"/>
+      <stop offset="80%" stop-color="#059669"/>
+      <stop offset="100%" stop-color="#064e3b"/>
+    </linearGradient>
+    <filter id="fan-alc-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#10b981" flood-opacity="0.6"/>
+    </filter>
+  </defs>
+
+  <circle cx="64" cy="64" r="60" fill="url(#fan-alc-bg)" stroke="#10b981" stroke-width="3" filter="url(#fan-alc-glow)"/>
+  <circle cx="64" cy="64" r="54" fill="none" stroke="rgba(52, 211, 153, 0.35)" stroke-width="1.2" stroke-dasharray="3 3"/>
+
+  <!-- Áo choàng học sĩ độc thảo ngọc bích -->
+  <path d="M 28 128 L 42 84 L 64 88 L 86 84 L 100 128 Z" fill="#021c15" stroke="#047857" stroke-width="1.5"/>
+
+  <!-- Mũ trùm học sĩ xanh sẫm & tóc bạc phong trần -->
+  <path d="M 38 48 C 36 26 48 18 64 18 C 80 18 92 26 90 48 C 94 62 88 74 88 74 L 40 74 C 40 74 34 62 38 48 Z" 
+        fill="#064e3b" stroke="#10b981" stroke-width="1.5"/>
+  <path d="M 46 48 C 46 66 52 74 64 78 C 76 74 82 66 82 48 C 82 38 76 34 64 34 C 52 34 46 38 46 48 Z" 
+        fill="#ecfdf5" stroke="#047857" stroke-width="1.2"/>
+
+  <!-- Kính đo thảo dược kim loại viền ngọc -->
+  <circle cx="54" cy="50" r="7" fill="#021c15" stroke="#10b981" stroke-width="1.8"/>
+  <circle cx="54" cy="50" r="4.5" fill="#34d399" opacity="0.6"/>
+  <circle cx="74" cy="50" r="7" fill="#021c15" stroke="#10b981" stroke-width="1.8"/>
+  <circle cx="74" cy="50" r="4.5" fill="#34d399" opacity="0.6"/>
+  <line x1="61" y1="50" x2="67" y2="50" stroke="#a7f3d0" stroke-width="2"/>
+
+  <!-- Bình độc dược ngọc bích hồi phục (Emerald Elixir Flask) -->
+  <g transform="translate(64, 102)">
+    <rect x="-4" y="-22" width="8" height="8" fill="#a7f3d0" stroke="#047857" stroke-width="1"/>
+    <path d="M -4 -14 L -16 6 C -18 10 -14 14 0 14 C 14 14 18 10 16 6 L 4 -14 Z" 
+          fill="url(#fan-potion)" stroke="#a7f3d0" stroke-width="1.5" filter="url(#fan-alc-glow)"/>
+    <circle cx="-3" cy="2" r="2" fill="#ffffff" opacity="0.85"/>
+    <circle cx="4" cy="-2" r="1.5" fill="#ffffff" opacity="0.85"/>
+    <circle cx="1" cy="6" r="1.8" fill="#ffffff" opacity="0.75"/>
+  </g>
+
+  <!-- Rank 4 Fan Clan -->
+  <circle cx="64" cy="116" r="10" fill="#021c15" stroke="#10b981" stroke-width="1.5"/>
+  <text x="64" y="120" text-anchor="middle" fill="#a7f3d0" font-size="11" font-weight="900" font-family="serif">IV</text>
+</svg>

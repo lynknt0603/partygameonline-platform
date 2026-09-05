@@ -87,6 +87,20 @@ When adding or modifying a board game, agents **MUST** strictly follow these seq
   2. `npm run typecheck` (tsc --noEmit passes)
   3. `npm run build` (Vite production build succeeds)
 
+### Rule 7: Clan Visual Consistency & Zero-Chibi Art Direction
+- When designing clan assets, tokens, and character portraits, **the clan's dominant theme color must permeate the entire asset set** (e.g., Fan Clan = Emerald/Jade Green across armor, weapons, robes, glowing eyes, and tassels; Rose Clan = Royal Crimson/Ruby Red; Inquisitor = Radiant Solar Gold). Never mix opposing clan colors (e.g., no red tassels on a green fan).
+- **Zero-Chibi Invariant**: For mysterious, deduction, or gothic games (vampires, werewolves, dark fantasy), strictly avoid cute chibi anime faces with pink blush and winking eyes. Use regal **Dark Gothic Fantasy**, Heraldic Vector, or serious semi-realistic illustrations.
+
+### Rule 8: Information Density, Clear Stats (0/4 Wounds) & Cheatsheet Sidebars
+- **No Empty Screen Voids**: Table and layout must responsively expand (`width: min(1120px, 94vw)`, seat cards `200px+`) to avoid desolate black voids on modern desktop monitors.
+- **Unambiguous Stats & Tooltips**: Never display raw mysterious abbreviations like `0/4`. Always label explicitly: `🩸 Vết thương: 0/4 (Chịu 4 vết thương sẽ bị Bắt Giữ!)` with visual wound pips and status tags (`BÌNH THƯỜNG`, `NGUY KỊCH`, `BỊ BẮT`).
+- **Interactive Cheatsheet Sidebar**: Provide a responsive right sidebar (`320px - 360px`) featuring a dedicated **Sổ Tay / Guide Tab** explaining win/loss conditions, token clues, and character abilities so new players immediately understand the game.
+
+### Rule 9: Zero-Dependency Web Audio API Sound Effects
+- Every game must feature high-quality synthesized sound effects using the native browser **Web Audio API** (zero latency, zero network asset fetching, no broken audio URLs).
+- Cover all key combat and gameplay moments: attack swings, wound impacts, shield deflections, heroic interventions, mystical token reveals, heals, turn notifications, royal victory fanfares, and dark defeat drones.
+- Provide a Sound Toggle button in the header and persist the user's preference to LocalStorage via a Zustand store.
+
 ---
 
 ## 4. Scaffolding a New Game
@@ -96,3 +110,4 @@ To quickly scaffold a new game following all architectural standards, run:
 npm run scaffold:game <game-id> "<Game Display Name>"
 ```
 Or review the dedicated skill: [create-boardgame](file:///.agents/skills/create-boardgame/SKILL.md).
+

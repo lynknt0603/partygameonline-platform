@@ -1,4 +1,4 @@
-export type BloodClan = "ROSE" | "BEAST" | "INQUISITOR";
+export type BloodClan = "ROSE" | "FAN" | "INQUISITOR";
 
 export type ClueTokenType = "COLOR" | "CREST" | "RANK" | "QUESTION";
 

@@ -49,13 +49,15 @@ export function ensureFullPlayerList(
   }
 
   const botTemplates = [
-    { id: "bot-alpha", name: "🤖 Alpha (Rose)", clanPref: "ROSE" },
-    { id: "bot-bravo", name: "🤖 Bravo (Rose)", clanPref: "ROSE" },
-    { id: "bot-charlie", name: "🤖 Charlie (Beast)", clanPref: "BEAST" },
-    { id: "bot-delta", name: "🤖 Delta (Beast)", clanPref: "BEAST" },
-    { id: "bot-echo", name: "🤖 Echo (Beast)", clanPref: "BEAST" },
-    { id: "bot-foxtrot", name: "🤖 Foxtrot (Rose)", clanPref: "ROSE" },
-    { id: "bot-golf", name: "🤖 Golf (Beast)", clanPref: "BEAST" },
+    { id: "bot-alpha", name: "🤖 Alpha", clanPref: "ROSE" },
+    { id: "bot-bravo", name: "🤖 Bravo", clanPref: "ROSE" },
+    { id: "bot-charlie", name: "🤖 Charlie", clanPref: "FAN" },
+    { id: "bot-delta", name: "🤖 Delta", clanPref: "FAN" },
+    { id: "bot-echo", name: "🤖 Echo", clanPref: "FAN" },
+    { id: "bot-foxtrot", name: "🤖 Foxtrot", clanPref: "ROSE" },
+    { id: "bot-golf", name: "🤖 Golf", clanPref: "FAN" },
+    { id: "bot-hotel", name: "🤖 Hotel", clanPref: "ROSE" },
+    { id: "bot-india", name: "🤖 India", clanPref: "INQUISITOR" },
   ];
 
   const result = [...currentPlayers];
@@ -120,9 +122,13 @@ export function decideBotAttack(
     // Kiểm tra token đã lộ
     for (const token of target.revealedTokens) {
       if (token.type === "COLOR") {
-        knownClan = token.value === "RED" ? "ROSE" : "BEAST";
+        knownClan = token.value === "RED" ? "ROSE" : token.value === "GREEN" ? "FAN" : "INQUISITOR";
       } else if (token.type === "CREST") {
-        knownClan = String(token.value).startsWith("ROSE") ? "ROSE" : "BEAST";
+        knownClan = String(token.value).startsWith("ROSE")
+          ? "ROSE"
+          : String(token.value).startsWith("FAN")
+          ? "FAN"
+          : "INQUISITOR";
       } else if (token.type === "RANK") {
         knownRank = Number(token.value);
       }
@@ -173,8 +179,11 @@ export function decideBotAttack(
     };
   });
 
-  // Chọn mục tiêu có điểm số cao nhất
-  scoredTargets.sort((a, b) => b.score - a.score);
+  // Chọn mục tiêu có điểm số cao nhất (thêm ngẫu nhiên khi bằng điểm để đa dạng hóa)
+  scoredTargets.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    return Math.random() - 0.5;
+  });
   const best = scoredTargets[0];
 
   return {

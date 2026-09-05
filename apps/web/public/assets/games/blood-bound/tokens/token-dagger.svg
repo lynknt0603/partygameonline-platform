@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <filter id="chibi-dagger-shadow" x="-10%" y="-10%" width="125%" height="125%">
+      <feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#451a03" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Huy hiệu nền tròn -->
+  <circle cx="64" cy="64" r="60" fill="#FFF7ED" stroke="#F97316" stroke-width="4.5" filter="url(#chibi-dagger-shadow)"/>
+  <circle cx="64" cy="64" r="53" fill="#FFEDD5" stroke="#FDBA74" stroke-width="1.5" stroke-dasharray="3 3"/>
+
+  <!-- Tia sáng lấp lánh ngôi sao 4 cánh Chibi (Anime Sparkles) -->
+  <path d="M96 24 Q96 32 104 32 Q96 32 96 40 Q96 32 88 32 Q96 32 96 24 Z" fill="#FBBF24"/>
+  <circle cx="96" cy="32" r="2" fill="#FFFFFF"/>
+  <path d="M28 88 Q28 94 34 94 Q28 94 28 100 Q28 94 22 94 Q28 94 28 88 Z" fill="#FBBF24"/>
+
+  <!-- THANH KIẾM CHIBI RPG ĐẶT CHÉO TỪ TRÊN PHẢI XUỐNG DƯỚI TRÁI -->
+  <g transform="rotate(45, 64, 64)">
+    <!-- Lưỡi kiếm mập mạp Chibi (Cel-shading 2 tone) -->
+    <!-- Nửa sáng bên trái lưỡi kiếm -->
+    <path d="M64 16 L54 62 L64 62 Z" fill="#FFFFFF" stroke="#334155" stroke-width="2.5" stroke-linejoin="round"/>
+    <!-- Nửa tối bên phải lưỡi kiếm -->
+    <path d="M64 16 L74 62 L64 62 Z" fill="#94A3B8" stroke="#334155" stroke-width="2.5" stroke-linejoin="round"/>
+    <!-- Rãnh máu trung tâm lưỡi kiếm -->
+    <line x1="64" y1="24" x2="64" y2="56" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+
+    <!-- Chắn tay kiếm (Crossguard) hình cánh dơi / cánh én Chibi bằng vàng -->
+    <path d="M40 60 C48 56 80 56 88 60 C92 64 88 70 80 68 L68 67 L68 70 L60 70 L60 67 L48 68 C40 70 36 64 40 60 Z" 
+          fill="#FBBF24" stroke="#78350F" stroke-width="2.5" stroke-linejoin="round"/>
+    <!-- Đổ bóng cel-shading chắn tay -->
+    <path d="M42 63 C52 61 76 61 86 63 L80 68 L68 67 L68 70 L60 70 L60 67 L48 68 Z" fill="#D97706"/>
+
+    <!-- Viên hồng ngọc đỏ Chibi ở tâm chuôi kiếm -->
+    <polygon points="64,58 70,64 64,70 58,64" fill="#EF4444" stroke="#78350F" stroke-width="1.5"/>
+    <polygon points="64,60 68,64 64,68 60,64" fill="#F87171"/>
+    <!-- Highlight chớp sáng trên ngọc -->
+    <circle cx="62.5" cy="62" r="1.2" fill="#FFFFFF"/>
+
+    <!-- Cán kiếm Chibi bọc da nâu -->
+    <rect x="60" y="70" width="8" height="24" rx="2" fill="#92400E" stroke="#451A03" stroke-width="2"/>
+    <!-- Vòng quấn dây vàng -->
+    <line x1="60" y1="76" x2="68" y2="76" stroke="#FDE68A" stroke-width="2"/>
+    <line x1="60" y1="82" x2="68" y2="82" stroke="#FDE68A" stroke-width="2"/>
+    <line x1="60" y1="88" x2="68" y2="88" stroke="#FDE68A" stroke-width="2"/>
+
+    <!-- Chuôi kiếm tròn (Pommel) quả cầu vàng -->
+    <circle cx="64" cy="98" r="8" fill="#FBBF24" stroke="#78350F" stroke-width="2.5"/>
+    <circle cx="64" cy="98" r="5" fill="#F59E0B"/>
+    <circle cx="62" cy="96" r="2.2" fill="#FEF08A"/>
+  </g>
+</svg>

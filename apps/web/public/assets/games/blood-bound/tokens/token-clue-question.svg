@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <filter id="chibi-q-shadow" x="-10%" y="-10%" width="125%" height="125%">
+      <feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#4c1d95" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Huy hiệu nền tròn -->
+  <circle cx="64" cy="64" r="60" fill="#FAF5FF" stroke="#8B5CF6" stroke-width="4.5" filter="url(#chibi-q-shadow)"/>
+  <circle cx="64" cy="64" r="53" fill="#F3E8FF" stroke="#C4B5FD" stroke-width="1.5" stroke-dasharray="3 3"/>
+
+  <!-- DẤU HỎI CHIBI RPG (Đầu to, tròn trịa, biểu cảm tò mò) -->
+  <!-- Phần móc dấu hỏi -->
+  <path d="M48 42 C48 30 54 22 66 22 C78 22 86 30 86 40 C86 52 74 58 70 66 L68 74 L58 74 L60 64 C64 56 74 52 74 42 C74 36 70 32 64 32 C58 32 56 36 56 42 Z" 
+        fill="#A855F7" stroke="#3B0764" stroke-width="3" stroke-linejoin="round"/>
+  <!-- Cel-shading bóng đổ nửa phải móc câu -->
+  <path d="M66 22 C78 22 86 30 86 40 C86 52 74 58 70 66 L68 74 L63 74 C66 66 74 60 76 52 C78 44 76 38 72 34 C69 32 66 32 64 32 C65 28 66 24 66 22 Z" 
+        fill="#7E22CE"/>
+  <!-- Highlight mảng sáng đầu móc câu -->
+  <ellipse cx="62" cy="26" rx="4" ry="2" fill="#E9D5FF"/>
+
+  <!-- Mắt Chibi tò mò trên móc dấu hỏi -->
+  <circle cx="64" cy="42" r="3.5" fill="#3B0764"/>
+  <circle cx="63" cy="41" r="1.2" fill="#FFFFFF"/>
+  <circle cx="72" cy="42" r="3.5" fill="#3B0764"/>
+  <circle cx="71" cy="41" r="1.2" fill="#FFFFFF"/>
+  <!-- Má hồng lém lỉnh -->
+  <circle cx="58" cy="46" r="2.5" fill="#F472B6" opacity="0.8"/>
+  <circle cx="78" cy="46" r="2.5" fill="#F472B6" opacity="0.8"/>
+
+  <!-- Dấu chấm tròn của dấu hỏi (Cục slime tím nhỏ xíu) -->
+  <circle cx="64" cy="94" r="10" fill="#A855F7" stroke="#3B0764" stroke-width="3"/>
+  <path d="M64 84 C69 84 74 88 74 94 C74 99 69 104 64 104 C64 98 64 90 64 84 Z" fill="#7E22CE"/>
+  <circle cx="61" cy="91" r="2.5" fill="#E9D5FF"/>
+</svg>

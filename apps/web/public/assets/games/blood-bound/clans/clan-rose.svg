@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <radialGradient id="rose-bg-grad" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#3b0712"/>
+      <stop offset="60%" stop-color="#1f0308"/>
+      <stop offset="100%" stop-color="#0a0103"/>
+    </radialGradient>
+    <linearGradient id="rose-gold-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="30%" stop-color="#eab308"/>
+      <stop offset="70%" stop-color="#ca8a04"/>
+      <stop offset="100%" stop-color="#854d0e"/>
+    </linearGradient>
+    <linearGradient id="rose-petal-main" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ff2a55"/>
+      <stop offset="50%" stop-color="#e11d48"/>
+      <stop offset="100%" stop-color="#881337"/>
+    </linearGradient>
+    <linearGradient id="rose-petal-inner" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fda4af"/>
+      <stop offset="60%" stop-color="#f43f5e"/>
+      <stop offset="100%" stop-color="#be123c"/>
+    </linearGradient>
+    <filter id="rose-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#e11d48" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+
+  <!-- Huy hiệu khiên/vòng tròn Gothic uy nghiêm -->
+  <circle cx="64" cy="64" r="59" fill="url(#rose-bg-grad)" stroke="url(#rose-gold-grad)" stroke-width="3.5" filter="url(#rose-glow)"/>
+  <circle cx="64" cy="64" r="53" fill="none" stroke="rgba(244, 63, 94, 0.4)" stroke-width="1.5" stroke-dasharray="4 3"/>
+
+  <!-- Họa tiết dây gai Obsidian & Lá nguyệt quế gothic phía sau -->
+  <path d="M 28 86 C 20 72 26 50 42 42 C 38 56 46 72 38 82 Z" fill="#4c0519" stroke="#9f1239" stroke-width="1.2"/>
+  <path d="M 100 86 C 108 72 102 50 86 42 C 90 56 82 72 90 82 Z" fill="#4c0519" stroke="#9f1239" stroke-width="1.2"/>
+  <path d="M 32 64 Q 22 66 18 60 Q 24 58 32 62" fill="#be123c"/>
+  <path d="M 96 64 Q 106 66 110 60 Q 104 58 96 62" fill="#be123c"/>
+
+  <!-- Vương miện gia tộc hoàng gia (Rose Clan Crown) -->
+  <path d="M 44 26 L 50 14 L 64 22 L 78 14 L 84 26 L 64 29 Z" fill="url(#rose-gold-grad)" stroke="#713f12" stroke-width="1.5" stroke-linejoin="round"/>
+  <circle cx="50" cy="14" r="2.2" fill="#ffe4e6"/>
+  <circle cx="64" cy="22" r="2.8" fill="#e11d48"/>
+  <circle cx="78" cy="14" r="2.2" fill="#ffe4e6"/>
+
+  <!-- Đóa hoa hồng Huyết Tộc nhiều tầng cánh (Layered Velvet Crimson Rose) -->
+  <!-- Cánh ngoài tầng 1 -->
+  <path d="M 64 36 C 40 36 28 54 30 76 C 32 94 48 106 64 106 C 80 106 96 94 98 76 C 100 54 88 36 64 36 Z" 
+        fill="url(#rose-petal-main)" stroke="#4c0519" stroke-width="2"/>
+  
+  <!-- Cánh ngoài tầng 2 (Shadows & Depth) -->
+  <path d="M 36 68 C 34 88 48 102 64 102 C 78 102 92 90 92 72 C 84 82 72 88 56 84 C 44 80 38 72 36 68 Z" 
+        fill="#4c0519" opacity="0.6"/>
+
+  <!-- Cánh giữa tầng 3 -->
+  <path d="M 64 44 C 46 44 38 56 40 74 C 42 86 52 94 64 94 C 76 94 86 86 88 74 C 90 56 82 44 64 44 Z" 
+        fill="url(#rose-petal-inner)" stroke="#881337" stroke-width="1.8"/>
+
+  <!-- Mảng cánh ôm cuộn (Petal Folds) -->
+  <path d="M 42 66 C 46 80 58 86 68 84 C 60 84 50 78 48 68 Z" fill="#9f1239"/>
+  <path d="M 86 66 C 82 80 70 86 60 84 C 68 84 78 78 80 68 Z" fill="#4c0519"/>
+
+  <!-- Tâm xoáy nụ hoa hồng (Rose Core Spiral) -->
+  <path d="M 52 54 C 56 46 72 46 76 54 C 80 62 74 72 64 74 C 54 72 48 62 52 54 Z" 
+        fill="#e11d48" stroke="#881337" stroke-width="1.5"/>
+  <path d="M 58 54 C 60 48 68 48 70 54 C 71 58 68 64 64 65 C 60 64 57 58 58 54 Z" 
+        fill="#fecdd3"/>
+  <path d="M 62 56 Q 64 52 66 56 Q 67 60 64 61 Z" fill="#ffffff" opacity="0.8"/>
+
+  <!-- Ánh sáng phản chiếu giọt sương / hạt ngọc máu (Ruby Dewdrops) -->
+  <circle cx="48" cy="62" r="2" fill="#ffffff" opacity="0.8"/>
+  <circle cx="80" cy="74" r="1.5" fill="#ffffff" opacity="0.7"/>
+
+  <!-- Ruy băng phù hiệu chữ ROSE phía dưới -->
+  <g transform="translate(64, 114)">
+    <path d="M -32 -6 L 32 -6 L 26 6 L -26 6 Z" fill="#1e0207" stroke="url(#rose-gold-grad)" stroke-width="1.2"/>
+    <text y="3" text-anchor="middle" fill="#fecdd3" font-size="7" font-weight="900" letter-spacing="2" font-family="serif">ROSE CLAN</text>
+  </g>
+</svg>

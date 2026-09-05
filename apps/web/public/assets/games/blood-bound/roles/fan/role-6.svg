@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <radialGradient id="fan-grd-bg" cx="50%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#064e3b"/>
+      <stop offset="50%" stop-color="#022c22"/>
+      <stop offset="100%" stop-color="#01140e"/>
+    </radialGradient>
+    <linearGradient id="fan-steel" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f0fdf4"/>
+      <stop offset="30%" stop-color="#a7f3d0"/>
+      <stop offset="70%" stop-color="#059669"/>
+      <stop offset="100%" stop-color="#064e3b"/>
+    </linearGradient>
+    <filter id="fan-grd-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#10b981" flood-opacity="0.6"/>
+    </filter>
+  </defs>
+
+  <circle cx="64" cy="64" r="60" fill="url(#fan-grd-bg)" stroke="#10b981" stroke-width="3" filter="url(#fan-grd-glow)"/>
+  <circle cx="64" cy="64" r="54" fill="none" stroke="rgba(52, 211, 153, 0.4)" stroke-width="1.2" stroke-dasharray="3 3"/>
+
+  <!-- Giáp vai & Áo choàng vệ binh Fan Clan -->
+  <path d="M 22 128 L 38 82 L 64 88 L 90 82 L 106 128 Z" fill="#021c15" stroke="#047857" stroke-width="1.5"/>
+  <path d="M 24 96 C 24 80 40 76 44 86 Z" fill="url(#fan-steel)" stroke="#10b981" stroke-width="1.2"/>
+  <path d="M 104 96 C 104 80 88 76 84 86 Z" fill="url(#fan-steel)" stroke="#10b981" stroke-width="1.2"/>
+
+  <!-- Mũ giáp chiến binh ngọc bích Đông Phương -->
+  <path d="M 44 26 C 44 20 52 16 64 16 C 76 16 84 20 84 26 L 84 62 C 84 76 76 84 64 86 C 52 84 44 76 44 62 Z" 
+        fill="url(#fan-steel)" stroke="#047857" stroke-width="2"/>
+
+  <!-- Mào lông vũ xanh ngọc lướt gió (Jade feather plume) -->
+  <path d="M 60 16 C 54 8 46 6 42 2 C 54 4 64 8 68 16 Z" fill="#34d399"/>
+  <path d="M 64 16 C 60 6 52 4 48 0 C 60 2 72 6 74 16 Z" fill="#10b981"/>
+
+  <!-- Khe nhìn mắt phát sáng xanh lục bảo -->
+  <line x1="48" y1="46" x2="80" y2="46" stroke="#10b981" stroke-width="4" stroke-linecap="round"/>
+  <line x1="64" y1="36" x2="64" y2="62" stroke="#10b981" stroke-width="3" stroke-linecap="round"/>
+  <line x1="52" y1="46" x2="76" y2="46" stroke="#6ee7b7" stroke-width="2"/>
+
+  <!-- Khiên hộ mệnh ngọc bích trước ngực -->
+  <path d="M 52 92 L 64 84 L 76 92 L 76 108 L 64 116 L 52 108 Z" fill="#059669" stroke="#34d399" stroke-width="1.5"/>
+  <circle cx="64" cy="98" r="3" fill="#ecfdf5"/>
+
+  <!-- Rank 6 Fan Clan -->
+  <circle cx="64" cy="116" r="10" fill="#021c15" stroke="#10b981" stroke-width="1.5"/>
+  <text x="64" y="120" text-anchor="middle" fill="#a7f3d0" font-size="11" font-weight="900" font-family="serif">VI</text>
+</svg>
