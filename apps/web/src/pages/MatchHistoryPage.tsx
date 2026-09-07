@@ -25,7 +25,11 @@ export function MatchHistoryPage() {
           return (
             <li key={match.id} className={`${styles.row} theme-card`}>
               <div>
-                <strong>{match.gameId === "wheres-the-bone" ? "Where's the Bone" : match.gameId}</strong>
+                <strong>{match.gameId === "wheres-the-bone"
+                  ? "Where's the Bone"
+                  : match.gameId === "liars-number"
+                    ? "Liar’s Number"
+                    : match.gameId}</strong>
                 <p>
                   {match.finishedAt ? new Date(match.finishedAt).toLocaleString() : match.roomId}
                 </p>

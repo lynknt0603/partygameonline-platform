@@ -3,6 +3,7 @@ import { Navigate, useParams } from "react-router-dom";
 import { fetchNobSnapshot, NOB_CATALOGUE_ID, NobPlayPage, parseNobView, type NobView } from "@/games/nob";
 import { NOT_IN_MY_POT_ID, NotInMyPotPlayPage, useNotInMyPotGame } from "@/games/notInMyPot";
 import { WHERES_THE_BONE_ID, WheresTheBonePlayPage, useWheresTheBoneGame } from "@/games/wheresTheBone";
+import { LIARS_NUMBER_ID, LiarsNumberPlayPage, useLiarsNumberGame } from "@/games/liarsNumber";
 import { ConnectionStatusBadge } from "@/shared/components/ConnectionStatusBadge/ConnectionStatusBadge";
 import { cacheSession } from "@/shared/api/session";
 import { useRealtimeStatus } from "@/shared/hooks/useRealtimeStatus";
@@ -22,8 +23,10 @@ export function GamePage() {
   const isNob = room?.gameId === NOB_CATALOGUE_ID;
   const isNotInMyPot = room?.gameId === NOT_IN_MY_POT_ID;
   const isWheresTheBone = room?.gameId === WHERES_THE_BONE_ID;
+  const isLiarsNumber = room?.gameId === LIARS_NUMBER_ID;
   const notInMyPot = useNotInMyPotGame(roomId, Boolean(isNotInMyPot && room?.status === "in_game"));
   const wheresTheBone = useWheresTheBoneGame(roomId, Boolean(isWheresTheBone && room?.status === "in_game"));
+  const liarsNumber = useLiarsNumberGame(roomId, Boolean(isLiarsNumber && room?.status === "in_game"));
 
   useEffect(() => {
     if (session && roomId) {
@@ -132,6 +135,22 @@ export function GamePage() {
             notice={wheresTheBone.notice}
             rejectCode={wheresTheBone.rejectCode}
             sendCommand={wheresTheBone.sendCommand}
+          />
+        </>
+      );
+    }
+    if (room.gameId === LIARS_NUMBER_ID) {
+      return (
+        <>
+          <ConnectionStatusBadge />
+          <LiarsNumberPlayPage
+            room={room}
+            view={liarsNumber.view}
+            snapshotPending={liarsNumber.snapshotPending}
+            snapshotError={liarsNumber.snapshotError}
+            notice={liarsNumber.notice}
+            rejectCode={liarsNumber.rejectCode}
+            sendCommand={liarsNumber.sendCommand}
           />
         </>
       );

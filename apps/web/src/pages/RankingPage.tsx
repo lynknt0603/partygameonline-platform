@@ -82,19 +82,20 @@ const RANKING_GAMES: Array<{ id: RankingGameId; label: string }> = [
   { id: "night-of-bloodlines", label: "Night of Bloodlines" },
   { id: "not-in-my-pot", label: "Not In My Pot" },
   { id: "wheres-the-bone", label: "Where's the Bone" },
+  { id: "liars-number", label: "Liar’s Number" },
 ];
 
 function formatNumber(value: number): string {
   return value.toLocaleString("en-US");
 }
 
-function rankingScore(entry: RankingEntryDto, sort: RankingSort): number {
+function rankingScore(entry: RankingEntryDto, sort: RankingSort, useCurrentElo = false): number {
   if (sort === "wins") return entry.totalWins;
   if (sort === "bloodlineWins") return entry.bloodlineWins;
   if (sort === "roleWins") return entry.roleWins;
   if (sort === "vegetarianWins") return entry.vegetarianWins ?? 0;
   if (sort === "meatEaterWins") return entry.meatEaterWins ?? 0;
-  return entry.highestElo;
+  return useCurrentElo ? entry.elo : entry.highestElo;
 }
 
 function isNotInMyPotFactionSort(sort: RankingSort): boolean {
@@ -173,19 +174,21 @@ function PodiumCard({
   sort,
   bloodline,
   role,
+  useCurrentElo,
 }: {
   entry: RankingEntryDto;
   position: 1 | 2 | 3;
   sort: RankingSort;
   bloodline: RankingBloodline;
   role: RankingRole;
+  useCurrentElo: boolean;
 }) {
   const t = useT();
   const isFirst = position === 1;
   const isSecond = position === 2;
 
-  let subtitle = t("rankingHighestElo");
-  let scoreValue = rankingScore(entry, sort);
+  let subtitle = t(useCurrentElo ? "rankingCurrentElo" : "rankingHighestElo");
+  let scoreValue = rankingScore(entry, sort, useCurrentElo);
 
   if (sort === "wins") {
     subtitle = t("rankingMatchesWon");
@@ -248,11 +251,13 @@ function RankingTableRow({
   sort,
   isNob,
   isWheresTheBone,
+  useCurrentElo,
 }: {
   entry: RankingEntryDto;
   sort: RankingSort;
   isNob: boolean;
   isWheresTheBone: boolean;
+  useCurrentElo: boolean;
 }) {
   const t = useT();
   const image = isWheresTheBone ? roleImage(entry.favoriteRole) : bloodlineImage(entry.favoriteBloodline);
@@ -269,7 +274,7 @@ function RankingTableRow({
         </Link>
       </div>
       <div className={`${styles.numberCell} ${sort === "highestElo" ? styles.activeCell : ""}`}>
-        {formatNumber(entry.highestElo)}
+        {formatNumber(useCurrentElo ? entry.elo : entry.highestElo)}
       </div>
       <div className={`${styles.numberCell} ${sort === "wins" ? styles.activeCell : ""}`}>
         {factionSort ? `${formatNumber(factionWinRate(entry, sort))}%` : formatNumber(entry.totalWins)}
@@ -284,7 +289,7 @@ function RankingTableRow({
         </div>
       ) : (
         <div className={`${styles.numberCell} ${factionSort ? styles.activeCell : ""}`}>
-          {factionSort ? formatNumber(rankingScore(entry, sort)) : formatNumber(entry.elo)}
+          {factionSort ? formatNumber(rankingScore(entry, sort, useCurrentElo)) : useCurrentElo ? null : formatNumber(entry.elo)}
         </div>
       )}
     </div>
@@ -304,10 +309,14 @@ export function RankingPage() {
   const isNob = gameId === "night-of-bloodlines";
   const isNotInMyPot = gameId === "not-in-my-pot";
   const isWheresTheBone = gameId === "wheres-the-bone";
+  const isLiarsNumber = gameId === "liars-number";
+  const useCurrentElo = isLiarsNumber;
   const isFactionRanking = isNotInMyPotFactionSort(sort);
   const selectedGameName = RANKING_GAMES.find((game) => game.id === gameId)?.label ?? gameId;
   const visibleSortOptions = SORT_OPTIONS.filter((option) =>
-    isNob
+    isLiarsNumber
+      ? option.id === "highestElo" || option.id === "wins"
+      : isNob
       ? option.id !== "vegetarianWins" && option.id !== "meatEaterWins"
       : isNotInMyPot
         ? option.id !== "bloodlineWins"
@@ -400,7 +409,7 @@ export function RankingPage() {
                 aria-selected={sort === id && bloodline === null && role === null}
               >
                 <Icon size={20} className={styles.filterIcon} aria-hidden="true" />
-                <span>{t(labelKey)}</span>
+                <span>{isLiarsNumber && id === "highestElo" ? t("rankingCurrentElo") : t(labelKey)}</span>
               </button>
             ))}
           </div>
@@ -467,9 +476,9 @@ export function RankingPage() {
               {/* Top 3 Podium Cards (Order: 2, 1, 3) */}
               {podium.length > 0 ? (
                 <section className={styles.podium} aria-label={t("rankingTopPlayers")}>
-                  {top2 ? <PodiumCard entry={top2} position={2} sort={sort} bloodline={bloodline} role={role} /> : <div className={styles.podiumPlaceholder} />}
-                  {top1 ? <PodiumCard entry={top1} position={1} sort={sort} bloodline={bloodline} role={role} /> : <div className={styles.podiumPlaceholder} />}
-                  {top3 ? <PodiumCard entry={top3} position={3} sort={sort} bloodline={bloodline} role={role} /> : <div className={styles.podiumPlaceholder} />}
+                  {top2 ? <PodiumCard entry={top2} position={2} sort={sort} bloodline={bloodline} role={role} useCurrentElo={useCurrentElo} /> : <div className={styles.podiumPlaceholder} />}
+                  {top1 ? <PodiumCard entry={top1} position={1} sort={sort} bloodline={bloodline} role={role} useCurrentElo={useCurrentElo} /> : <div className={styles.podiumPlaceholder} />}
+                  {top3 ? <PodiumCard entry={top3} position={3} sort={sort} bloodline={bloodline} role={role} useCurrentElo={useCurrentElo} /> : <div className={styles.podiumPlaceholder} />}
                 </section>
               ) : null}
 
@@ -479,7 +488,7 @@ export function RankingPage() {
                   <div className={styles.tableHeader}>
                     <span>{t("rankingRank")}</span>
                     <span>{t("rankingPlayer")}</span>
-                    <span className={sort === "highestElo" ? styles.activeHeader : ""}>{t("rankingHighestElo")}</span>
+                    <span className={sort === "highestElo" ? styles.activeHeader : ""}>{useCurrentElo ? t("rankingCurrentElo") : t("rankingHighestElo")}</span>
                     <span className={sort === "wins" ? styles.activeHeader : ""}>
                       {isFactionRanking ? t("winRate") : t("rankingMatchesWon")}
                     </span>
@@ -490,13 +499,15 @@ export function RankingPage() {
                           ? t("rankingRoleWins")
                           : isFactionRanking
                             ? factionWinsLabel(sort, t)
-                            : t("rankingCurrentElo")}
+                            : useCurrentElo
+                              ? ""
+                              : t("rankingCurrentElo")}
                     </span>
                   </div>
 
                   <div className={styles.tableBody}>
                     {entries.map((entry) => (
-                      <RankingTableRow key={entry.playerId} entry={entry} sort={sort} isNob={isNob} isWheresTheBone={isWheresTheBone} />
+                      <RankingTableRow key={entry.playerId} entry={entry} sort={sort} isNob={isNob} isWheresTheBone={isWheresTheBone} useCurrentElo={useCurrentElo} />
                     ))}
                   </div>
                 </section>
@@ -521,7 +532,7 @@ export function RankingPage() {
                   </div>
 
                   <div className={`${styles.meEloCol} ${sort === "highestElo" ? styles.activeMeNumber : ""}`}>
-                    {formatNumber(me.highestElo)}
+                    {formatNumber(useCurrentElo ? me.elo : me.highestElo)}
                   </div>
                   <div className={`${styles.meWinsCol} ${sort === "wins" ? styles.activeMeNumber : ""}`}>
                     {isFactionRanking
@@ -544,7 +555,7 @@ export function RankingPage() {
                     </div>
                   ) : (
                     <div className={`${styles.meEloCol} ${isFactionRanking ? styles.activeMeNumber : ""}`}>
-                      {isFactionRanking ? formatNumber(rankingScore(me, sort)) : formatNumber(me.elo)}
+                      {isFactionRanking ? formatNumber(rankingScore(me, sort, useCurrentElo)) : useCurrentElo ? null : formatNumber(me.elo)}
                     </div>
                   )}
                 </section>
