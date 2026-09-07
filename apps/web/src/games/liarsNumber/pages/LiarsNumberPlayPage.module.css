@@ -49,7 +49,6 @@
 .lieButton { border-color: #cc7d6f !important; color: #8a2d24 !important; background: #fff0ed !important; }
 .peekButton { display: inline-flex; align-items: center; gap: 7px; border-color: #748cac !important; color: #2f4d74 !important; background: #ecf2fc !important; }
 .waitingCopy { padding: 22px; border-radius: 13px; background: #fbf1db; }
-.revealBanner { margin: 0 26px 24px; padding: 12px 14px; display: flex; justify-content: space-between; gap: 12px; border-left: 4px solid #bd7224; border-radius: 9px; background: #fff3cf; color: #76481e; font-size: .86rem; }
 .sidebar { display: grid; gap: 18px; }
 .playersPanel { box-sizing: border-box; min-height: 654px; max-height: 690px; padding: 18px; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; scrollbar-width: thin; scrollbar-color: #c69a61 #f5e8cf; }
 .playersPanel::-webkit-scrollbar { width: 7px; }

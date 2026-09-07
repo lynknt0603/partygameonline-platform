@@ -212,7 +212,6 @@ export function LiarsNumberPlayPage({ room, view, snapshotPending = false, snaps
     return <><ResultPanel view={view} room={room} locale={locale} onPlayAgain={() => navigate(`/rooms/${room.id}`)} onLeave={() => setConfirmLeave(true)} />{leaveDialog}</>;
   }
 
-  const latestEvent = view.publicEvents[view.publicEvents.length - 1];
   const phaseLabel: Record<string, string> = locale === "vi" ? {
     SELECT_CARD: "Chọn một lá bài", SELECT_TARGET: "Chọn người nhận", DECLARE_TYPE: "Chọn số để tuyên bố", RECEIVER_DECISION: "Người nhận quyết định", SELECT_PASS_TARGET: "Chọn người chuyền tiếp", PASS_DECLARE_TYPE: "Tuyên bố mới",
   } : {
@@ -253,7 +252,6 @@ export function LiarsNumberPlayPage({ room, view, snapshotPending = false, snaps
             {view.phase === "SELECT_PASS_TARGET" && view.legalActions.includes("SELECT_PASS_TARGET") ? <><p>{locale === "vi" ? "Bạn đã xem bài. Chuyền cho người chưa xem." : "You saw the card. Pass it to someone who has not seen it."}</p><div className={styles.targetGrid}>{view.availablePassTargetPlayerIds.map((id) => { const player = view.players.find((item) => item.playerId === id); return player ? <button type="button" key={id} className={styles.targetButton} onClick={() => send({ type: "SELECT_PASS_TARGET", targetPlayerId: id })}><PlayerAvatar playerId={player.playerId} displayName={player.displayName} avatarUrl={room.players.find((item) => item.playerId === id)?.avatarUrl} size={34} decorative /><span>{player.displayName}</span></button> : null; })}</div></> : null}
             {!view.legalActions.length ? <p className={styles.waitingCopy}>{locale === "vi" ? "Đang chờ người chơi khác hành động…" : "Waiting for another player…"}</p> : null}
           </div>
-          {latestEvent?.type === "LIARS_NUMBER_CARD_REVEALED" ? <div className={styles.revealBanner}><strong>{locale === "vi" ? "Đã lật bài:" : "Revealed:"} {view.lastResolvedCard?.label}</strong><span>{view.lastPenaltyPlayerId === view.you ? (locale === "vi" ? "Bạn nhận lá này" : "You take this card") : `${playerName(view.players, view.lastPenaltyPlayerId)} ${locale === "vi" ? "nhận lá này" : "takes this card"}`}</span></div> : null}
         </section>
 
         <aside className={styles.sidebar}>
