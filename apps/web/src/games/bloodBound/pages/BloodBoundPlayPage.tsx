@@ -29,13 +29,14 @@ import {
   decideBotIntervene,
   decideBotWoundReveal,
 } from "../model/bloodBoundBot";
-import type {
-  BloodBoundView,
-  BloodBoundCard,
-  BloodClan,
-  BloodBoundRoleRank,
-  ClueTokenType,
-  BloodBoundCommand,
+import {
+  type BloodBoundView,
+  type BloodBoundCard,
+  type BloodClan,
+  type BloodBoundRoleRank,
+  type ClueTokenType,
+  type BloodBoundCommand,
+  hydrateBloodBoundCard,
 } from "../model/bloodBoundTypes";
 import { useBloodBoundPrefs } from "../model/bloodBoundPrefs";
 import { playBloodBoundSfx, unlockBloodBoundSfx } from "../model/bloodBoundSfx";
@@ -61,6 +62,10 @@ export function BloodBoundPlayPage({
   roomId = "demo-blood-bound",
   room,
   view: serverView,
+  snapshotPending,
+  snapshotError,
+  notice,
+  rejectCode,
   sendCommand,
 }: BloodBoundPlayPageProps) {
   const navigate = useNavigate();
@@ -219,7 +224,7 @@ export function BloodBoundPlayPage({
   const autoPlayTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (isServerAuthoritative || isPaused || activeView.phase === "GAME_OVER") {
+    if (!isDemo || isServerAuthoritative || isPaused || activeView.phase === "GAME_OVER") {
       if (autoPlayTimerRef.current) clearTimeout(autoPlayTimerRef.current);
       return;
     }
@@ -272,7 +277,8 @@ export function BloodBoundPlayPage({
             if (decision.shouldIntervene) {
               addAiLog(bot.displayName, "Nhảy vào đỡ đòn cứu đồng đội!", decision.reasoning);
               playBloodBoundSfx("intervene");
-              return processIntervene(curr, bot.playerId, botSecret);
+              const next = processIntervene(curr, bot.playerId, botSecret);
+              return processWoundReveal(next, secretCards, "RANK");
             }
           }
 
@@ -328,7 +334,15 @@ export function BloodBoundPlayPage({
   // 6. Audio Feedback on Phase Transitions
   const you = activeView.players.find((p) => p.playerId === myPlayerId);
   const isMyTurn = activeView.daggerHolderPlayerId === myPlayerId && activeView.phase === "ATTACK_CHOICE";
-  const myCard = activeView.mySecretCard ?? secretCards[myPlayerId] ?? null;
+  const rawMyCard = activeView.mySecretCard ?? secretCards[myPlayerId] ?? null;
+  const myCard = hydrateBloodBoundCard(rawMyCard);
+
+  const tableSecretCards = useMemo(() => {
+    if (isServerAuthoritative) {
+      return myCard ? { [myPlayerId]: myCard } : {};
+    }
+    return secretCards;
+  }, [isServerAuthoritative, myCard, myPlayerId, secretCards]);
 
   useEffect(() => {
     if (activeView.phase === "GAME_OVER") {
@@ -384,7 +398,10 @@ export function BloodBoundPlayPage({
     } else {
       const mySecret = secretCards[myPlayerId];
       if (mySecret) {
-        setGameState((curr) => processIntervene(curr, myPlayerId, mySecret));
+        setGameState((curr) => {
+          const next = processIntervene(curr, myPlayerId, mySecret);
+          return processWoundReveal(next, secretCards, "RANK");
+        });
       }
     }
   };
@@ -422,9 +439,13 @@ export function BloodBoundPlayPage({
       }
 
       if (isServerAuthoritative && sendCommand) {
-        sendCommand({ type: "USE_ABILITY", targetPlayerId });
+        sendCommand({
+          type: "USE_ABILITY",
+          targetPlayerId: target.playerId,
+          abilityTargetPlayerId: target.playerId,
+        });
       } else {
-        setGameState((curr) => applyRoleAbility(curr, myPlayerId, myCard.rank, target.playerId));
+        setGameState((curr) => applyRoleAbility(curr, myPlayerId, myCard.rank, target.playerId, secretCards));
       }
       setShowAbilityModal(false);
     }
@@ -448,8 +469,68 @@ export function BloodBoundPlayPage({
 
   const soundPrefs = useBloodBoundPrefs();
 
+  if (!isDemo && room?.status === "in_game" && !serverView) {
+    if (snapshotError) {
+      return (
+        <div className={styles.container}>
+          <header className={styles.header}>
+            <div className={styles.headerLeft}>
+              <h2 className={styles.gameTitle}>Blood Bound</h2>
+            </div>
+            <div className={styles.headerRight}>
+              <button
+                type="button"
+                className={styles.btnNavBack}
+                onClick={() => navigate("/rooms")}
+              >
+                <LogOut size={16} /> Thoát phòng
+              </button>
+            </div>
+          </header>
+          <div style={{ padding: "60px 20px", textAlign: "center", color: "#f87171" }}>
+            <p style={{ fontSize: "1.1rem", fontWeight: 700 }}>Không thể tải ván đấu Blood Bound từ máy chủ</p>
+            <p style={{ color: "#94a3b8", margin: "12px 0 24px" }}>
+              {snapshotError.message || "Vui lòng kiểm tra lại kết nối mạng."}
+            </p>
+            <button type="button" className={styles.btnPrimary} onClick={() => window.location.reload()}>
+              Thử lại
+            </button>
+          </div>
+        </div>
+      );
+    }
+    if (snapshotPending || !serverView) {
+      return (
+        <div className={styles.container}>
+          <header className={styles.header}>
+            <div className={styles.headerLeft}>
+              <h2 className={styles.gameTitle}>Blood Bound</h2>
+            </div>
+            <div className={styles.headerRight}>
+              <button
+                type="button"
+                className={styles.btnNavBack}
+                onClick={() => navigate("/rooms")}
+              >
+                <LogOut size={16} /> Thoát phòng
+              </button>
+            </div>
+          </header>
+          <div style={{ padding: "80px 20px", textAlign: "center", color: "#94a3b8" }}>
+            <p style={{ fontSize: "1.1rem", fontWeight: 600 }}>Đang kết nối bàn cờ Blood Bound...</p>
+          </div>
+        </div>
+      );
+    }
+  }
+
   return (
     <div className={styles.container}>
+      {notice && (
+        <div style={{ background: "rgba(239, 68, 68, 0.2)", border: "1px solid #ef4444", color: "#fca5a5", padding: "8px 16px", borderRadius: "8px", margin: "10px 16px 0", fontSize: "0.85rem" }}>
+          ⚠️ {notice} {rejectCode ? `[${rejectCode}]` : ""}
+        </div>
+      )}
       {/* 1. Header with Title, Sound & Controls */}
       <header className={styles.header}>
         <div className={styles.headerLeft}>
@@ -528,7 +609,7 @@ export function BloodBoundPlayPage({
           daggerHolderPlayerId={activeView.daggerHolderPlayerId}
           currentTargetPlayerId={activeView.currentTargetPlayerId}
           intervenedByPlayerId={activeView.intervenedByPlayerId}
-          secretCards={secretCards}
+          secretCards={tableSecretCards}
           isMyTurn={isMyTurn}
           canDebug={canDebug}
           debugMode={debugMode}

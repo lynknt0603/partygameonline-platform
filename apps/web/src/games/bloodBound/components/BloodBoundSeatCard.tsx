@@ -72,7 +72,10 @@ export const BloodBoundSeatCard: React.FC<BloodBoundSeatCardProps> = ({
   isGameOver,
   onSelectTarget,
 }) => {
-  const isRevealedToUser = isYou || (canDebug && debugMode) || isGameOver;
+  const rankToken = player.revealedTokens.find((t) => t.type === "RANK");
+  const tokenRank = rankToken?.value ? Number(rankToken.value) : null;
+
+  const isRevealedToUser = isYou || (canDebug && debugMode) || (isGameOver && Boolean(secret));
   const trueClan = secret?.clan;
   const trueRank = secret?.rank;
 
@@ -87,9 +90,9 @@ export const BloodBoundSeatCard: React.FC<BloodBoundSeatCardProps> = ({
     else if (colorToken?.value === "GREEN") deducedClan = "FAN";
   }
 
-  const displayClan = isRevealedToUser ? trueClan : deducedClan;
-  const hasRankRevealed = player.revealedTokens.some((t) => t.type === "RANK");
-  const displayRank = isRevealedToUser ? trueRank : hasRankRevealed ? trueRank : null;
+  const displayClan = isRevealedToUser ? (trueClan ?? deducedClan) : deducedClan;
+  const hasRankRevealed = Boolean(rankToken);
+  const displayRank = isRevealedToUser ? (trueRank ?? tokenRank) : hasRankRevealed ? (tokenRank ?? trueRank) : null;
   const portraitUrl = getRolePortraitUrl(displayRank, displayClan);
 
   return (
@@ -189,7 +192,7 @@ export const BloodBoundSeatCard: React.FC<BloodBoundSeatCardProps> = ({
               alt={secret.clan}
               style={{ width: 18, height: 18 }}
             />
-            {secret.roleInfo.roleNameVi}
+            {secret.roleInfo?.roleNameVi ?? `Cấp ${secret.rank}`}
           </span>
           <span>Rank {secret.rank}</span>
         </div>

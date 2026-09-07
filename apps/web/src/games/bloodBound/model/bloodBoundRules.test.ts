@@ -9,7 +9,9 @@ import {
   processPassIntervention,
   processWoundReveal,
   applyRoleAbility,
+  validateAbility,
 } from "./bloodBoundRules";
+
 
 describe("Blood Bound Rules - Game Initialization", () => {
   const players = [
@@ -285,6 +287,48 @@ describe("Blood Bound Rules - Character Abilities", () => {
     const p2 = nextView.players.find((p) => p.playerId === "p2");
     expect(p2?.wounds).toBe(1);
   });
+
+  it("Assassin lethal wound on enemy Leader triggers GAME_OVER with attacker winning", () => {
+    const { view, secretCards } = initBloodBoundGame("room-bb-1", [
+      { playerId: "p1", displayName: "Alice" }, // Rose Assassin (rank 2)
+      { playerId: "p2", displayName: "Bob" },   // Fan Leader (rank 1)
+    ], "p1", {
+      assignedRoles: {
+        p1: { clan: "ROSE", rank: 2 },
+        p2: { clan: "FAN", rank: 1 },
+      },
+    });
+
+    // Bob already has 3 wounds
+    view.players[1].wounds = 3;
+    // Alice has revealed rank
+    view.players[0].hasRevealedRank = true;
+
+    const nextView = applyRoleAbility(view, "p1", 2, "p2", secretCards);
+    expect(nextView.phase).toBe("GAME_OVER");
+    expect(nextView.capturedPlayerId).toBe("p2");
+    expect(nextView.winnerClan).toBe("ROSE");
+  });
+
+  it("Assassin lethal wound on enemy Non-Leader triggers GAME_OVER with wrongful capture defending clan winning", () => {
+    const { view, secretCards } = initBloodBoundGame("room-bb-1", [
+      { playerId: "p1", displayName: "Alice" }, // Rose Assassin (rank 2)
+      { playerId: "p2", displayName: "Bob" },   // Fan Harlequin (rank 3)
+    ], "p1", {
+      assignedRoles: {
+        p1: { clan: "ROSE", rank: 2 },
+        p2: { clan: "FAN", rank: 3 },
+      },
+    });
+
+    view.players[1].wounds = 3;
+    view.players[0].hasRevealedRank = true;
+
+    const nextView = applyRoleAbility(view, "p1", 2, "p2", secretCards);
+    expect(nextView.phase).toBe("GAME_OVER");
+    expect(nextView.capturedPlayerId).toBe("p2");
+    expect(nextView.winnerClan).toBe("FAN");
+  });
 });
 
 describe("Blood Bound Rules - Role Customization & Shuffling", () => {
@@ -318,4 +362,84 @@ describe("Blood Bound Rules - Role Customization & Shuffling", () => {
     expect(view.players.find((p) => p.playerId === "p3")?.isDaggerHolder).toBe(true);
     expect(view.players.find((p) => p.playerId === "p1")?.isDaggerHolder).toBe(false);
   });
+
+  it("friendly fire lethal attack on own Leader awards victory to opponent clan", () => {
+    const { view, secretCards } = initBloodBoundGame("room-bb-ff-1", [
+      { playerId: "p1", displayName: "Alice" }, // Rose
+      { playerId: "p2", displayName: "Bob" },   // Rose Leader (Rank 1)
+    ], "p1", {
+      assignedRoles: {
+        p1: { clan: "ROSE", rank: 2 },
+        p2: { clan: "ROSE", rank: 1 },
+      },
+    });
+
+    view.players[1].wounds = 3;
+    view.phase = "WOUND_ASSIGNMENT";
+    view.currentTargetPlayerId = "p2";
+    view.daggerHolderPlayerId = "p1";
+    const nextView = processWoundReveal(view, secretCards, "RANK");
+    expect(nextView.phase).toBe("GAME_OVER");
+    expect(nextView.capturedPlayerId).toBe("p2");
+    // Friendly fire suicide on own Leader -> FAN wins!
+    expect(nextView.winnerClan).toBe("FAN");
+  });
+
+  it("friendly fire lethal attack on own teammate awards victory to opponent clan", () => {
+    const { view, secretCards } = initBloodBoundGame("room-bb-ff-2", [
+      { playerId: "p1", displayName: "Alice" }, // Rose
+      { playerId: "p2", displayName: "Bob" },   // Rose Harlequin (Rank 3)
+    ], "p1", {
+      assignedRoles: {
+        p1: { clan: "ROSE", rank: 2 },
+        p2: { clan: "ROSE", rank: 3 },
+      },
+    });
+
+    view.players[1].wounds = 3;
+    view.phase = "WOUND_ASSIGNMENT";
+    view.currentTargetPlayerId = "p2";
+    view.daggerHolderPlayerId = "p1";
+    const nextView = processWoundReveal(view, secretCards, "RANK");
+
+    expect(nextView.phase).toBe("GAME_OVER");
+    expect(nextView.capturedPlayerId).toBe("p2");
+    // Friendly fire kill on own teammate -> FAN wins!
+    expect(nextView.winnerClan).toBe("FAN");
+  });
+
+  it("friendly fire ability on own Leader awards victory to opponent clan", () => {
+    const { view, secretCards } = initBloodBoundGame("room-bb-ff-3", [
+      { playerId: "p1", displayName: "Alice" }, // Rose Assassin (Rank 2)
+      { playerId: "p2", displayName: "Bob" },   // Rose Leader (Rank 1)
+    ], "p1", {
+      assignedRoles: {
+        p1: { clan: "ROSE", rank: 2 },
+        p2: { clan: "ROSE", rank: 1 },
+      },
+    });
+
+    view.players[1].wounds = 3;
+    view.players[0].hasRevealedRank = true;
+
+    const nextView = applyRoleAbility(view, "p1", 2, "p2", secretCards);
+    expect(nextView.phase).toBe("GAME_OVER");
+    expect(nextView.capturedPlayerId).toBe("p2");
+    // Rose shot own Leader -> FAN wins!
+    expect(nextView.winnerClan).toBe("FAN");
+  });
+
+  it("rejects Berserker targeting self", () => {
+    const { view } = initBloodBoundGame("room-bb-berserk", [
+      { playerId: "p1", displayName: "Alice" },
+      { playerId: "p2", displayName: "Bob" },
+    ], "p1");
+
+    view.phase = "ATTACK_CHOICE";
+    view.players[0].hasRevealedRank = true;
+    const check = validateAbility(view, "p1", 7, "p1");
+    expect(check.valid).toBe(false);
+    expect(check.reasonVi).toContain("chính mình");
+  });
 });
+

@@ -46,7 +46,21 @@ export function useBloodBoundGame(
       if (current?.phase === "GAME_OVER" && next.phase !== "GAME_OVER") {
         return current;
       }
-      return !current || next.roundNumber >= current.roundNumber ? next : current;
+      if (!current) return next;
+      if (typeof next.version === "number" && typeof current.version === "number") {
+        return next.version >= current.version ? next : current;
+      }
+      if (next.roundNumber !== current.roundNumber) {
+        return next.roundNumber > current.roundNumber ? next : current;
+      }
+      const phaseOrder: Record<string, number> = {
+        LOOK_LEFT: 1,
+        ATTACK_CHOICE: 2,
+        INTERVENTION_WINDOW: 3,
+        WOUND_ASSIGNMENT: 4,
+        GAME_OVER: 5,
+      };
+      return (phaseOrder[next.phase] ?? 0) >= (phaseOrder[current.phase] ?? 0) ? next : current;
     });
     setRejectCode(null);
   }, [snapshot.data]);
@@ -57,6 +71,10 @@ export function useBloodBoundGame(
     setView((current) => {
       if (current?.phase === "GAME_OVER" && next.phase !== "GAME_OVER") {
         return current;
+      }
+      if (!current) return next;
+      if (typeof next.version === "number" && typeof current.version === "number") {
+        return next.version >= current.version ? next : current;
       }
       return next;
     });

@@ -5,6 +5,7 @@ import {
   decideBotAttack,
   decideBotIntervene,
   decideBotWoundReveal,
+  decideBotAbility,
   executeBotTurnStep,
 } from "./bloodBoundBot";
 
@@ -128,4 +129,85 @@ describe("BloodBound Bot AI & Solo Simulation", () => {
     const step3 = executeBotTurnStep(step2.nextView, secretCards);
     expect(["ATTACK_CHOICE", "GAME_OVER"]).toContain(step3.nextView.phase);
   });
+
+  it("decideBotAttack avoids killing ally with 3 wounds", () => {
+    const players = ensureFullPlayerList([{ playerId: "p1", displayName: "You" }], 6);
+    const { view, secretCards } = initBloodBoundGame("room-1", players, "p1", {
+      assignedRoles: {
+        [players[0].playerId]: { clan: "ROSE", rank: 1 },
+        [players[1].playerId]: { clan: "ROSE", rank: 2 },
+        [players[2].playerId]: { clan: "FAN", rank: 3 },
+      },
+    });
+
+    // Bot 1 (Rose) attacks. Ally (p1) has 3 wounds. Enemy (p3) has 0 wounds.
+    const state = {
+      ...view,
+      phase: "ATTACK_CHOICE" as const,
+      daggerHolderPlayerId: players[1].playerId,
+      players: view.players.map((p) => {
+        if (p.playerId === players[0].playerId) {
+          return {
+            ...p,
+            wounds: 3,
+            revealedTokens: [{ type: "COLOR" as const, value: "RED" as const }],
+          };
+        }
+        return p;
+      }),
+    };
+
+    const decision = decideBotAttack(state, players[1].playerId, secretCards);
+    // Bot must not attack its ally who has 3 wounds!
+    expect(decision.targetPlayerId).not.toBe(players[0].playerId);
+  });
+
+  it("decideBotAbility Assassin bot targets enemy and never targets self", () => {
+    const players = ensureFullPlayerList([{ playerId: "p1", displayName: "You" }], 6);
+    const { view, secretCards } = initBloodBoundGame("room-1", players, "p1", {
+      assignedRoles: {
+        [players[0].playerId]: { clan: "ROSE", rank: 1 },
+        [players[1].playerId]: { clan: "FAN", rank: 2 }, // Fan Assassin
+      },
+    });
+
+    const state = {
+      ...view,
+      phase: "ATTACK_CHOICE" as const,
+      players: view.players.map((p) =>
+        p.playerId === players[1].playerId ? { ...p, hasRevealedRank: true } : p,
+      ),
+    };
+
+    const decision = decideBotAbility(state, players[1].playerId, secretCards);
+    expect(decision.useAbility).toBe(true);
+    expect(decision.targetPlayerId).not.toBe(players[1].playerId);
+    expect(decision.reasoning).toContain("Sát Thủ");
+  });
+
+  it("decideBotAbility Alchemist heals wounded ally", () => {
+    const players = ensureFullPlayerList([{ playerId: "p1", displayName: "You" }], 6);
+    const { view, secretCards } = initBloodBoundGame("room-1", players, "p1", {
+      assignedRoles: {
+        [players[0].playerId]: { clan: "ROSE", rank: 1 },
+        [players[1].playerId]: { clan: "ROSE", rank: 4 }, // Rose Alchemist
+      },
+    });
+
+    const state = {
+      ...view,
+      phase: "ATTACK_CHOICE" as const,
+      players: view.players.map((p) => {
+        if (p.playerId === players[1].playerId) return { ...p, hasRevealedRank: true };
+        if (p.playerId === players[0].playerId) return { ...p, wounds: 2 };
+        return p;
+      }),
+    };
+
+    const decision = decideBotAbility(state, players[1].playerId, secretCards);
+    expect(decision.useAbility).toBe(true);
+    expect(decision.targetPlayerId).toBe(players[0].playerId);
+    expect(decision.reasoning).toContain("Nhà Giả Kim");
+  });
 });
+

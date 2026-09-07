@@ -151,9 +151,13 @@ export function decideBotAttack(
         reason = `🎯 Tập trung tấn công Thủ Lĩnh địch (${target.displayName}) đã lộ diện.`;
       }
     } else if (isConfirmedAlly) {
-      // Tránh tấn công đồng đội
-      score -= 150;
-      reason = `🛡️ Tránh tấn công đồng đội (${target.displayName}) cùng phe ${botClan}.`;
+      if (target.wounds === 3) {
+        score -= 10000; // Tuyệt đối không kết liễu đồng đội gây thua trận
+        reason = `🚫 Tuyệt đối không tấn công đồng đội (${target.displayName}) đang có 3 vết thương để tránh tự thua!`;
+      } else {
+        score -= 150;
+        reason = `🛡️ Tránh tấn công đồng đội (${target.displayName}) cùng phe ${botClan}.`;
+      }
     } else if (target.wounds === 3 && !isConfirmedLeader) {
       // NGUY HIỂM: Nếu đánh vào người đã 3 vết thương mà không chắc là Thủ Lĩnh -> Có nguy cơ bắt nhầm và THUA NGAY
       score -= 80;
@@ -296,8 +300,8 @@ export function decideBotWoundReveal(
     };
   }
 
-  // 2. Nếu là các vai trò chiến thuật cần mở khóa kỹ năng (Assassin Rank 2, Guardian Rank 3, Harlequin Rank 6)
-  if ([2, 3, 6, 8].includes(secret.rank) && !alreadyRevealed.includes("RANK")) {
+  // 2. Nếu là các vai trò chiến thuật cần mở khóa kỹ năng (Assassin 2, Alchemist 4, Mentalist 5, Guardian 6, Berserker 7)
+  if ([2, 4, 5, 6, 7].includes(secret.rank) && !alreadyRevealed.includes("RANK")) {
     return {
       tokenType: "RANK",
       reasoning: `⚡ [${secret.roleInfo.roleNameVi}] Chọn lộ Token Số (Rank ${secret.rank}) để kích hoạt kỹ năng đặc biệt!`,
@@ -328,6 +332,96 @@ export function decideBotWoundReveal(
     tokenType: "RANK",
     reasoning: `Tiết lộ Token Số của bản thân.`,
   };
+}
+
+/**
+ * Quyết định kích hoạt kỹ năng đặc biệt cho Bot
+ */
+export function decideBotAbility(
+  view: BloodBoundView,
+  botPlayerId: string,
+  secretCards: Record<string, BloodBoundCard>,
+): BotAbilityDecision {
+  const botCard = secretCards[botPlayerId];
+  if (!botCard) return { useAbility: false, reasoning: "Không tìm thấy thẻ của bot." };
+
+  const botPlayer = view.players.find((p) => p.playerId === botPlayerId);
+  if (!botPlayer || !botPlayer.hasRevealedRank || botPlayer.hasUsedAbility) {
+    return { useAbility: false, reasoning: "Chưa đủ điều kiện kích hoạt kỹ năng." };
+  }
+
+  const rank = botCard.rank;
+  const botClan = botCard.clan;
+
+  // Rank 2: Assassin - Gây 1 sát thương trực tiếp lên kẻ địch
+  if (rank === 2) {
+    const enemies = view.players.filter((p) => {
+      const card = secretCards[p.playerId];
+      return card && card.clan !== botClan && p.wounds < 4 && p.playerId !== botPlayerId;
+    });
+    const killLeader = enemies.find((p) => secretCards[p.playerId]?.rank === 1 && p.wounds === 3);
+    const killWounded = enemies.find((p) => p.wounds === 3 && secretCards[p.playerId]?.rank !== 1);
+    const target = killLeader || enemies.find((p) => secretCards[p.playerId]?.rank === 1) || (!killWounded ? enemies[0] : null) || enemies[0];
+    if (target) {
+      return {
+        useAbility: true,
+        targetPlayerId: target.playerId,
+        reasoning: `⚡ [Sát Thủ] Tung đòn ám sát gây 1 vết thương lên ${target.displayName}!`,
+      };
+    }
+  }
+
+  // Rank 4: Alchemist - Hồi 1 vết thương cho đồng đội hoặc bản thân
+  if (rank === 4) {
+    const woundedAllies = view.players.filter((p) => {
+      const card = secretCards[p.playerId];
+      return card && card.clan === botClan && p.wounds > 0 && p.wounds < 4;
+    });
+    const leaderAlly = woundedAllies.find((p) => secretCards[p.playerId]?.rank === 1);
+    const healTarget = leaderAlly || woundedAllies[0];
+    if (healTarget) {
+      return {
+        useAbility: true,
+        targetPlayerId: healTarget.playerId,
+        reasoning: `🧪 [Nhà Giả Kim] Hồi phục 1 vết thương cho ${healTarget.displayName}!`,
+      };
+    }
+  }
+
+  // Rank 6: Guardian - Ban khiên bảo vệ
+  if (rank === 6) {
+    const unshieldedAllies = view.players.filter((p) => {
+      const card = secretCards[p.playerId];
+      return card && card.clan === botClan && !p.isShielded && p.wounds < 4;
+    });
+    const leaderAlly = unshieldedAllies.find((p) => secretCards[p.playerId]?.rank === 1);
+    const shieldTarget = leaderAlly || unshieldedAllies[0];
+    if (shieldTarget) {
+      return {
+        useAbility: true,
+        targetPlayerId: shieldTarget.playerId,
+        reasoning: `🛡️ [Hộ Vệ] Ban khiên bảo vệ cho ${shieldTarget.displayName}!`,
+      };
+    }
+  }
+
+  // Rank 7: Berserker - Gây 1 vết thương phản đòn lên kẻ địch
+  if (rank === 7) {
+    const enemies = view.players.filter((p) => {
+      const card = secretCards[p.playerId];
+      return card && card.clan !== botClan && p.wounds < 4 && p.playerId !== botPlayerId;
+    });
+    const target = enemies[0];
+    if (target) {
+      return {
+        useAbility: true,
+        targetPlayerId: target.playerId,
+        reasoning: `💥 [Cuồng Nộ] Phản đòn gây 1 vết thương lên ${target.displayName}!`,
+      };
+    }
+  }
+
+  return { useAbility: false, reasoning: "Không kích hoạt kỹ năng." };
 }
 
 /**
@@ -373,8 +467,9 @@ export function executeBotTurnStep(
       const decision = decideBotIntervene(view, p.playerId, secretCards);
       if (decision.shouldIntervene) {
         const nextView = processIntervene(view, p.playerId, secretCards[p.playerId]);
+        const resolved = processWoundReveal(nextView, secretCards, "RANK");
         return {
-          nextView,
+          nextView: resolved,
           logAction: {
             botName: p.displayName,
             action: `Nhảy vào can thiệp đỡ đòn`,

@@ -283,6 +283,71 @@ export function validateIntervene(
 }
 
 /**
+ * Kiểm tra tính hợp lệ khi kích hoạt kỹ năng nhân vật
+ */
+export function validateAbility(
+  view: BloodBoundView,
+  actorPlayerId: string,
+  rank: BloodBoundRoleRank,
+  targetPlayerId?: string,
+): { valid: boolean; reason?: string; reasonVi?: string } {
+  if (view.phase === "LOOK_LEFT" || view.phase === "GAME_OVER") {
+    return {
+      valid: false,
+      reason: "Cannot use ability in current phase",
+      reasonVi: "Không thể dùng kỹ năng ở giai đoạn này",
+    };
+  }
+  if (rank === 1) {
+    return {
+      valid: false,
+      reason: "Leader ability is passive",
+      reasonVi: "Kỹ năng Thủ Lĩnh là bị động, không thể kích hoạt chủ động",
+    };
+  }
+  const actor = view.players.find((p) => p.playerId === actorPlayerId);
+  if (!actor) {
+    return { valid: false, reason: "Player not found", reasonVi: "Không tìm thấy người chơi" };
+  }
+  if (!actor.hasRevealedRank) {
+    return {
+      valid: false,
+      reason: "Must have revealed rank to use ability",
+      reasonVi: "Phải để lộ Token Số trước khi kích hoạt kỹ năng",
+    };
+  }
+  if (actor.hasUsedAbility) {
+    return {
+      valid: false,
+      reason: "Ability already used",
+      reasonVi: "Kỹ năng đã được sử dụng trước đó trong ván này",
+    };
+  }
+  if ((rank === 2 || rank === 7) && actorPlayerId === targetPlayerId) {
+    return {
+      valid: false,
+      reason: "Cannot target self",
+      reasonVi: "Không thể nhắm vào chính mình",
+    };
+  }
+  if (targetPlayerId) {
+    const target = view.players.find((p) => p.playerId === targetPlayerId);
+    if (!target) {
+      return { valid: false, reason: "Target not found", reasonVi: "Mục tiêu không tồn tại" };
+    }
+    if (target.wounds >= 4) {
+      return {
+        valid: false,
+        reason: "Target is already captured",
+        reasonVi: "Mục tiêu đã bị bắt giữ",
+      };
+    }
+  }
+  return { valid: true };
+}
+
+
+/**
  * Xử lý khi có người can thiệp đỡ đòn:
  * - Người can thiệp BẮT BUỘC nhận sát thương & LỘ TOKEN SỐ (Rank Token)
  * - Kích hoạt quyền sử dụng kỹ năng đặc biệt
@@ -432,12 +497,14 @@ export function processWoundReveal(
 
     // Luật cốt lõi Blood Bound:
     // Bắt đúng Thủ Lĩnh (Leader) của đối phương -> Phe tấn công thắng.
-    // Bắt nhầm người không phải Thủ Lĩnh -> Phe có người bị bắt thắng (Phe tấn công thua).
+    // Bắt nhầm người vô tội của địch hoặc tự hại phe mình -> Phe đối phương thắng.
     let winnerClan: BloodClan;
-    if (isLeader) {
+    if (victimClan === "INQUISITOR") {
+      winnerClan = "INQUISITOR";
+    } else if (attackerClan !== victimClan && isLeader) {
       winnerClan = attackerClan;
     } else {
-      winnerClan = victimClan;
+      winnerClan = attackerClan === "ROSE" ? "FAN" : "ROSE";
     }
 
     return {
@@ -494,6 +561,7 @@ export function applyRoleAbility(
   actorPlayerId: string,
   roleRank: BloodBoundRoleRank,
   targetPlayerId?: string,
+  secretCards?: Record<string, BloodBoundCard>,
 ): BloodBoundView {
   const actor = view.players.find((p) => p.playerId === actorPlayerId);
   if (!actor || actor.hasUsedAbility) {
@@ -503,6 +571,9 @@ export function applyRoleAbility(
   let updatedPlayers = view.players;
   let logText = "";
   let logTextVi = "";
+  let isGameOver = false;
+  let winnerClan: BloodClan | null = view.winnerClan;
+  let capturedPlayerId: string | null = view.capturedPlayerId;
 
   switch (roleRank) {
     case 1: // Leader: Bị động, kiên cường giữ vững sĩ khí
@@ -512,15 +583,34 @@ export function applyRoleAbility(
 
     case 2: // Assassin: Gây ngay 1 vết thương lên mục tiêu
       if (targetPlayerId) {
+        let lethal = false;
         updatedPlayers = view.players.map((p) => {
           if (p.playerId === targetPlayerId) {
-            return { ...p, wounds: Math.min(4, p.wounds + 1) };
+            const nextWounds = p.wounds + 1;
+            if (nextWounds >= 4) lethal = true;
+            return { ...p, wounds: Math.min(4, nextWounds) };
           }
           return p;
         });
         const target = view.players.find((p) => p.playerId === targetPlayerId);
         logText = `Assassin ${actor.displayName} strikes ${target?.displayName ?? "target"}, dealing 1 direct wound!`;
         logTextVi = `Sát thủ ${actor.displayName} xuất chiêu, gây ngay 1 vết thương lên ${target?.displayName ?? "mục tiêu"}!`;
+
+        if (lethal) {
+          isGameOver = true;
+          capturedPlayerId = targetPlayerId;
+          const targetCard = secretCards?.[targetPlayerId];
+          const isLeader = targetCard ? targetCard.rank === 1 : false;
+          const actorClan = secretCards?.[actorPlayerId]?.clan ?? "ROSE";
+          const targetClan = targetCard?.clan ?? (actorClan === "ROSE" ? "FAN" : "ROSE");
+          if (targetClan === "INQUISITOR") {
+            winnerClan = "INQUISITOR";
+          } else if (actorClan !== targetClan && isLeader) {
+            winnerClan = actorClan;
+          } else {
+            winnerClan = actorClan === "ROSE" ? "FAN" : "ROSE";
+          }
+        }
       }
       break;
 
@@ -588,15 +678,34 @@ export function applyRoleAbility(
 
     case 7: // Berserker: Cuồng nộ phản đòn 1 vết thương
       if (targetPlayerId) {
+        let lethal = false;
         updatedPlayers = view.players.map((p) => {
           if (p.playerId === targetPlayerId) {
-            return { ...p, wounds: Math.min(4, p.wounds + 1) };
+            const nextWounds = p.wounds + 1;
+            if (nextWounds >= 4) lethal = true;
+            return { ...p, wounds: Math.min(4, nextWounds) };
           }
           return p;
         });
         const target = view.players.find((p) => p.playerId === targetPlayerId);
         logText = `Berserker ${actor.displayName} unleashes wrath, dealing 1 wound to ${target?.displayName ?? "target"}!`;
         logTextVi = `Cuồng Nộ ${actor.displayName} bộc phát thịnh nộ, gây 1 vết thương lên ${target?.displayName ?? "mục tiêu"}!`;
+
+        if (lethal) {
+          isGameOver = true;
+          capturedPlayerId = targetPlayerId;
+          const targetCard = secretCards?.[targetPlayerId];
+          const isLeader = targetCard ? targetCard.rank === 1 : false;
+          const actorClan = secretCards?.[actorPlayerId]?.clan ?? "ROSE";
+          const targetClan = targetCard?.clan ?? (actorClan === "ROSE" ? "FAN" : "ROSE");
+          if (targetClan === "INQUISITOR") {
+            winnerClan = "INQUISITOR";
+          } else if (actorClan !== targetClan && isLeader) {
+            winnerClan = actorClan;
+          } else {
+            winnerClan = actorClan === "ROSE" ? "FAN" : "ROSE";
+          }
+        }
       }
       break;
 
@@ -622,10 +731,22 @@ export function applyRoleAbility(
 
   return {
     ...view,
+    phase: isGameOver ? "GAME_OVER" : view.phase,
+    winnerClan: isGameOver ? winnerClan : view.winnerClan,
+    capturedPlayerId: isGameOver ? capturedPlayerId : view.capturedPlayerId,
     players: updatedPlayers,
     publicLog: [
       ...view.publicLog,
       ...(logText ? [{ text: logText, textVi: logTextVi, timestamp: new Date().toISOString() }] : []),
+      ...(isGameOver
+        ? [
+            {
+              text: `Player is CAPTURED! ${winnerClan} clan WINS!`,
+              textVi: `Người chơi ĐÃ BỊ BẮT! Gia tộc ${winnerClan} CHIẾN THẮNG!`,
+              timestamp: new Date().toISOString(),
+            },
+          ]
+        : []),
     ],
   };
 }

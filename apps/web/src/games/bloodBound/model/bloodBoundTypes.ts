@@ -106,6 +106,7 @@ export type BloodBoundPhase =
 export interface BloodBoundView {
   gameId: string;
   roomId: string;
+  version?: number;
   you: string;
   phase: BloodBoundPhase;
   roundNumber: number;
@@ -113,9 +114,9 @@ export interface BloodBoundView {
   currentTargetPlayerId: string | null;
   intervenedByPlayerId: string | null;
   players: BloodBoundPlayerPublic[];
-  mySecretCard: BloodBoundCard | null;
+  mySecretCard: { clan: BloodClan; rank: BloodBoundRoleRank; roleInfo?: BloodBoundRoleInfo } | null;
   leftNeighborClue: { clan: BloodClan; crest: string } | null;
-  timeRemainingSeconds: number;
+  timeRemainingSeconds?: number;
   winnerClan: BloodClan | null;
   capturedPlayerId: string | null;
   publicLog: Array<{ text: string; textVi: string; timestamp: string }>;
@@ -127,6 +128,18 @@ export type BloodBoundCommand =
   | { type: "INTERVENE" }
   | { type: "PASS_INTERVENE" }
   | { type: "REVEAL_CLUE"; tokenType: ClueTokenType }
-  | { type: "USE_ABILITY"; targetPlayerId?: string };
+  | { type: "USE_ABILITY"; targetPlayerId?: string; abilityTargetPlayerId?: string };
+
+export function hydrateBloodBoundCard(
+  card: { clan: BloodClan; rank: BloodBoundRoleRank; roleInfo?: BloodBoundRoleInfo } | null | undefined,
+): BloodBoundCard | null {
+  if (!card) return null;
+  const rank = Math.min(8, Math.max(1, card.rank)) as BloodBoundRoleRank;
+  return {
+    clan: card.clan,
+    rank,
+    roleInfo: card.roleInfo ?? BLOOD_BOUND_ROLES[rank],
+  };
+}
 
 export const BLOOD_BOUND_ID = "blood-bound";
