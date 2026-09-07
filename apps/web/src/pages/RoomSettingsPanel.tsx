@@ -3,6 +3,12 @@ import { NOB_CATALOGUE_ID } from "@/games/nob";
 import { NOT_IN_MY_POT_ID } from "@/games/notInMyPot";
 import { WHERES_THE_BONE_ID } from "@/games/wheresTheBone";
 import { WHERES_THE_BONE_DEFAULT_SETTINGS, type WheresTheBoneSettings } from "@/games/wheresTheBone/model/wheresTheBoneSettings";
+import { LIARS_NUMBER_ID } from "@/games/liarsNumber/model/liarsNumberTypes";
+import {
+  LIARS_NUMBER_DEFAULT_SETTINGS,
+  LIARS_NUMBER_TURN_PRESETS,
+  type LiarsNumberSettings,
+} from "@/games/liarsNumber/model/liarsNumberSettings";
 import {
   NOB_DEFAULT_TIMING,
   NOB_ANNOUNCEMENT_PRESETS,
@@ -50,9 +56,11 @@ export function RoomSettingsPanel({ room, minCap, maxCap, isHost, onClose, onClo
   const [nob, setNob] = useState<NobTiming>(room.nobTiming ?? NOB_DEFAULT_TIMING);
   const [notInMyPot, setNotInMyPot] = useState<NotInMyPotSettings>(room.notInMyPotSettings ?? NIMP_DEFAULT_SETTINGS);
   const [wheresTheBone, setWheresTheBone] = useState<WheresTheBoneSettings>(room.wheresTheBoneSettings ?? WHERES_THE_BONE_DEFAULT_SETTINGS);
+  const [liarsNumber, setLiarsNumber] = useState<LiarsNumberSettings>(room.liarsNumberSettings ?? LIARS_NUMBER_DEFAULT_SETTINGS);
   const isNob = room.gameId === NOB_CATALOGUE_ID;
   const isNotInMyPot = room.gameId === NOT_IN_MY_POT_ID;
   const isWheresTheBone = room.gameId === WHERES_THE_BONE_ID;
+  const isLiarsNumber = room.gameId === LIARS_NUMBER_ID;
   const maxPlayersError = players < room.players.length
     ? t("maxPlayersBelowCurrent").replace("{count}", String(room.players.length))
     : null;
@@ -64,7 +72,7 @@ export function RoomSettingsPanel({ room, minCap, maxCap, isHost, onClose, onClo
       onClose();
       return;
     }
-    const gameSettings = isNob ? { nob } : isNotInMyPot ? { notInMyPot } : isWheresTheBone ? { wheresTheBone } : {};
+    const gameSettings = isNob ? { nob } : isNotInMyPot ? { notInMyPot } : isWheresTheBone ? { wheresTheBone } : isLiarsNumber ? { liarsNumber } : {};
     update.mutate({ ...gameSettings, locked, maxPlayers: players }, { onSuccess: () => onClose() });
   };
 
@@ -191,6 +199,21 @@ export function RoomSettingsPanel({ room, minCap, maxCap, isHost, onClose, onClo
           </section>
         ) : null}
 
+        {isLiarsNumber ? (
+          <section className={styles.timerBlock}>
+            <h3>{t("liarsNumberSettings")}</h3>
+            <TimerRow
+              label={`${t("liarsNumberTurnSeconds")} · ${liarsNumber.turnSeconds === 0 ? t("noTimeLimit") : `${liarsNumber.turnSeconds}s`}`}
+              value={liarsNumber.turnSeconds}
+              presets={LIARS_NUMBER_TURN_PRESETS}
+              disabled={!canEdit}
+              formatPreset={(preset) => preset === 0 ? "∞" : `${preset}s`}
+              onChange={(next) => setLiarsNumber({ turnSeconds: next })}
+            />
+            {!canEdit ? <p className={styles.bubble}>{waiting ? t("nobTimersHostOnly") : t("nobTimersLocked")}</p> : null}
+          </section>
+        ) : null}
+
         {update.error ? <p className={styles.saveError}>{update.error.message}</p> : null}
 
         <button type="button" className={styles.save} onClick={save} disabled={update.isPending || Boolean(maxPlayersError)}>
@@ -214,12 +237,14 @@ function TimerRow({
   value,
   presets,
   disabled,
+  formatPreset = String,
   onChange,
 }: {
   label: string;
   value: number;
   presets: readonly number[];
   disabled: boolean;
+  formatPreset?: (value: number) => string;
   onChange: (value: number) => void;
 }) {
   return (
@@ -235,7 +260,7 @@ function TimerRow({
             disabled={disabled}
             onClick={() => onChange(preset)}
           >
-            {preset}
+            {formatPreset(preset)}
           </button>
         ))}
       </div>

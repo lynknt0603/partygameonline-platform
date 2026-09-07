@@ -3,6 +3,7 @@ import { nobSettingsFromUnknown, type NobTiming } from "@/games/nob/model/nobTim
 import { notInMyPotSettingsFromUnknown, type NotInMyPotSettings } from "@/games/notInMyPot/model/notInMyPotSettings";
 import type { SeatState } from "@/shared/types/status";
 import { wheresTheBoneSettingsFromUnknown, type WheresTheBoneSettings } from "@/games/wheresTheBone/model/wheresTheBoneSettings";
+import { liarsNumberSettingsFromUnknown, type LiarsNumberSettings } from "@/games/liarsNumber/model/liarsNumberSettings";
 
 export interface LobbySeat {
   id: string;
@@ -30,6 +31,7 @@ export interface RoomView {
   nobTiming: NobTiming | null;
   notInMyPotSettings: NotInMyPotSettings | null;
   wheresTheBoneSettings: WheresTheBoneSettings | null;
+  liarsNumberSettings: LiarsNumberSettings | null;
   locked: boolean;
 }
 
@@ -51,6 +53,7 @@ export function toRoomView(room: RoomDto): RoomView {
     nobTiming: nobSettingsFromUnknown(room.settings),
     notInMyPotSettings: notInMyPotSettingsFromUnknown(room.settings),
     wheresTheBoneSettings: wheresTheBoneSettingsFromUnknown(room.settings),
+    liarsNumberSettings: liarsNumberSettingsFromUnknown(room.settings),
     locked: roomLockedFromUnknown(room.settings),
   };
 }

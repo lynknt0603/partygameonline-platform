@@ -1,6 +1,7 @@
 import type { NobTiming } from "@/games/nob/model/nobTiming";
 import type { NotInMyPotSettings } from "@/games/notInMyPot/model/notInMyPotSettings";
 import type { WheresTheBoneSettings } from "@/games/wheresTheBone/model/wheresTheBoneSettings";
+import type { LiarsNumberSettings } from "@/games/liarsNumber/model/liarsNumberSettings";
 import { api } from "./http";
 import type { RoomDto } from "./types";
 
@@ -53,7 +54,7 @@ export function closeRoom(roomId: string): Promise<void> {
 
 export function updateRoomSettings(
   roomId: string,
-  body: { nob?: NobTiming; notInMyPot?: NotInMyPotSettings; wheresTheBone?: WheresTheBoneSettings; locked?: boolean; maxPlayers?: number },
+  body: { nob?: NobTiming; notInMyPot?: NotInMyPotSettings; wheresTheBone?: WheresTheBoneSettings; liarsNumber?: LiarsNumberSettings; locked?: boolean; maxPlayers?: number },
 ): Promise<RoomDto> {
   return api<RoomDto>(`/api/v1/rooms/${roomId}/settings`, {
     method: "PUT",

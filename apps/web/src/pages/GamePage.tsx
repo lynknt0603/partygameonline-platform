@@ -4,6 +4,7 @@ import { fetchNobSnapshot, NOB_CATALOGUE_ID, NobPlayPage, parseNobView, type Nob
 import { BLOOD_BOUND_ID, BloodBoundPlayPage, useBloodBoundGame } from "@/games/bloodBound";
 import { NOT_IN_MY_POT_ID, NotInMyPotPlayPage, useNotInMyPotGame } from "@/games/notInMyPot";
 import { WHERES_THE_BONE_ID, WheresTheBonePlayPage, useWheresTheBoneGame } from "@/games/wheresTheBone";
+import { LIARS_NUMBER_ID, LiarsNumberPlayPage, useLiarsNumberGame } from "@/games/liarsNumber";
 import { ConnectionStatusBadge } from "@/shared/components/ConnectionStatusBadge/ConnectionStatusBadge";
 import { cacheSession } from "@/shared/api/session";
 import { useRealtimeStatus } from "@/shared/hooks/useRealtimeStatus";
@@ -24,8 +25,10 @@ export function GamePage() {
   const isNotInMyPot = room?.gameId === NOT_IN_MY_POT_ID;
   const isWheresTheBone = room?.gameId === WHERES_THE_BONE_ID;
   const isBloodBound = room?.gameId === BLOOD_BOUND_ID;
+  const isLiarsNumber = room?.gameId === LIARS_NUMBER_ID;
   const notInMyPot = useNotInMyPotGame(roomId, Boolean(isNotInMyPot && room?.status === "in_game"));
   const wheresTheBone = useWheresTheBoneGame(roomId, Boolean(isWheresTheBone && room?.status === "in_game"));
+  const liarsNumber = useLiarsNumberGame(roomId, Boolean(isLiarsNumber && room?.status === "in_game"));
   const bloodBound = useBloodBoundGame(roomId, Boolean(isBloodBound && room?.status === "in_game"));
 
   useEffect(() => {
@@ -145,6 +148,22 @@ export function GamePage() {
             notice={wheresTheBone.notice}
             rejectCode={wheresTheBone.rejectCode}
             sendCommand={wheresTheBone.sendCommand}
+          />
+        </>
+      );
+    }
+    if (room.gameId === LIARS_NUMBER_ID) {
+      return (
+        <>
+          <ConnectionStatusBadge />
+          <LiarsNumberPlayPage
+            room={room}
+            view={liarsNumber.view}
+            snapshotPending={liarsNumber.snapshotPending}
+            snapshotError={liarsNumber.snapshotError}
+            notice={liarsNumber.notice}
+            rejectCode={liarsNumber.rejectCode}
+            sendCommand={liarsNumber.sendCommand}
           />
         </>
       );

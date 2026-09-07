@@ -64,6 +64,17 @@ const PRESENTATION: Record<string, Presentation> = {
     durationMax: 20,
     theme: { id: "wheres-the-bone-yard", name: "Moonlit Dog Yard", prefersDarkCanvas: true, hudVariant: "platform", className: "wheres-the-bone" },
   },
+  "liars-number": {
+    displayName: "Liar’s Number",
+    displayNameVi: "Ăn Gian Nói Dối",
+    genre: "Bluffing • hidden information",
+    genreVi: "Nói dối • thông tin ẩn",
+    summary: "Claim a number, read the table and decide whether the story is true.",
+    summaryVi: "Chọn một lá số, nói thật hoặc nói dối và đoán câu chuyện của đối thủ.",
+    durationMin: 10,
+    durationMax: 25,
+    theme: { id: "liars-number-table", name: "Golden Card Table", prefersDarkCanvas: false, hudVariant: "platform", className: "liars-number" },
+  },
 };
 
 const FALLBACK: Presentation = {

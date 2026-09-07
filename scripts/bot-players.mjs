@@ -1,6 +1,7 @@
 /**
  * Script giả lập bot tham gia phòng chơi (Lobby & In-Game)
- * Tự động chơi Not In My Pot và ƯU TIÊN đánh thẻ OUT_OF_HOUSE (Đuổi Khỏi Nhà / Out You Go!)
+ * Tự động chơi Liar's Number bằng hành động ngẫu nhiên.
+ * Với Not In My Pot, bot vẫn ưu tiên thẻ OUT_OF_HOUSE (Đuổi Khỏi Nhà / Out You Go!).
  * 
  * Cách dùng: node scripts/bot-players.mjs <ROOM_ID> [SỐ_LƯỢNG_BOT=7]
  * Bắt buộc: BOT_PASSWORD=<mật khẩu bot>
@@ -140,31 +141,152 @@ async function checkAndLeaveCurrentRoom(bot) {
 
 function sendWsCommand(bot, payload) {
   if (!bot.ws || bot.ws.readyState !== 1) { // 1 = OPEN
-    return;
+    return null;
   }
-  const commandId = typeof crypto !== 'undefined' && crypto.randomUUID
+  const requestId = typeof crypto !== 'undefined' && crypto.randomUUID
     ? crypto.randomUUID()
     : `cmd_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
   const envelope = {
+    version: 1,
     type: 'GAME_ACTION',
+    requestId,
     roomId: bot.targetRoomId,
+    lastServerSequence: bot.lastServerSequence || 0,
     payload: {
-      commandId,
+      commandId: requestId,
       ...payload
     }
   };
   bot.ws.send(JSON.stringify(envelope));
+  return requestId;
 }
 
 function extractViewFromMessage(msg) {
   if (!msg) return null;
   if (msg.payload?.view) return msg.payload.view;
   if (msg.view) return msg.view;
-  if (msg.payload?.gameType === 'not-in-my-pot' || msg.gameType === 'not-in-my-pot') {
+  if (
+    ['not-in-my-pot', 'liars-number'].includes(msg.payload?.gameType) ||
+    ['not-in-my-pot', 'liars-number'].includes(msg.gameType)
+  ) {
     return msg.payload || msg;
   }
   return null;
+}
+
+function randomItem(items) {
+  if (!Array.isArray(items) || items.length === 0) return null;
+  return items[Math.floor(Math.random() * items.length)];
+}
+
+async function handleLiarsNumberTurn(bot, view) {
+  if (!view || view.gameType !== 'liars-number' || view.finished || view.phase === 'GAME_OVER') return;
+
+  const legalActions = Array.isArray(view.legalActions) ? view.legalActions : [];
+  if (legalActions.length === 0) return;
+
+  const actionKey = `liars_${view.roundNumber || 0}_${view.phase}_${view.stateVersion || 0}`;
+  if (bot.lastActionKey === actionKey || bot.isActing) return;
+
+  bot.lastActionKey = actionKey;
+  bot.isActing = true;
+  await new Promise((resolve) => setTimeout(resolve, 500 + Math.floor(Math.random() * 700)));
+
+  try {
+    const type = randomItem(legalActions);
+    let command = null;
+    let description = type;
+
+    switch (type) {
+      case 'SELECT_CARD': {
+        const card = randomItem((view.myHand || []).filter((item) => item.cardId));
+        if (card) {
+          command = { type, cardId: card.cardId };
+          description = `chọn ngẫu nhiên lá ${card.label || card.cardId}`;
+        }
+        break;
+      }
+      case 'SELECT_TARGET': {
+        const fallbackTargets = (view.players || [])
+          .filter((player) => player.playerId !== bot.playerId && !player.you)
+          .map((player) => player.playerId);
+        const targetPlayerId = randomItem(view.availableTargetPlayerIds || []) || randomItem(fallbackTargets);
+        if (targetPlayerId) {
+          command = { type, targetPlayerId };
+          const target = (view.players || []).find((player) => player.playerId === targetPlayerId);
+          description = `chuyền bài cho ${target?.displayName || targetPlayerId}`;
+        }
+        break;
+      }
+      case 'DECLARE_TYPE':
+      case 'PASS_DECLARE_TYPE': {
+        const declaredType = 1 + Math.floor(Math.random() * 8);
+        command = { type, declaredType };
+        description = `tuyên bố số ${declaredType}`;
+        break;
+      }
+      case 'GUESS': {
+        const guess = Math.random() < 0.5 ? 'TRUE' : 'FALSE';
+        command = { type, guess };
+        description = `đoán ${guess === 'TRUE' ? 'NÓI THẬT' : 'NÓI DỐI'}`;
+        break;
+      }
+      case 'PEEK_AND_PASS':
+        command = { type };
+        description = 'xem bài rồi chuyền tiếp';
+        break;
+      case 'SELECT_PASS_TARGET': {
+        const targetPlayerId = randomItem(view.availablePassTargetPlayerIds || []);
+        if (targetPlayerId) {
+          command = { type, targetPlayerId };
+          const target = (view.players || []).find((player) => player.playerId === targetPlayerId);
+          description = `chuyền tiếp cho ${target?.displayName || targetPlayerId}`;
+        }
+        break;
+      }
+      default:
+        break;
+    }
+
+    if (!command) {
+      bot.lastActionKey = null;
+      return;
+    }
+
+    sendWsCommand(bot, {
+      expectedVersion: view.stateVersion,
+      ...command
+    });
+    console.log(`🎲 [${bot.name}] Liar's Number: ${description}`);
+  } catch (err) {
+    bot.lastActionKey = null;
+    console.error(`⚠️ [${bot.name}] Lỗi khi chơi Liar's Number:`, err.message);
+  } finally {
+    setTimeout(() => {
+      bot.isActing = false;
+    }, 400);
+  }
+}
+
+function handleGameView(bot, view) {
+  if (!view?.gameType) return;
+  if (view.you) bot.playerId = view.you;
+
+  if (view.gameType === 'liars-number') {
+    void handleLiarsNumberTurn(bot, view);
+  } else if (view.gameType === 'not-in-my-pot') {
+    void handleNotInMyPotTurn(bot, view);
+  }
+}
+
+async function fetchGameSnapshot(bot) {
+  if (!['liars-number', 'not-in-my-pot'].includes(bot.gameId)) return null;
+  const response = await fetch(
+    `${BASE_URL}/api/v1/games/${bot.gameId}/rooms/${bot.targetRoomId}/snapshot`,
+    { headers: authHeaders(bot) }
+  );
+  return response.ok ? response.json() : null;
 }
 
 /**
@@ -358,19 +480,26 @@ async function createBot(index, targetRoomId) {
     }
 
     // 3. Bật Sẵn sàng (Ready)
-    await fetch(`${BASE_URL}/api/v1/rooms/${targetRoomId}/ready`, {
+    const readyRes = await fetch(`${BASE_URL}/api/v1/rooms/${targetRoomId}/ready`, {
       method: 'PUT',
       headers: {
         ...authHeaders(bot, true)
       },
       body: JSON.stringify({ ready: true })
     });
+    if (!readyRes.ok) {
+      const readyError = await readyRes.json().catch(() => ({}));
+      throw new Error(`Không thể sẵn sàng: ${JSON.stringify(readyError)}`);
+    }
+    const readyRoom = await readyRes.json();
+    bot.gameId = readyRoom.gameId;
 
     // 4. Kết nối WebSocket
     const ws = new WebSocket(WS_URL, ["boardverse", `bearer.${bot.accessToken}`]);
 
     bot.ws = ws;
     bot.targetRoomId = targetRoomId;
+    bot.lastServerSequence = 0;
 
     ws.onopen = () => {
       console.log(`✅ [${name}] đã vào phòng ${targetRoomId} và SẴN SÀNG (READY)!`);
@@ -379,18 +508,20 @@ async function createBot(index, targetRoomId) {
     ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data);
+        if (typeof msg.serverSequence === 'number') {
+          bot.lastServerSequence = msg.serverSequence;
+        }
+        if (msg.type === 'ACTION_REJECTED') {
+          bot.lastActionKey = null;
+          console.warn(`⚠️ [${name}] Server từ chối action: ${msg.payload?.errorCode || 'UNKNOWN'}`);
+        }
         if (msg.type === 'GAME_STARTED') {
           console.log(`🎮 [${name}] Trò chơi đã bắt đầu!`);
           // Gọi snapshot kiểm tra lượt đầu
           setTimeout(async () => {
             try {
-              const snapRes = await fetch(`${BASE_URL}/api/v1/games/not-in-my-pot/rooms/${targetRoomId}/snapshot`, {
-                headers: authHeaders(bot)
-              });
-              if (snapRes.ok) {
-                const snapView = await snapRes.json();
-                handleNotInMyPotTurn(bot, snapView);
-              }
+              const snapView = await fetchGameSnapshot(bot);
+              handleGameView(bot, snapView);
             } catch {
               // ignore
             }
@@ -398,9 +529,7 @@ async function createBot(index, targetRoomId) {
         }
 
         const view = extractViewFromMessage(msg);
-        if (view && view.gameType === 'not-in-my-pot') {
-          handleNotInMyPotTurn(bot, view);
-        }
+        handleGameView(bot, view);
       } catch (err) {
         // ignore parse errors
       }
