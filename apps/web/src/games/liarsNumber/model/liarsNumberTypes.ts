@@ -62,6 +62,8 @@ export interface LiarsNumberView {
   phase: LiarsNumberPhase;
   stateVersion: number;
   serverTime: string | null;
+  turnSeconds: number;
+  turnDeadline: string | null;
   finished: boolean;
   playerCount: number;
   lossThreshold: number;
@@ -198,6 +200,8 @@ export function parseLiarsNumberView(value: unknown): LiarsNumberView | null {
     phase: asString(record.phase, "SELECT_CARD"),
     stateVersion: asNumber(record.stateVersion, 1),
     serverTime: asNullableString(record.serverTime),
+    turnSeconds: asNumber(record.turnSeconds),
+    turnDeadline: asNullableString(record.turnDeadline),
     finished: record.finished === true,
     playerCount: asNumber(record.playerCount),
     lossThreshold: asNumber(record.lossThreshold, 4),

@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { ArrowLeft, Eye, Flag, HelpCircle, LogOut, RotateCcw, Send, ShieldAlert, Trophy } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowLeft, Clock3, Eye, Flag, HelpCircle, LogOut, RotateCcw, Send, ShieldAlert, Trophy } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { RoomView } from "@/shared/lobby/roomView";
 import { PlayerAvatar } from "@/shared/components/PlayerAvatar/PlayerAvatar";
@@ -61,6 +61,46 @@ function CardTile({ card, onClick, disabled, small = false }: { card: LiarsNumbe
     </>
   );
   return onClick ? <button type="button" title={romanTooltip} aria-label={romanTooltip ?? card.label} className={`${styles.cardTile} ${small ? styles.cardTileSmall : ""}`} onClick={onClick} disabled={disabled}>{content}</button> : <div className={`${styles.cardTile} ${small ? styles.cardTileSmall : ""}`} title={romanTooltip}>{content}</div>;
+}
+
+function TurnTimer({ deadline, serverTime, turnSeconds, locale }: { deadline: string | null; serverTime: string | null; turnSeconds: number; locale: string }) {
+  const [now, setNow] = useState(() => Date.now());
+  const clockOffset = useMemo(() => {
+    const parsed = serverTime ? Date.parse(serverTime) : Number.NaN;
+    return Number.isFinite(parsed) ? parsed - Date.now() : 0;
+  }, [serverTime]);
+
+  useEffect(() => {
+    if (!deadline) return;
+    setNow(Date.now());
+    const timer = window.setInterval(() => setNow(Date.now()), 250);
+    return () => window.clearInterval(timer);
+  }, [deadline]);
+
+  if (!deadline || turnSeconds <= 0) {
+    return <span className={styles.turnTimer}><Clock3 size={15} /> {locale === "vi" ? "Không giới hạn" : "No time limit"}</span>;
+  }
+  const remaining = Math.max(0, Math.ceil((Date.parse(deadline) - (now + clockOffset)) / 1000));
+  return <span className={`${styles.turnTimer} ${remaining <= 5 ? styles.turnTimerUrgent : ""}`}><Clock3 size={15} /> {remaining}s</span>;
+}
+
+function PenaltyCardGroups({ cards, locale }: { cards: LiarsNumberCard[]; locale: string }) {
+  const groups = useMemo(() => {
+    const grouped = new Map<number, LiarsNumberCard[]>();
+    for (const card of cards) {
+      if (card.typeId === null) continue;
+      grouped.set(card.typeId, [...(grouped.get(card.typeId) ?? []), card]);
+    }
+    return [...grouped.entries()].sort(([left], [right]) => left - right);
+  }, [cards]);
+
+  if (!groups.length) return null;
+  return <div className={styles.penaltyGroups}>{groups.map(([typeId, group]) => (
+    <div key={typeId} className={styles.penaltyGroup}>
+      <span>{locale === "vi" ? "Số" : "No."} {typeId}</span>
+      <div className={styles.penaltyCards}>{group.map((card) => <CardTile key={card.cardId} card={card} small />)}</div>
+    </div>
+  ))}</div>;
 }
 
 function ResultPanel({ view, room, locale, onPlayAgain, onLeave }: { view: LiarsNumberView; room: RoomView; locale: string; onPlayAgain: () => void; onLeave: () => void }) {
@@ -147,10 +187,10 @@ export function LiarsNumberPlayPage({ room, view, snapshotPending = false, snaps
     <main className={styles.page}>
       <header className={styles.header}>
         <div><p className={styles.eyebrow}>LIAR’S NUMBER</p><h1>{locale === "vi" ? "Ăn Gian Nói Dối" : "Liar’s Number"}</h1></div>
-        <div className={styles.headerMeta}><span>Round {view.roundNumber}</span><span>{view.playerCount} players</span><button type="button" className={styles.helpButton} onClick={() => setRulesOpen((open) => !open)} aria-label="Rules"><HelpCircle size={18} /></button></div>
+        <div className={styles.headerMeta}><span>Round {view.roundNumber}</span><span>{view.playerCount} players</span><TurnTimer deadline={view.turnDeadline} serverTime={view.serverTime} turnSeconds={view.turnSeconds} locale={locale} /><button type="button" className={styles.helpButton} onClick={() => setRulesOpen((open) => !open)} aria-label={locale === "vi" ? "Hướng dẫn chơi" : "Rules"}><HelpCircle size={18} /></button></div>
       </header>
       {notice || lastNotice || rejectCode ? <div className={styles.notice} role="status"><Flag size={16} /> {notice ?? lastNotice ?? rejectCode}</div> : null}
-      {rulesOpen ? <section className={styles.rulesPanel}><h2>{locale === "vi" ? "CÁCH CHƠI TRONG 30 GIÂY" : "HOW TO PLAY IN 30 SECONDS"}</h2><ol><li>{locale === "vi" ? "Chọn một lá bài và đưa úp cho người khác." : "Choose a card and pass it face down."}</li><li>{locale === "vi" ? "Nói đó là một số từ 1–8; bạn được nói thật hoặc nói dối." : "Claim any number from 1–8; tell the truth or bluff."}</li><li>{locale === "vi" ? "Người nhận đoán thật/dối hoặc xem rồi chuyền tiếp." : "The receiver guesses or peeks and passes."}</li><li>{locale === "vi" ? "Người đoán sai hoặc người bị bắt quả tang nhận penalty." : "The wrong guesser or caught bluffer takes the penalty."}</li><li>{locale === "vi" ? `Lá thường = 1 điểm, Roman = 2 điểm. Đạt ${view.lossThreshold} điểm cùng số là thua.` : `Normal = 1 point, Roman = 2 points. Reach ${view.lossThreshold} points of one number to lose.`}</li></ol></section> : null}
+      {rulesOpen ? <section className={styles.rulesPanel}><h2>{locale === "vi" ? "HƯỚNG DẪN CHƠI" : "HOW TO PLAY"}</h2><ol><li>{locale === "vi" ? "Chọn một lá bài và đưa úp cho người khác." : "Choose a card and pass it face down."}</li><li>{locale === "vi" ? "Nói đó là một số từ 1–8; bạn được nói thật hoặc nói dối." : "Claim any number from 1–8; tell the truth or bluff."}</li><li>{locale === "vi" ? "Người nhận đoán thật/dối hoặc xem rồi chuyền tiếp." : "The receiver guesses or peeks and passes."}</li><li>{locale === "vi" ? "Người đoán sai hoặc người bị bắt quả tang nhận penalty." : "The wrong guesser or caught bluffer takes the penalty."}</li><li>{locale === "vi" ? `Lá thường = 1 điểm, Roman = 2 điểm. Đạt ${view.lossThreshold} điểm cùng số là thua.` : `Normal = 1 point, Roman = 2 points. Reach ${view.lossThreshold} points of one number to lose.`}</li></ol></section> : null}
       {myPlayer && Object.values(myPlayer.penaltyScores).some((score) => score === view.lossThreshold - 1) ? <div className={styles.warning} role="status">{locale === "vi" ? `Cảnh báo: thêm 1 điểm cùng loại là bạn sẽ thua.` : "Warning: one more point of that number and you lose."}</div> : null}
 
       <div className={styles.layout}>
@@ -178,8 +218,7 @@ export function LiarsNumberPlayPage({ room, view, snapshotPending = false, snaps
         </section>
 
         <aside className={styles.sidebar}>
-          <section className={styles.playersPanel}><div className={styles.panelTitle}><h2>{locale === "vi" ? "Người chơi" : "Players"}</h2><span>{view.removedCardCount ? `${view.removedCardCount} hidden cards` : "64 cards"}</span></div>{view.players.map((player) => <article key={player.playerId} className={`${styles.playerCard} ${player.playerId === view.currentRoundStarterId ? styles.starterCard : ""} ${player.loser ? styles.loserCard : ""}`}><PlayerAvatar playerId={player.playerId} displayName={player.displayName} avatarUrl={room.players.find((item) => item.playerId === player.playerId)?.avatarUrl} size={38} decorative /><div className={styles.playerInfo}><strong>{player.displayName}{player.you ? " · You" : ""}</strong><small>{player.handCount} {locale === "vi" ? "lá trên tay" : "in hand"}</small>{player.you && player.penaltyCards.length ? <div className={styles.penaltyCards}>{player.penaltyCards.map((card) => <CardTile key={card.cardId} card={card} small />)}</div> : null}</div><div className={styles.playerPenalty}>{Object.entries(player.penaltyScores).map(([type, score]) => <span key={type} title={`Type ${type}`}>{type}: {score}/{view.lossThreshold}</span>)}{!Object.keys(player.penaltyScores).length ? <span>0/{view.lossThreshold}</span> : null}</div></article>)}</section>
-          <section className={styles.logPanel}><div className={styles.panelTitle}><h2>{locale === "vi" ? "Nhật ký" : "Game log"}</h2></div><div className={styles.logList}>{view.publicEvents.slice(-8).reverse().map((event, index) => <p key={`${event.type}-${index}`}>{event.type === "LIARS_NUMBER_CLAIM_DECLARED" ? `${playerName(view.players, String(event.payload.senderId))} ${locale === "vi" ? "nói đây là số" : "claims"} ${String(event.payload.declaredType)}` : event.type === "LIARS_NUMBER_CARD_REVEALED" ? `${locale === "vi" ? "Lật bài" : "Reveal"}: ${String(event.payload.variant) === "ROMAN" ? "Roman " : ""}${String(event.payload.typeId)}` : event.type === "LIARS_NUMBER_CARD_PEEKED" ? `${playerName(view.players, String(event.payload.playerId))} ${locale === "vi" ? "đã xem bài" : "peeked"}` : event.type === "LIARS_NUMBER_GAME_STARTED" ? (locale === "vi" ? "Ván đã bắt đầu" : "Game started") : event.type}</p>)}</div></section>
+          <section className={styles.playersPanel}><div className={styles.panelTitle}><h2>{locale === "vi" ? "Người chơi" : "Players"}</h2><span>{view.removedCardCount ? `${view.removedCardCount} hidden cards` : "64 cards"}</span></div>{view.players.map((player) => <article key={player.playerId} className={`${styles.playerCard} ${player.playerId === view.currentRoundStarterId ? styles.starterCard : ""} ${player.loser ? styles.loserCard : ""} ${active?.currentReceiverId === player.playerId ? styles.receiverCard : ""}`}><PlayerAvatar playerId={player.playerId} displayName={player.displayName} avatarUrl={room.players.find((item) => item.playerId === player.playerId)?.avatarUrl} size={38} decorative /><div className={styles.playerInfo}><strong>{player.displayName}{player.you ? (locale === "vi" ? " · Bạn" : " · You") : ""}</strong><small>{player.handCount} {locale === "vi" ? "lá trên tay" : "in hand"}{active?.currentReceiverId === player.playerId ? (locale === "vi" ? " · đang nhận bài" : " · receiving card") : ""}</small><PenaltyCardGroups cards={player.penaltyCards} locale={locale} /></div><div className={styles.playerPenalty}>{Object.entries(player.penaltyScores).map(([type, score]) => <span key={type} title={`Type ${type}`}>{type}: {score}/{view.lossThreshold}</span>)}{!Object.keys(player.penaltyScores).length ? <span>0/{view.lossThreshold}</span> : null}</div></article>)}</section>
         </aside>
       </div>
       <button type="button" className={styles.leaveButton} onClick={() => leave.mutate(room.id)}><LogOut size={16} /> {locale === "vi" ? "Rời phòng" : "Leave room"}</button>
