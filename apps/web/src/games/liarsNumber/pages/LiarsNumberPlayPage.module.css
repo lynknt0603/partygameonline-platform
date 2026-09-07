@@ -71,13 +71,12 @@
 .meBadge { color: #28517b; background: #e5f0ff; border: 1px solid #9ab9dc; }
 .turnBadge { color: #fff8e8; background: #a94628; border: 1px solid #8c351e; }
 .playerInfo small { color: #987a5c; font-size: .68rem; }
-.penaltyGroups { display: grid; gap: 2px; max-height: 76px; margin-top: 2px; padding-right: 3px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #c69a61 transparent; }
-.penaltyGroups::-webkit-scrollbar { width: 4px; }
+.penaltyGroups { display: flex; align-items: center; gap: 6px; max-width: 100%; margin-top: 3px; padding: 2px 1px 4px; overflow-x: auto; overscroll-behavior-inline: contain; scrollbar-width: thin; scrollbar-color: #c69a61 transparent; }
+.penaltyGroups::-webkit-scrollbar { height: 4px; }
 .penaltyGroups::-webkit-scrollbar-thumb { border-radius: 999px; background: #c69a61; }
-.penaltyCards { display: flex; flex-wrap: nowrap; gap: 3px; max-width: 100%; margin-top: 2px; padding: 4px 0 3px; overflow-x: auto; overscroll-behavior-inline: contain; scrollbar-width: thin; scrollbar-color: #c69a61 transparent; }
-.penaltyCards::-webkit-scrollbar { height: 4px; }
-.penaltyCards::-webkit-scrollbar-thumb { border-radius: 999px; background: #c69a61; }
-.penaltyCards .cardTileSmall { flex: 0 0 30px; width: 30px; border-width: 1px; border-radius: 5px; cursor: default; }
+.penaltyCards { flex: 0 0 auto; display: flex; align-items: center; gap: 2px; padding: 3px; border: 1px solid #dfc99f; border-radius: 7px; background: #fffaf0; box-shadow: 0 2px 6px #7a542512; }
+.penaltyCards .cardTileSmall { flex: 0 0 34px; width: 34px; border-width: 1px; border-radius: 5px; cursor: default; box-shadow: 0 2px 5px #42210f24; }
+.penaltyCards .romanTag { right: 1px; bottom: 1px; padding: 1px 2px; font-size: .46rem; }
 .leaveButton { display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 8px 13px; border: 1px solid #d7b987; border-radius: 11px; color: #7f3d2c; background: #fff8e9; cursor: pointer; font-weight: 800; box-shadow: 0 5px 14px #7a542516; }
 .leaveButton:hover { border-color: #b65b43; color: #9b3023; background: #fff0e8; }
 .leaveButton:disabled { opacity: .6; cursor: wait; }
