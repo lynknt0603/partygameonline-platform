@@ -56,20 +56,20 @@
 .panelTitle { margin-bottom: 12px; }
 .panelTitle h2 { margin: 0; color: #71301f; font-size: 1rem; font-family: var(--font-display); }
 .panelTitle span { color: #9a7b5b; font-size: .68rem; }
-.playerCard { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 9px; padding: 10px 7px; border-bottom: 1px solid #e7d8bc; }
+.playerCard { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 9px; padding: 10px 7px; border-bottom: 1px solid #e7d8bc; transition: border-color .16s ease, background .16s ease, box-shadow .16s ease; }
 .playerCard:last-child { border-bottom: 0; }
-.starterCard { border-radius: 10px; background: #fff1ce; }
-.receiverCard { box-shadow: inset 3px 0 #b43b29; }
+.activePlayerCard { margin: 4px 0; padding: 10px 9px; border: 2px solid #b43b29; border-radius: 13px; background: #fff1ce; box-shadow: 0 0 0 3px #e9b94b42, 0 7px 18px #7a542522; }
+.activePlayerCard:last-child { border-bottom: 2px solid #b43b29; }
 .loserCard { background: #ffebe5; }
 .playerInfo { min-width: 0; display: grid; gap: 3px; }
-.playerInfo strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .84rem; }
+.playerNameLine { min-width: 0; display: flex; align-items: center; gap: 6px; }
+.playerNameLine strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .84rem; }
+.meBadge, .turnBadge { flex: 0 0 auto; padding: 2px 6px; border-radius: 999px; font-size: .52rem; font-weight: 900; letter-spacing: .04em; }
+.meBadge { color: #28517b; background: #e5f0ff; border: 1px solid #9ab9dc; }
+.turnBadge { color: #fff8e8; background: #a94628; border: 1px solid #8c351e; }
 .playerInfo small { color: #987a5c; font-size: .68rem; }
-.penaltyGroups { display: grid; gap: 4px; margin-top: 5px; }
-.penaltyGroup { display: flex; align-items: center; gap: 5px; }
-.penaltyGroup > span { flex: 0 0 30px; color: #9a4a24; font-size: .58rem; font-weight: 800; }
-.penaltyCards { display: flex; flex-wrap: nowrap; gap: 3px; }
+.penaltyCards { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
 .penaltyCards .cardTileSmall { width: 34px; border-width: 1px; border-radius: 5px; cursor: default; }
-.playerPenalty { display: grid; gap: 3px; justify-items: end; color: #9a4a24; font-size: .66rem; font-weight: 800; }
 .leaveButton { display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 8px 13px; border: 1px solid #d7b987; border-radius: 11px; color: #7f3d2c; background: #fff8e9; cursor: pointer; font-weight: 800; box-shadow: 0 5px 14px #7a542516; }
 .leaveButton:hover { border-color: #b65b43; color: #9b3023; background: #fff0e8; }
 .leaveButton:disabled { opacity: .6; cursor: wait; }

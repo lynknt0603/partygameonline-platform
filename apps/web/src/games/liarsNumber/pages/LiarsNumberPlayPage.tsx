@@ -45,20 +45,20 @@ function reasonText(view: LiarsNumberView, locale: string): string {
   }
   if (view.lastPenaltyType && view.lastPenaltyScore) {
     return locale === "vi"
-      ? `${loser} đạt ${view.lastPenaltyScore}/${view.lastPenaltyThreshold} điểm penalty của số ${view.lastPenaltyType}.`
-      : `${loser} reached ${view.lastPenaltyScore}/${view.lastPenaltyThreshold} penalty points for number ${view.lastPenaltyType}.`;
+      ? `${loser} đạt ${view.lastPenaltyScore}/${view.lastPenaltyThreshold} điểm phạt của số ${view.lastPenaltyType}.`
+      : `${loser} reached ${view.lastPenaltyScore}/${view.lastPenaltyThreshold} points for number ${view.lastPenaltyType}.`;
   }
-  return locale === "vi" ? "Người chơi đầu tiên chạm ngưỡng penalty đã thua." : "The first player to reach the penalty threshold lost.";
+  return locale === "vi" ? "Người chơi đầu tiên chạm ngưỡng điểm phạt đã thua." : "The first player to reach the point limit lost.";
 }
 
 function CardTile({ card, onClick, disabled, small = false }: { card: LiarsNumberCard; onClick?: () => void; disabled?: boolean; small?: boolean }) {
   const romanTooltip = card.faceUp && card.variant === "roman"
-    ? `Roman ${card.label.replace(/^Roman\s*/i, "")} — belongs to number ${card.typeId}; if it becomes a penalty, it counts as 2 points.`
+    ? `Roman ${card.label.replace(/^Roman\s*/i, "")} — number ${card.typeId}; this card counts as 2 points.`
     : undefined;
   const content = (
     <>
       <img src={cardImage(card)} alt={card.faceUp ? card.label : "Card back"} />
-      {card.faceUp && card.variant === "roman" ? <span className={styles.romanTag}>×2 penalty</span> : null}
+      {card.faceUp && card.variant === "roman" ? <span className={styles.romanTag}>×2</span> : null}
     </>
   );
   return onClick ? <button type="button" title={romanTooltip} aria-label={romanTooltip ?? card.label} className={`${styles.cardTile} ${small ? styles.cardTileSmall : ""}`} onClick={onClick} disabled={disabled}>{content}</button> : <div className={`${styles.cardTile} ${small ? styles.cardTileSmall : ""}`} title={romanTooltip}>{content}</div>;
@@ -85,23 +85,22 @@ function TurnTimer({ deadline, serverTime, turnSeconds, locale }: { deadline: st
   return <span className={`${styles.turnTimer} ${remaining <= 5 ? styles.turnTimerUrgent : ""}`}><Clock3 size={15} /> {remaining}s</span>;
 }
 
-function PenaltyCardGroups({ cards, locale }: { cards: LiarsNumberCard[]; locale: string }) {
-  const groups = useMemo(() => {
-    const grouped = new Map<number, LiarsNumberCard[]>();
-    for (const card of cards) {
-      if (card.typeId === null) continue;
-      grouped.set(card.typeId, [...(grouped.get(card.typeId) ?? []), card]);
-    }
-    return [...grouped.entries()].sort(([left], [right]) => left - right);
+function CollectedCards({ cards }: { cards: LiarsNumberCard[] }) {
+  const sortedCards = useMemo(() => {
+    return [...cards].sort((left, right) => (left.typeId ?? 0) - (right.typeId ?? 0));
   }, [cards]);
 
-  if (!groups.length) return null;
-  return <div className={styles.penaltyGroups}>{groups.map(([typeId, group]) => (
-    <div key={typeId} className={styles.penaltyGroup}>
-      <span>{locale === "vi" ? "Số" : "No."} {typeId}</span>
-      <div className={styles.penaltyCards}>{group.map((card) => <CardTile key={card.cardId} card={card} small />)}</div>
-    </div>
-  ))}</div>;
+  if (!sortedCards.length) return null;
+  return <div className={styles.penaltyCards}>{sortedCards.map((card) => <CardTile key={card.cardId} card={card} small />)}</div>;
+}
+
+function currentActorId(view: LiarsNumberView): string | null {
+  if (view.phase === "SELECT_CARD") return view.currentRoundStarterId;
+  if (view.phase === "RECEIVER_DECISION") return view.activeRound?.currentReceiverId ?? null;
+  if (["SELECT_TARGET", "DECLARE_TYPE", "SELECT_PASS_TARGET", "PASS_DECLARE_TYPE"].includes(view.phase)) {
+    return view.activeRound?.currentSenderId ?? null;
+  }
+  return null;
 }
 
 function ResultPanel({ view, room, locale, onPlayAgain, onLeave }: { view: LiarsNumberView; room: RoomView; locale: string; onPlayAgain: () => void; onLeave: () => void }) {
@@ -177,6 +176,7 @@ export function LiarsNumberPlayPage({ room, view, snapshotPending = false, snaps
   const receiver = playerName(view?.players ?? [], active?.currentReceiverId);
   const currentPlayer = view?.players.find((player) => player.playerId === view.currentRoundStarterId);
   const myPlayer = view?.players.find((player) => player.you);
+  const actingPlayerId = view ? currentActorId(view) : null;
   const activeTargets = useMemo(() => (view?.availableTargetPlayerIds ?? []).map((id) => view?.players.find((player) => player.playerId === id)).filter((player): player is LiarsNumberPlayer => Boolean(player)), [view]);
 
   if (!view) {
@@ -215,7 +215,7 @@ export function LiarsNumberPlayPage({ room, view, snapshotPending = false, snaps
         <div className={styles.headerMeta}><span>Round {view.roundNumber}</span><span>{view.playerCount} players</span><TurnTimer deadline={view.turnDeadline} serverTime={view.serverTime} turnSeconds={view.turnSeconds} locale={locale} /><button type="button" className={styles.helpButton} onClick={() => setRulesOpen((open) => !open)} aria-label={locale === "vi" ? "Hướng dẫn chơi" : "Rules"}><HelpCircle size={18} /></button></div>
       </header>
       {notice || lastNotice || rejectCode ? <div className={styles.notice} role="status"><Flag size={16} /> {notice ?? lastNotice ?? rejectCode}</div> : null}
-      {rulesOpen ? <section className={styles.rulesPanel}><h2>{locale === "vi" ? "HƯỚNG DẪN CHƠI" : "HOW TO PLAY"}</h2><ol><li>{locale === "vi" ? "Chọn một lá bài và đưa úp cho người khác." : "Choose a card and pass it face down."}</li><li>{locale === "vi" ? "Nói đó là một số từ 1–8; bạn được nói thật hoặc nói dối." : "Claim any number from 1–8; tell the truth or bluff."}</li><li>{locale === "vi" ? "Người nhận đoán thật/dối hoặc xem rồi chuyền tiếp." : "The receiver guesses or peeks and passes."}</li><li>{locale === "vi" ? "Người đoán sai hoặc người bị bắt quả tang nhận penalty." : "The wrong guesser or caught bluffer takes the penalty."}</li><li>{locale === "vi" ? `Lá thường = 1 điểm, Roman = 2 điểm. Đạt ${view.lossThreshold} điểm cùng số là thua.` : `Normal = 1 point, Roman = 2 points. Reach ${view.lossThreshold} points of one number to lose.`}</li></ol></section> : null}
+      {rulesOpen ? <section className={styles.rulesPanel}><h2>{locale === "vi" ? "HƯỚNG DẪN CHƠI" : "HOW TO PLAY"}</h2><ol><li>{locale === "vi" ? "Chọn một lá bài và đưa úp cho người khác." : "Choose a card and pass it face down."}</li><li>{locale === "vi" ? "Nói đó là một số từ 1–8; bạn được nói thật hoặc nói dối." : "Claim any number from 1–8; tell the truth or bluff."}</li><li>{locale === "vi" ? "Người nhận đoán thật/dối hoặc xem rồi chuyền tiếp." : "The receiver guesses or peeks and passes."}</li><li>{locale === "vi" ? "Người đoán sai hoặc người bị bắt quả tang nhận lá phạt." : "The wrong guesser or caught bluffer takes the card."}</li><li>{locale === "vi" ? `Lá thường = 1 điểm, Roman = 2 điểm. Đạt ${view.lossThreshold} điểm cùng số là thua.` : `Normal = 1 point, Roman = 2 points. Reach ${view.lossThreshold} points of one number to lose.`}</li></ol></section> : null}
       {myPlayer && Object.values(myPlayer.penaltyScores).some((score) => score === view.lossThreshold - 1) ? <div className={styles.warning} role="status">{locale === "vi" ? `Cảnh báo: thêm 1 điểm cùng loại là bạn sẽ thua.` : "Warning: one more point of that number and you lose."}</div> : null}
 
       <div className={styles.layout}>
@@ -239,11 +239,11 @@ export function LiarsNumberPlayPage({ room, view, snapshotPending = false, snaps
             {view.phase === "SELECT_PASS_TARGET" && view.legalActions.includes("SELECT_PASS_TARGET") ? <><p>{locale === "vi" ? "Bạn đã xem bài. Chuyền cho người chưa xem." : "You saw the card. Pass it to someone who has not seen it."}</p><div className={styles.targetGrid}>{view.availablePassTargetPlayerIds.map((id) => { const player = view.players.find((item) => item.playerId === id); return player ? <button type="button" key={id} className={styles.targetButton} onClick={() => send({ type: "SELECT_PASS_TARGET", targetPlayerId: id })}><PlayerAvatar playerId={player.playerId} displayName={player.displayName} avatarUrl={room.players.find((item) => item.playerId === id)?.avatarUrl} size={34} decorative /><span>{player.displayName}</span></button> : null; })}</div></> : null}
             {!view.legalActions.length ? <p className={styles.waitingCopy}>{locale === "vi" ? "Đang chờ người chơi khác hành động…" : "Waiting for another player…"}</p> : null}
           </div>
-          {latestEvent?.type === "LIARS_NUMBER_CARD_REVEALED" ? <div className={styles.revealBanner}><strong>{locale === "vi" ? "Đã lật bài:" : "Revealed:"} {view.lastResolvedCard?.label}</strong><span>{view.lastPenaltyPlayerId === view.you ? (locale === "vi" ? "Bạn nhận penalty" : "You take the penalty") : `${playerName(view.players, view.lastPenaltyPlayerId)} ${locale === "vi" ? "nhận penalty" : "takes the penalty"}`}</span></div> : null}
+          {latestEvent?.type === "LIARS_NUMBER_CARD_REVEALED" ? <div className={styles.revealBanner}><strong>{locale === "vi" ? "Đã lật bài:" : "Revealed:"} {view.lastResolvedCard?.label}</strong><span>{view.lastPenaltyPlayerId === view.you ? (locale === "vi" ? "Bạn nhận lá này" : "You take this card") : `${playerName(view.players, view.lastPenaltyPlayerId)} ${locale === "vi" ? "nhận lá này" : "takes this card"}`}</span></div> : null}
         </section>
 
         <aside className={styles.sidebar}>
-          <section className={styles.playersPanel}><div className={styles.panelTitle}><h2>{locale === "vi" ? "Người chơi" : "Players"}</h2><span>{view.removedCardCount ? `${view.removedCardCount} hidden cards` : "64 cards"}</span></div>{view.players.map((player) => <article key={player.playerId} className={`${styles.playerCard} ${player.playerId === view.currentRoundStarterId ? styles.starterCard : ""} ${player.loser ? styles.loserCard : ""} ${active?.currentReceiverId === player.playerId ? styles.receiverCard : ""}`}><PlayerAvatar playerId={player.playerId} displayName={player.displayName} avatarUrl={room.players.find((item) => item.playerId === player.playerId)?.avatarUrl} size={38} decorative /><div className={styles.playerInfo}><strong>{player.displayName}{player.you ? (locale === "vi" ? " · Bạn" : " · You") : ""}</strong><small>{player.handCount} {locale === "vi" ? "lá trên tay" : "in hand"}{active?.currentReceiverId === player.playerId ? (locale === "vi" ? " · đang nhận bài" : " · receiving card") : ""}</small><PenaltyCardGroups cards={player.penaltyCards} locale={locale} /></div><div className={styles.playerPenalty}>{Object.entries(player.penaltyScores).map(([type, score]) => <span key={type} title={`Type ${type}`}>{type}: {score}/{view.lossThreshold}</span>)}{!Object.keys(player.penaltyScores).length ? <span>0/{view.lossThreshold}</span> : null}</div></article>)}</section>
+          <section className={styles.playersPanel}><div className={styles.panelTitle}><h2>{locale === "vi" ? "Người chơi" : "Players"}</h2><span>{view.removedCardCount ? `${view.removedCardCount} hidden cards` : "64 cards"}</span></div>{view.players.map((player) => <article key={player.playerId} className={`${styles.playerCard} ${player.playerId === actingPlayerId ? styles.activePlayerCard : ""} ${player.loser ? styles.loserCard : ""}`}><PlayerAvatar playerId={player.playerId} displayName={player.displayName} avatarUrl={room.players.find((item) => item.playerId === player.playerId)?.avatarUrl} size={38} decorative /><div className={styles.playerInfo}><div className={styles.playerNameLine}><strong>{player.displayName}</strong>{player.you ? <span className={styles.meBadge}>{locale === "vi" ? "TÔI" : "ME"}</span> : null}{player.playerId === actingPlayerId ? <span className={styles.turnBadge}>{locale === "vi" ? "ĐANG LƯỢT" : "ACTING"}</span> : null}</div><small>{player.handCount} {locale === "vi" ? "lá trên tay" : "in hand"}</small><CollectedCards cards={player.penaltyCards} /></div></article>)}</section>
         </aside>
       </div>
     </main>
