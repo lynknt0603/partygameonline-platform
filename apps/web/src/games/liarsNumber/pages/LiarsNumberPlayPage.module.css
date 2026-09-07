@@ -71,6 +71,9 @@
 .meBadge { color: #28517b; background: #e5f0ff; border: 1px solid #9ab9dc; }
 .turnBadge { color: #fff8e8; background: #a94628; border: 1px solid #8c351e; }
 .playerInfo small { color: #987a5c; font-size: .68rem; }
+.penaltyGroups { display: grid; gap: 2px; max-height: 76px; margin-top: 2px; padding-right: 3px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #c69a61 transparent; }
+.penaltyGroups::-webkit-scrollbar { width: 4px; }
+.penaltyGroups::-webkit-scrollbar-thumb { border-radius: 999px; background: #c69a61; }
 .penaltyCards { display: flex; flex-wrap: nowrap; gap: 3px; max-width: 100%; margin-top: 2px; padding: 4px 0 3px; overflow-x: auto; overscroll-behavior-inline: contain; scrollbar-width: thin; scrollbar-color: #c69a61 transparent; }
 .penaltyCards::-webkit-scrollbar { height: 4px; }
 .penaltyCards::-webkit-scrollbar-thumb { border-radius: 999px; background: #c69a61; }

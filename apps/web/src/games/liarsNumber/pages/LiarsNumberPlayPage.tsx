@@ -86,12 +86,21 @@ function TurnTimer({ deadline, serverTime, turnSeconds, locale }: { deadline: st
 }
 
 function CollectedCards({ cards }: { cards: LiarsNumberCard[] }) {
-  const sortedCards = useMemo(() => {
-    return [...cards].sort((left, right) => (left.typeId ?? 0) - (right.typeId ?? 0));
+  const groups = useMemo(() => {
+    const grouped = new Map<number, LiarsNumberCard[]>();
+    for (const card of cards) {
+      if (card.typeId === null) continue;
+      grouped.set(card.typeId, [...(grouped.get(card.typeId) ?? []), card]);
+    }
+    return [...grouped.entries()].sort(([left], [right]) => left - right);
   }, [cards]);
 
-  if (!sortedCards.length) return null;
-  return <div className={styles.penaltyCards}>{sortedCards.map((card) => <CardTile key={card.cardId} card={card} small />)}</div>;
+  if (!groups.length) return null;
+  return <div className={styles.penaltyGroups}>{groups.map(([typeId, group]) => (
+    <div key={typeId} className={styles.penaltyCards} role="group" aria-label={`Number ${typeId}`}>
+      {group.map((card) => <CardTile key={card.cardId} card={card} small />)}
+    </div>
+  ))}</div>;
 }
 
 function currentActorId(view: LiarsNumberView): string | null {
@@ -177,6 +186,12 @@ export function LiarsNumberPlayPage({ room, view, snapshotPending = false, snaps
   const currentPlayer = view?.players.find((player) => player.playerId === view.currentRoundStarterId);
   const myPlayer = view?.players.find((player) => player.you);
   const actingPlayerId = view ? currentActorId(view) : null;
+  const warningTypeIds = myPlayer && view
+    ? Object.entries(myPlayer.penaltyScores)
+        .filter(([, score]) => score === view.lossThreshold - 1)
+        .map(([type]) => Number(type))
+        .sort((left, right) => left - right)
+    : [];
   const activeTargets = useMemo(() => (view?.availableTargetPlayerIds ?? []).map((id) => view?.players.find((player) => player.playerId === id)).filter((player): player is LiarsNumberPlayer => Boolean(player)), [view]);
 
   if (!view) {
@@ -216,7 +231,7 @@ export function LiarsNumberPlayPage({ room, view, snapshotPending = false, snaps
       </header>
       {notice || lastNotice || rejectCode ? <div className={styles.notice} role="status"><Flag size={16} /> {notice ?? lastNotice ?? rejectCode}</div> : null}
       {rulesOpen ? <section className={styles.rulesPanel}><h2>{locale === "vi" ? "HƯỚNG DẪN CHƠI" : "HOW TO PLAY"}</h2><ol><li>{locale === "vi" ? "Chọn một lá bài và đưa úp cho người khác." : "Choose a card and pass it face down."}</li><li>{locale === "vi" ? "Nói đó là một số từ 1–8; bạn được nói thật hoặc nói dối." : "Claim any number from 1–8; tell the truth or bluff."}</li><li>{locale === "vi" ? "Người nhận đoán thật/dối hoặc xem rồi chuyền tiếp." : "The receiver guesses or peeks and passes."}</li><li>{locale === "vi" ? "Người đoán sai hoặc người bị bắt quả tang nhận lá phạt." : "The wrong guesser or caught bluffer takes the card."}</li><li>{locale === "vi" ? `Lá thường = 1 điểm, Roman = 2 điểm. Đạt ${view.lossThreshold} điểm cùng số là thua.` : `Normal = 1 point, Roman = 2 points. Reach ${view.lossThreshold} points of one number to lose.`}</li></ol></section> : null}
-      {myPlayer && Object.values(myPlayer.penaltyScores).some((score) => score === view.lossThreshold - 1) ? <div className={styles.warning} role="status">{locale === "vi" ? `Cảnh báo: thêm 1 điểm cùng loại là bạn sẽ thua.` : "Warning: one more point of that number and you lose."}</div> : null}
+      {warningTypeIds.length ? <div className={styles.warning} role="status">{locale === "vi" ? `Cảnh báo: thêm 1 điểm số ${warningTypeIds.join(", ")} cùng loại là bạn sẽ thua.` : `Warning: one more point for number ${warningTypeIds.join(", ")} and you lose.`}</div> : null}
 
       <div className={styles.layout}>
         <section className={styles.tablePanel}>
