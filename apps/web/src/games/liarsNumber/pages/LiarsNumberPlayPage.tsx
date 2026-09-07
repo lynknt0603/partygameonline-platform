@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Clock3, Eye, Flag, HelpCircle, LogOut, RotateCcw, Send, ShieldAlert, Trophy } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { RoomView } from "@/shared/lobby/roomView";
+import { ConfirmDialog } from "@/shared/components/ConfirmDialog/ConfirmDialog";
 import { PlayerAvatar } from "@/shared/components/PlayerAvatar/PlayerAvatar";
 import { useLeaveRoom } from "@/shared/hooks/useRooms";
 import { useLocale } from "@/shared/i18n/useT";
@@ -144,6 +145,28 @@ export function LiarsNumberPlayPage({ room, view, snapshotPending = false, snaps
   const leave = useLeaveRoom();
   const [rulesOpen, setRulesOpen] = useState(false);
   const [lastNotice, setLastNotice] = useState<string | null>(null);
+  const [confirmLeave, setConfirmLeave] = useState(false);
+
+  const leaveDialog = (
+    <ConfirmDialog
+      open={confirmLeave}
+      title={locale === "vi" ? "Thoát ván Liar’s Number?" : "Leave Liar’s Number?"}
+      body={view?.finished
+        ? (locale === "vi" ? "Bạn sẽ rời phòng và quay về danh sách phòng." : "You will leave the room and return to the room list.")
+        : (locale === "vi"
+            ? "Rời ván lúc này sẽ tính bạn thua, trừ ELO theo số người bắt đầu ván và kết thúc ván ngay lập tức."
+            : "Leaving now counts as a loss, deducts ELO based on the starting player count, and ends the match immediately.")}
+      confirmLabel={locale === "vi" ? "Xác nhận thoát" : "Leave match"}
+      cancelLabel={locale === "vi" ? "Ở lại" : "Stay"}
+      pending={leave.isPending}
+      error={leave.error}
+      onConfirm={() => leave.mutate(room.id)}
+      onCancel={() => {
+        leave.reset();
+        setConfirmLeave(false);
+      }}
+    />
+  );
 
   const send = (command: LiarsNumberCommand) => {
     const result = sendCommand(command);
@@ -172,7 +195,7 @@ export function LiarsNumberPlayPage({ room, view, snapshotPending = false, snaps
   }
 
   if (view.finished) {
-    return <ResultPanel view={view} room={room} locale={locale} onPlayAgain={() => navigate(`/rooms/${room.id}`)} onLeave={() => leave.mutate(room.id)} />;
+    return <><ResultPanel view={view} room={room} locale={locale} onPlayAgain={() => navigate(`/rooms/${room.id}`)} onLeave={() => setConfirmLeave(true)} />{leaveDialog}</>;
   }
 
   const latestEvent = view.publicEvents[view.publicEvents.length - 1];
@@ -184,9 +207,11 @@ export function LiarsNumberPlayPage({ room, view, snapshotPending = false, snaps
   const phaseTitle = phaseLabel[view.phase] ?? view.phase.replaceAll("_", " ");
 
   return (
+    <>
     <main className={styles.page}>
       <header className={styles.header}>
-        <div><p className={styles.eyebrow}>LIAR’S NUMBER</p><h1>{locale === "vi" ? "Ăn Gian Nói Dối" : "Liar’s Number"}</h1></div>
+        <button type="button" className={styles.leaveButton} onClick={() => setConfirmLeave(true)} disabled={leave.isPending}><LogOut size={16} /> {locale === "vi" ? "Thoát" : "Leave"}</button>
+        <div className={styles.headerTitle}><p className={styles.eyebrow}>LIAR’S NUMBER</p><h1>{locale === "vi" ? "Ăn Gian Nói Dối" : "Liar’s Number"}</h1></div>
         <div className={styles.headerMeta}><span>Round {view.roundNumber}</span><span>{view.playerCount} players</span><TurnTimer deadline={view.turnDeadline} serverTime={view.serverTime} turnSeconds={view.turnSeconds} locale={locale} /><button type="button" className={styles.helpButton} onClick={() => setRulesOpen((open) => !open)} aria-label={locale === "vi" ? "Hướng dẫn chơi" : "Rules"}><HelpCircle size={18} /></button></div>
       </header>
       {notice || lastNotice || rejectCode ? <div className={styles.notice} role="status"><Flag size={16} /> {notice ?? lastNotice ?? rejectCode}</div> : null}
@@ -221,7 +246,8 @@ export function LiarsNumberPlayPage({ room, view, snapshotPending = false, snaps
           <section className={styles.playersPanel}><div className={styles.panelTitle}><h2>{locale === "vi" ? "Người chơi" : "Players"}</h2><span>{view.removedCardCount ? `${view.removedCardCount} hidden cards` : "64 cards"}</span></div>{view.players.map((player) => <article key={player.playerId} className={`${styles.playerCard} ${player.playerId === view.currentRoundStarterId ? styles.starterCard : ""} ${player.loser ? styles.loserCard : ""} ${active?.currentReceiverId === player.playerId ? styles.receiverCard : ""}`}><PlayerAvatar playerId={player.playerId} displayName={player.displayName} avatarUrl={room.players.find((item) => item.playerId === player.playerId)?.avatarUrl} size={38} decorative /><div className={styles.playerInfo}><strong>{player.displayName}{player.you ? (locale === "vi" ? " · Bạn" : " · You") : ""}</strong><small>{player.handCount} {locale === "vi" ? "lá trên tay" : "in hand"}{active?.currentReceiverId === player.playerId ? (locale === "vi" ? " · đang nhận bài" : " · receiving card") : ""}</small><PenaltyCardGroups cards={player.penaltyCards} locale={locale} /></div><div className={styles.playerPenalty}>{Object.entries(player.penaltyScores).map(([type, score]) => <span key={type} title={`Type ${type}`}>{type}: {score}/{view.lossThreshold}</span>)}{!Object.keys(player.penaltyScores).length ? <span>0/{view.lossThreshold}</span> : null}</div></article>)}</section>
         </aside>
       </div>
-      <button type="button" className={styles.leaveButton} onClick={() => leave.mutate(room.id)}><LogOut size={16} /> {locale === "vi" ? "Rời phòng" : "Leave room"}</button>
     </main>
+    {leaveDialog}
+    </>
   );
 }

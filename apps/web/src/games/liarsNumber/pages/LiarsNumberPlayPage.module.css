@@ -1,5 +1,6 @@
 .page { min-height: 100vh; padding: 24px clamp(16px, 4vw, 56px) 54px; color: #332618; background: radial-gradient(circle at 15% 0%, #fff7df 0, #f7edd5 42%, #e8d6b8 100%); }
-.header { max-width: 1260px; margin: 0 auto 18px; display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; }
+.header { max-width: 1260px; margin: 0 auto 18px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 18px; }
+.headerTitle { min-width: 0; }
 .eyebrow { margin: 0 0 5px; color: #b43b29; letter-spacing: .18em; font-size: .69rem; font-weight: 800; }
 .header h1, .resultPanel h1, .loadingPanel h1 { margin: 0; font-family: var(--font-display); color: #6f261b; }
 .header h1 { font-size: clamp(1.7rem, 3vw, 2.4rem); }
@@ -69,7 +70,9 @@
 .penaltyCards { display: flex; flex-wrap: nowrap; gap: 3px; }
 .penaltyCards .cardTileSmall { width: 34px; border-width: 1px; border-radius: 5px; cursor: default; }
 .playerPenalty { display: grid; gap: 3px; justify-items: end; color: #9a4a24; font-size: .66rem; font-weight: 800; }
-.leaveButton { display: flex; align-items: center; gap: 7px; margin: 18px auto 0; padding: 9px 14px; border: 0; color: #875541; background: transparent; cursor: pointer; font-weight: 700; }
+.leaveButton { display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 8px 13px; border: 1px solid #d7b987; border-radius: 11px; color: #7f3d2c; background: #fff8e9; cursor: pointer; font-weight: 800; box-shadow: 0 5px 14px #7a542516; }
+.leaveButton:hover { border-color: #b65b43; color: #9b3023; background: #fff0e8; }
+.leaveButton:disabled { opacity: .6; cursor: wait; }
 .loadingPanel, .resultPanel { margin-top: 6vh; padding: 48px 30px; border: 1px solid #d8bd91; border-radius: 24px; background: #fffaf0; box-shadow: 0 18px 42px #7a54251c; text-align: center; }
 .loadingCard { width: 130px; margin-bottom: 22px; border-radius: 14px; box-shadow: 0 12px 20px #42210f2e; }
 .loadingPanel p:not(.eyebrow), .resultReason, .resultSubline { max-width: 520px; margin: 12px auto; color: #7b634d; line-height: 1.5; }
@@ -96,5 +99,5 @@
 .primaryButton { border: 1px solid #8c351e; color: #fff7e8; background: #a94628; }
 .secondaryButton { border: 1px solid #d7b987; color: #704a32; background: #fff8e9; }
 @media (max-width: 850px) { .layout { grid-template-columns: 1fr; } .tablePanel, .playersPanel { min-height: 0; } }
-@media (max-width: 570px) { .page { padding: 16px 10px 42px; } .header { align-items: flex-start; } .headerMeta { flex-wrap: wrap; justify-content: flex-end; } .sidebar { grid-template-columns: 1fr; } .claimArea { min-height: 240px; } .resultRow { grid-template-columns: 20px auto minmax(0, 1fr) 48px 52px 40px; gap: 5px; padding: 8px; } .resultOutcome { display: none; } .resultActions { flex-direction: column; } }
+@media (max-width: 570px) { .page { padding: 16px 10px 42px; } .header { grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 12px; } .headerMeta { grid-column: 1 / -1; flex-wrap: wrap; justify-content: flex-end; } .leaveButton { min-height: 38px; padding: 7px 10px; } .sidebar { grid-template-columns: 1fr; } .claimArea { min-height: 240px; } .resultRow { grid-template-columns: 20px auto minmax(0, 1fr) 48px 52px 40px; gap: 5px; padding: 8px; } .resultOutcome { display: none; } .resultActions { flex-direction: column; } }
 @keyframes timerPulse { from { transform: scale(1); } to { transform: scale(1.05); } }
