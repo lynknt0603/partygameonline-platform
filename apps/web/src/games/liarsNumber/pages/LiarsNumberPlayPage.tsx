@@ -58,7 +58,6 @@ function CardTile({ card, onClick, disabled, small = false }: { card: LiarsNumbe
   const content = (
     <>
       <img src={cardImage(card)} alt={card.faceUp ? card.label : "Card back"} />
-      {card.faceUp && card.variant === "roman" ? <span className={styles.romanTag}>×2</span> : null}
     </>
   );
   return onClick ? <button type="button" title={romanTooltip} aria-label={romanTooltip ?? card.label} className={`${styles.cardTile} ${small ? styles.cardTileSmall : ""}`} onClick={onClick} disabled={disabled}>{content}</button> : <div className={`${styles.cardTile} ${small ? styles.cardTileSmall : ""}`} title={romanTooltip}>{content}</div>;
