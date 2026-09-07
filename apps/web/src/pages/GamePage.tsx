@@ -101,7 +101,12 @@ export function GamePage() {
     },
   });
 
-  const isDemoBloodBound = roomId.toLowerCase().includes("blood-bound") || roomId.toLowerCase().includes("bloodbound");
+  const isDemoBloodBound =
+    roomId.toLowerCase().includes("blood-bound") ||
+    roomId.toLowerCase().includes("bloodbound") ||
+    roomId.toLowerCase().includes("huyet-the") ||
+    roomId.toLowerCase().includes("huyetthe") ||
+    roomId.toLowerCase().includes("crimson-vow");
   if (isDemoBloodBound) {
     return (
       <>

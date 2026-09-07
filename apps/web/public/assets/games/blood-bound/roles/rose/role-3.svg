@@ -24,7 +24,7 @@
   <polygon points="64,92 56,104 72,104" fill="#f43f5e"/>
 
   <!-- Mặt nạ dạ hội Rose Mask bí ẩn -->
-  <path d="M 36 50 C 36 78 46 88 64 88 C 82 88 92 78 92 50 C 92 38 78 36 64 36 C 50 36 36 38 36 50 Z" 
+  <path d="M 36 50 C 36 78 46 88 64 88 C 82 88 92 78 92 50 C 92 38 78 36 64 36 C 50 36 36 38 36 50 Z"
         fill="#fff1f2" stroke="#e11d48" stroke-width="1.8"/>
 
   <!-- Nửa mặt nạ họa tiết đỏ rực -->

@@ -23,9 +23,9 @@
   <path d="M 28 128 L 42 84 L 64 88 L 86 84 L 100 128 Z" fill="#021c15" stroke="#047857" stroke-width="1.5"/>
 
   <!-- Mũ trùm học sĩ xanh sẫm & tóc bạc phong trần -->
-  <path d="M 38 48 C 36 26 48 18 64 18 C 80 18 92 26 90 48 C 94 62 88 74 88 74 L 40 74 C 40 74 34 62 38 48 Z" 
+  <path d="M 38 48 C 36 26 48 18 64 18 C 80 18 92 26 90 48 C 94 62 88 74 88 74 L 40 74 C 40 74 34 62 38 48 Z"
         fill="#064e3b" stroke="#10b981" stroke-width="1.5"/>
-  <path d="M 46 48 C 46 66 52 74 64 78 C 76 74 82 66 82 48 C 82 38 76 34 64 34 C 52 34 46 38 46 48 Z" 
+  <path d="M 46 48 C 46 66 52 74 64 78 C 76 74 82 66 82 48 C 82 38 76 34 64 34 C 52 34 46 38 46 48 Z"
         fill="#ecfdf5" stroke="#047857" stroke-width="1.2"/>
 
   <!-- Kính đo thảo dược kim loại viền ngọc -->
@@ -38,7 +38,7 @@
   <!-- Bình độc dược ngọc bích hồi phục (Emerald Elixir Flask) -->
   <g transform="translate(64, 102)">
     <rect x="-4" y="-22" width="8" height="8" fill="#a7f3d0" stroke="#047857" stroke-width="1"/>
-    <path d="M -4 -14 L -16 6 C -18 10 -14 14 0 14 C 14 14 18 10 16 6 L 4 -14 Z" 
+    <path d="M -4 -14 L -16 6 C -18 10 -14 14 0 14 C 14 14 18 10 16 6 L 4 -14 Z"
           fill="url(#fan-potion)" stroke="#a7f3d0" stroke-width="1.5" filter="url(#fan-alc-glow)"/>
     <circle cx="-3" cy="2" r="2" fill="#ffffff" opacity="0.85"/>
     <circle cx="4" cy="-2" r="1.5" fill="#ffffff" opacity="0.85"/>

@@ -11,11 +11,11 @@
 
   <!-- GIỌT MÁU VẾT THƯƠNG CHIBI (Mập mạp, biểu cảm nhăn nhó hài hước) -->
   <!-- Hình thể giọt máu tròn trịa -->
-  <path d="M64 22 C64 22 34 56 34 80 C34 98 47 110 64 110 C81 110 94 98 94 80 C94 56 64 22 64 22 Z" 
+  <path d="M64 22 C64 22 34 56 34 80 C34 98 47 110 64 110 C81 110 94 98 94 80 C94 56 64 22 64 22 Z"
         fill="#FF2A55" stroke="#4C0519" stroke-width="3.5" stroke-linejoin="round"/>
 
   <!-- Mảng bóng Cel-shading nửa phải giọt máu -->
-  <path d="M64 22 C64 22 78 50 86 66 C92 78 94 88 94 80 C94 98 81 110 64 110 C78 110 94 98 94 80 C94 56 64 22 64 22 Z" 
+  <path d="M64 22 C64 22 78 50 86 66 C92 78 94 88 94 80 C94 98 81 110 64 110 C78 110 94 98 94 80 C94 56 64 22 64 22 Z"
         fill="#BE123C"/>
 
   <!-- Điểm highlight sáng hình hạt đậu (Cel highlight) -->
@@ -34,7 +34,7 @@
   <path d="M78 68 L71 73 L78 78" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
 
   <!-- Giọt mồ hôi anime rơi bên trán (Sweat drop) -->
-  <path d="M38 52 C38 48 43 42 43 42 C43 42 48 48 48 52 C48 55 45 58 43 58 C41 58 38 55 38 52 Z" 
+  <path d="M38 52 C38 48 43 42 43 42 C43 42 48 48 48 52 C48 55 45 58 43 58 C41 58 38 55 38 52 Z"
         fill="#38BDF8" stroke="#0284C7" stroke-width="1.5"/>
   <circle cx="41.5" cy="53" r="1" fill="#FFFFFF"/>
 

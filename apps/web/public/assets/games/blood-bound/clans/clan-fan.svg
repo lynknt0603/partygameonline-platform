@@ -37,11 +37,11 @@
 
   <!-- CHIẾN QUẠT THẦN CƠ (Lethal Emerald War Fan) -->
   <!-- Vùng nan quạt xòe chính -->
-  <path d="M 18 64 C 18 28 42 15 64 15 C 86 15 110 28 110 64 C 94 58 78 58 64 88 C 50 58 34 58 18 64 Z" 
+  <path d="M 18 64 C 18 28 42 15 64 15 C 86 15 110 28 110 64 C 94 58 78 58 64 88 C 50 58 34 58 18 64 Z"
         fill="url(#fan-blade-grad)" stroke="#022c22" stroke-width="2.5" stroke-linejoin="round"/>
 
   <!-- Lưỡi dao ngọc bích sắc bén trên đỉnh từng nan quạt -->
-  <path d="M 18 64 C 26 38 44 22 64 22 C 84 22 102 38 110 64 L 105 59 C 96 36 82 26 64 26 C 46 26 32 36 23 59 Z" 
+  <path d="M 18 64 C 26 38 44 22 64 22 C 84 22 102 38 110 64 L 105 59 C 96 36 82 26 64 26 C 46 26 32 36 23 59 Z"
         fill="url(#fan-gold-blade)"/>
 
   <!-- Các rãnh nan quạt ngọc bích & gân thép (Fold lines & jade ribs) -->

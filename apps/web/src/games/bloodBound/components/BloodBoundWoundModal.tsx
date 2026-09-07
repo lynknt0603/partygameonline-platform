@@ -20,7 +20,7 @@ export const BloodBoundWoundModal: React.FC<BloodBoundWoundModalProps> = ({
       <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalTitle}>🩸 Bạn Vừa Chịu Vết Thương!</div>
         <div className={styles.modalDesc}>
-          Theo luật Blood Bound, bạn phải chọn để lộ <strong>1 Token Manh Mối</strong> cho toàn bàn cờ:
+          Theo luật Huyết Thệ, bạn phải chọn để lộ <strong>1 Token Manh Mối</strong> cho toàn bàn cờ:
         </div>
         <div style={{ display: "flex", gap: "10px", marginTop: "14px", flexWrap: "wrap", justifyContent: "center" }}>
           <button

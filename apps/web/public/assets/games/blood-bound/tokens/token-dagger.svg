@@ -25,7 +25,7 @@
     <line x1="64" y1="24" x2="64" y2="56" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
 
     <!-- Chắn tay kiếm (Crossguard) hình cánh dơi / cánh én Chibi bằng vàng -->
-    <path d="M40 60 C48 56 80 56 88 60 C92 64 88 70 80 68 L68 67 L68 70 L60 70 L60 67 L48 68 C40 70 36 64 40 60 Z" 
+    <path d="M40 60 C48 56 80 56 88 60 C92 64 88 70 80 68 L68 67 L68 70 L60 70 L60 67 L48 68 C40 70 36 64 40 60 Z"
           fill="#FBBF24" stroke="#78350F" stroke-width="2.5" stroke-linejoin="round"/>
     <!-- Đổ bóng cel-shading chắn tay -->
     <path d="M42 63 C52 61 76 61 86 63 L80 68 L68 67 L68 70 L60 70 L60 67 L48 68 Z" fill="#D97706"/>

@@ -33,10 +33,10 @@
 
   <!-- Khuôn mặt Lãnh Chúa / Thủ Lĩnh quý phái -->
   <!-- Tóc bạch kim quý tộc -->
-  <path d="M 40 54 C 38 34 50 24 64 24 C 78 24 90 34 88 54 C 92 64 86 76 86 76 C 82 66 80 60 76 58 C 64 62 52 58 48 76 C 48 76 42 64 40 54 Z" 
+  <path d="M 40 54 C 38 34 50 24 64 24 C 78 24 90 34 88 54 C 92 64 86 76 86 76 C 82 66 80 60 76 58 C 64 62 52 58 48 76 C 48 76 42 64 40 54 Z"
         fill="#e2e8f0" stroke="#475569" stroke-width="1.2"/>
   <!-- Khuôn mặt thanh tú -->
-  <path d="M 48 50 C 48 68 54 78 64 82 C 74 78 80 68 80 50 C 80 40 74 36 64 36 C 54 36 48 40 48 50 Z" 
+  <path d="M 48 50 C 48 68 54 78 64 82 C 74 78 80 68 80 50 C 80 40 74 36 64 36 C 54 36 48 40 48 50 Z"
         fill="#fde2e4" stroke="#9f1239" stroke-width="1.2"/>
   <!-- Ánh mắt sắc sảo lạnh lùng đỏ rực (Crimson eyes) -->
   <ellipse cx="56" cy="54" rx="3" ry="1.8" fill="#e11d48"/>

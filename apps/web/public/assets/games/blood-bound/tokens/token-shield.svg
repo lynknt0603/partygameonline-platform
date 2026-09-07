@@ -11,11 +11,11 @@
 
   <!-- Khiên Hiệp Sĩ Chibi Hình Bầu Dục / Cánh Sen Kiên Cố -->
   <!-- Viền ngoài bằng vàng kim -->
-  <path d="M64 20 C90 20 102 32 102 62 C102 88 80 104 64 112 C48 104 26 88 26 62 C26 32 38 20 64 20 Z" 
+  <path d="M64 20 C90 20 102 32 102 62 C102 88 80 104 64 112 C48 104 26 88 26 62 C26 32 38 20 64 20 Z"
         fill="#FBBF24" stroke="#78350F" stroke-width="3.5" stroke-linejoin="round"/>
-  
+
   <!-- Lòng khiên chính (Màu Xanh Băng RPG Cel-shaded) -->
-  <path d="M64 27 C84 27 94 36 94 62 C94 84 76 98 64 105 C52 98 34 84 34 62 C34 36 44 27 64 27 Z" 
+  <path d="M64 27 C84 27 94 36 94 62 C94 84 76 98 64 105 C52 98 34 84 34 62 C34 36 44 27 64 27 Z"
         fill="#38BDF8" stroke="#0369A1" stroke-width="2.5" stroke-linejoin="round"/>
 
   <!-- Mảng đổ bóng Cel-shading nửa phải khiên -->

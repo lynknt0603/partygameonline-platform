@@ -10,12 +10,8 @@ export function startBloodBoundGame(roomId: string): Promise<RoomDto> {
 }
 
 export async function fetchBloodBoundSnapshot(roomId: string): Promise<BloodBoundView | null> {
-  try {
-    const raw = await api<BloodBoundView>(`/api/v1/games/blood-bound/rooms/${roomId.toUpperCase()}/snapshot`);
-    return raw;
-  } catch {
-    return null;
-  }
+  const raw = await api<BloodBoundView>(`/api/v1/games/blood-bound/rooms/${roomId.toUpperCase()}/snapshot`);
+  return raw;
 }
 
 export function sendBloodBoundAction(roomId: string, command: BloodBoundCommand): string {

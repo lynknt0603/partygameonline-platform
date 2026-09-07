@@ -107,7 +107,7 @@ describe("BloodBound Bot AI & Solo Simulation", () => {
     expect(decision.reasoning).toContain("BẢO VỆ THỦ LĨNH");
   });
 
-  it("executeBotTurnStep should automatically advance ATTACK_CHOICE, INTERVENTION_WINDOW, and WOUND_ASSIGNMENT", () => {
+  it("executeBotTurnStep should automatically advance through attack and intervention loop", () => {
     const players = ensureFullPlayerList([{ playerId: "p1", displayName: "You" }], 6);
     const { view, secretCards } = initBloodBoundGame("room-1", players, "p1");
 
@@ -123,11 +123,61 @@ describe("BloodBound Bot AI & Solo Simulation", () => {
 
     // 2. Intervention Step (Pass or Intervene)
     const step2 = executeBotTurnStep(step1.nextView, secretCards);
-    expect(step2.nextView.phase).toBe("WOUND_ASSIGNMENT");
+    expect(["WOUND_ASSIGNMENT", "ATTACK_CHOICE", "GAME_OVER"]).toContain(step2.nextView.phase);
 
-    // 3. Wound Reveal Step
-    const step3 = executeBotTurnStep(step2.nextView, secretCards);
-    expect(["ATTACK_CHOICE", "GAME_OVER"]).toContain(step3.nextView.phase);
+    // 3. If no bot intervened, wound assignment resolves next
+    if (step2.nextView.phase === "WOUND_ASSIGNMENT") {
+      const step3 = executeBotTurnStep(step2.nextView, secretCards);
+      expect(["ATTACK_CHOICE", "GAME_OVER"]).toContain(step3.nextView.phase);
+    }
+  });
+
+  it("executeBotTurnStep deterministic: passes intervention to WOUND_ASSIGNMENT when nobody can intervene", () => {
+    const players = ensureFullPlayerList([{ playerId: "p1", displayName: "You" }], 6);
+    const { view, secretCards } = initBloodBoundGame("room-1", players, "p1");
+
+    // Attack target is players[0]. All other potential interveners have revealed rank (cannot intervene)
+    const interventionState = {
+      ...view,
+      phase: "INTERVENTION_WINDOW" as const,
+      daggerHolderPlayerId: players[1].playerId,
+      currentTargetPlayerId: players[0].playerId,
+      players: view.players.map((p) => ({ ...p, hasRevealedRank: true })),
+    };
+
+    const step = executeBotTurnStep(interventionState, secretCards);
+    expect(step.nextView.phase).toBe("WOUND_ASSIGNMENT");
+
+    const woundStep = executeBotTurnStep(step.nextView, secretCards);
+    expect(["ATTACK_CHOICE", "GAME_OVER"]).toContain(woundStep.nextView.phase);
+  });
+
+  it("executeBotTurnStep deterministic: ally intervenes and directly resolves to ATTACK_CHOICE", () => {
+    const players = ensureFullPlayerList([{ playerId: "p1", displayName: "You" }], 6);
+    const { view, secretCards } = initBloodBoundGame("room-1", players, "p1", {
+      assignedRoles: {
+        [players[0].playerId]: { clan: "ROSE", rank: 1 }, // Target: Leader
+        [players[1].playerId]: { clan: "FAN", rank: 2 },  // Attacker
+        [players[2].playerId]: { clan: "ROSE", rank: 6 }, // Ally: Guardian
+      },
+    });
+
+    const interventionState = {
+      ...view,
+      phase: "INTERVENTION_WINDOW" as const,
+      daggerHolderPlayerId: players[1].playerId,
+      currentTargetPlayerId: players[0].playerId,
+      players: view.players.map((p) => {
+        if (p.playerId === players[0].playerId) return { ...p, wounds: 2 };
+        if (p.playerId === players[2].playerId) return { ...p, hasRevealedRank: false };
+        return { ...p, hasRevealedRank: true };
+      }),
+    };
+
+    const step = executeBotTurnStep(interventionState, secretCards);
+    // Guardian intervenes to protect leader -> directly reveals wound and advances to ATTACK_CHOICE
+    expect(step.nextView.phase).toBe("ATTACK_CHOICE");
+    expect(step.logAction?.action).toContain("can thiệp");
   });
 
   it("decideBotAttack avoids killing ally with 3 wounds", () => {

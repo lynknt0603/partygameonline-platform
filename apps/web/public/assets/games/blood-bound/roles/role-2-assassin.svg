@@ -30,11 +30,11 @@
 
   <!-- Áo choàng & Mũ trùm đầu bóng đêm (Assassin Hood) -->
   <path d="M 32 128 L 44 88 L 64 78 L 84 88 L 96 128 Z" fill="#18181b" stroke="#27272a" stroke-width="1.5"/>
-  <path d="M 64 18 C 42 18 36 34 36 58 C 36 78 44 88 64 92 C 84 88 92 78 92 58 C 92 34 86 18 64 18 Z" 
+  <path d="M 64 18 C 42 18 36 34 36 58 C 36 78 44 88 64 92 C 84 88 92 78 92 58 C 92 34 86 18 64 18 Z"
         fill="#09090b" stroke="#3f3f46" stroke-width="2"/>
-  
+
   <!-- Hốc mũ tối sâu (Dark face recess) -->
-  <path d="M 44 46 C 44 34 52 30 64 30 C 76 30 84 34 84 46 C 84 64 78 78 64 80 C 50 78 44 64 44 46 Z" 
+  <path d="M 44 46 C 44 34 52 30 64 30 C 76 30 84 34 84 46 C 84 64 78 78 64 80 C 50 78 44 64 44 46 Z"
         fill="#000000"/>
 
   <!-- Khăn bịt mặt thích khách (Assassin Cowl/Scarf) -->

@@ -24,7 +24,7 @@
   <polygon points="64,92 56,104 72,104" fill="#10b981"/>
 
   <!-- Mặt nạ dạ hội ngọc bích Jade Mask -->
-  <path d="M 36 50 C 36 78 46 88 64 88 C 82 88 92 78 92 50 C 92 38 78 36 64 36 C 50 36 36 38 36 50 Z" 
+  <path d="M 36 50 C 36 78 46 88 64 88 C 82 88 92 78 92 50 C 92 38 78 36 64 36 C 50 36 36 38 36 50 Z"
         fill="#f0fdf4" stroke="#10b981" stroke-width="1.8"/>
 
   <!-- Họa tiết ngọc bích xẻ nửa mặt nạ -->

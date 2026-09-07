@@ -22,9 +22,9 @@
   <path d="M 28 128 L 42 84 L 64 88 L 86 84 L 100 128 Z" fill="#24030a" stroke="#881337" stroke-width="1.5"/>
 
   <!-- Mũ trùm học sĩ & tóc xám thông thái -->
-  <path d="M 38 48 C 36 26 48 18 64 18 C 80 18 92 26 90 48 C 94 62 88 74 88 74 L 40 74 C 40 74 34 62 38 48 Z" 
+  <path d="M 38 48 C 36 26 48 18 64 18 C 80 18 92 26 90 48 C 94 62 88 74 88 74 L 40 74 C 40 74 34 62 38 48 Z"
         fill="#3b0712" stroke="#e11d48" stroke-width="1.5"/>
-  <path d="M 46 48 C 46 66 52 74 64 78 C 76 74 82 66 82 48 C 82 38 76 34 64 34 C 52 34 46 38 46 48 Z" 
+  <path d="M 46 48 C 46 66 52 74 64 78 C 76 74 82 66 82 48 C 82 38 76 34 64 34 C 52 34 46 38 46 48 Z"
         fill="#fce7f3" stroke="#9f1239" stroke-width="1.2"/>
 
   <!-- Kính đo quang học kim loại đỏ đồng -->
@@ -39,7 +39,7 @@
     <!-- Cổ bình thủy tinh -->
     <rect x="-4" y="-22" width="8" height="8" fill="#fda4af" stroke="#881337" stroke-width="1"/>
     <!-- Thân bình tam giác phát sáng -->
-    <path d="M -4 -14 L -16 6 C -18 10 -14 14 0 14 C 14 14 18 10 16 6 L 4 -14 Z" 
+    <path d="M -4 -14 L -16 6 C -18 10 -14 14 0 14 C 14 14 18 10 16 6 L 4 -14 Z"
           fill="url(#rose-potion)" stroke="#fda4af" stroke-width="1.5" filter="url(#rose-alc-glow)"/>
     <!-- Bọt khí hồi phục dược chất -->
     <circle cx="-3" cy="2" r="2" fill="#ffffff" opacity="0.8"/>

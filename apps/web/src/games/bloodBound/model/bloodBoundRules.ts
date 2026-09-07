@@ -223,6 +223,17 @@ export function validateAttack(
   if (target.wounds >= 4) {
     return { valid: false, reason: "Mục tiêu đã bị bắt giữ từ trước" };
   }
+  if (view.forcedAttackTargetId) {
+    const forcedTarget = view.players.find((p) => p.playerId === view.forcedAttackTargetId);
+    if (forcedTarget && forcedTarget.wounds < 4 && forcedTarget.playerId !== attackerPlayerId) {
+      if (targetPlayerId !== view.forcedAttackTargetId) {
+        return {
+          valid: false,
+          reason: `Mưu lược Mê Hoặc ép bạn phải tấn công ${forcedTarget.displayName}!`,
+        };
+      }
+    }
+  }
   return { valid: true };
 }
 
@@ -241,6 +252,7 @@ export function processAttack(
     phase: "INTERVENTION_WINDOW",
     currentTargetPlayerId: targetPlayerId,
     intervenedByPlayerId: null,
+    forcedAttackTargetId: null,
     timeRemainingSeconds: 10,
     publicLog: [
       ...view.publicLog,
@@ -712,8 +724,8 @@ export function applyRoleAbility(
     case 8: // Courtesan / Inquisitor: Mưu kế thao túng
       if (targetPlayerId) {
         const target = view.players.find((p) => p.playerId === targetPlayerId);
-        logText = `${actor.displayName} uses high intrigue upon ${target?.displayName ?? "target"}!`;
-        logTextVi = `${actor.displayName} kích hoạt mưu lược Rank 8 lên ${target?.displayName ?? "mục tiêu"}!`;
+        logText = `${actor.displayName} schemes with Courtesan intrigue, forcing next attack on ${target?.displayName ?? "target"}!`;
+        logTextVi = `${actor.displayName} dùng mưu lược Mê Hoặc, ép đòn tấn công tiếp theo phải nhắm vào ${target?.displayName ?? "mục tiêu"}!`;
       }
       break;
 
@@ -734,6 +746,7 @@ export function applyRoleAbility(
     phase: isGameOver ? "GAME_OVER" : view.phase,
     winnerClan: isGameOver ? winnerClan : view.winnerClan,
     capturedPlayerId: isGameOver ? capturedPlayerId : view.capturedPlayerId,
+    forcedAttackTargetId: targetPlayerId ?? view.forcedAttackTargetId,
     players: updatedPlayers,
     publicLog: [
       ...view.publicLog,

@@ -135,17 +135,12 @@ export function BloodBoundPlayPage({
   );
 
   // 3. Fallback Client Game State & Secret Cards
-  const [gameState, setGameState] = useState<BloodBoundView>(() => {
+  const [initialGameData] = useState(() => {
     const defaultOpts = { shuffle: true };
-    const { view } = initBloodBoundGame(roomId, initialPlayers, myPlayerId, defaultOpts);
-    return view;
+    return initBloodBoundGame(roomId, initialPlayers, myPlayerId, defaultOpts);
   });
-
-  const [secretCards, setSecretCards] = useState<Record<string, BloodBoundCard>>(() => {
-    const defaultOpts = { shuffle: true };
-    const { secretCards: cards } = initBloodBoundGame(roomId, initialPlayers, myPlayerId, defaultOpts);
-    return cards;
-  });
+  const [gameState, setGameState] = useState<BloodBoundView>(initialGameData.view);
+  const [secretCards, setSecretCards] = useState<Record<string, BloodBoundCard>>(initialGameData.secretCards);
 
   // Dual-mode state determination
   const isServerAuthoritative = Boolean(serverView && sendCommand && room?.status === "in_game");
@@ -475,7 +470,7 @@ export function BloodBoundPlayPage({
         <div className={styles.container}>
           <header className={styles.header}>
             <div className={styles.headerLeft}>
-              <h2 className={styles.gameTitle}>Blood Bound</h2>
+              <h2 className={styles.gameTitle}>Huyết Thệ</h2>
             </div>
             <div className={styles.headerRight}>
               <button
@@ -488,7 +483,7 @@ export function BloodBoundPlayPage({
             </div>
           </header>
           <div style={{ padding: "60px 20px", textAlign: "center", color: "#f87171" }}>
-            <p style={{ fontSize: "1.1rem", fontWeight: 700 }}>Không thể tải ván đấu Blood Bound từ máy chủ</p>
+            <p style={{ fontSize: "1.1rem", fontWeight: 700 }}>Không thể tải ván đấu Huyết Thệ từ máy chủ</p>
             <p style={{ color: "#94a3b8", margin: "12px 0 24px" }}>
               {snapshotError.message || "Vui lòng kiểm tra lại kết nối mạng."}
             </p>
@@ -504,7 +499,7 @@ export function BloodBoundPlayPage({
         <div className={styles.container}>
           <header className={styles.header}>
             <div className={styles.headerLeft}>
-              <h2 className={styles.gameTitle}>Blood Bound</h2>
+              <h2 className={styles.gameTitle}>Huyết Thệ</h2>
             </div>
             <div className={styles.headerRight}>
               <button
@@ -517,7 +512,7 @@ export function BloodBoundPlayPage({
             </div>
           </header>
           <div style={{ padding: "80px 20px", textAlign: "center", color: "#94a3b8" }}>
-            <p style={{ fontSize: "1.1rem", fontWeight: 600 }}>Đang kết nối bàn cờ Blood Bound...</p>
+            <p style={{ fontSize: "1.1rem", fontWeight: 600 }}>Đang kết nối bàn cờ Huyết Thệ...</p>
           </div>
         </div>
       );
@@ -534,7 +529,7 @@ export function BloodBoundPlayPage({
       {/* 1. Header with Title, Sound & Controls */}
       <header className={styles.header}>
         <div className={styles.headerLeft}>
-          <h2 className={styles.gameTitle}>Blood Bound</h2>
+          <h2 className={styles.gameTitle}>Huyết Thệ</h2>
           <span className={styles.phaseBadge}>
             <Swords size={16} /> Phase: {activeView.phase}
           </span>

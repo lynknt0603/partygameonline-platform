@@ -28,7 +28,7 @@
   <path d="M 32 128 L 44 88 L 64 80 L 84 88 L 96 128 Z" fill="#1c1917" stroke="#44403c" stroke-width="1.5"/>
 
   <!-- Mũ trùm & Tóc xoăn nhà giả kim -->
-  <path d="M 64 20 C 44 20 38 34 38 56 C 38 74 46 84 64 88 C 82 84 90 74 90 56 C 90 34 84 20 64 20 Z" 
+  <path d="M 64 20 C 44 20 38 34 38 56 C 38 74 46 84 64 88 C 82 84 90 74 90 56 C 90 34 84 20 64 20 Z"
         fill="#292524" stroke="#44403c" stroke-width="1.8"/>
 
   <!-- Kính bảo hộ giả kim thuật mạ đồng (Occult Brass Goggles) -->

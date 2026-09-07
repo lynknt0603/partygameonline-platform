@@ -441,5 +441,41 @@ describe("Blood Bound Rules - Role Customization & Shuffling", () => {
     expect(check.valid).toBe(false);
     expect(check.reasonVi).toContain("chính mình");
   });
+
+  it("Rank 8 Courtesan ability forces the next attack to target chosen player", () => {
+    const { view, secretCards } = initBloodBoundGame("room-bb-rank8", [
+      { playerId: "p1", displayName: "Alice" },
+      { playerId: "p2", displayName: "Bob" },
+      { playerId: "p3", displayName: "Charlie" },
+      { playerId: "p4", displayName: "David" },
+    ], "p1", {
+      assignedRoles: {
+        p1: { clan: "ROSE", rank: 8 },
+        p2: { clan: "FAN", rank: 3 },
+        p3: { clan: "FAN", rank: 4 },
+        p4: { clan: "ROSE", rank: 5 },
+      },
+    });
+
+    view.phase = "ATTACK_CHOICE";
+    view.players[0].hasRevealedRank = true;
+
+    // Use ability to force attack on p3
+    const nextView = applyRoleAbility(view, "p1", 8, "p3", secretCards);
+    expect(nextView.forcedAttackTargetId).toBe("p3");
+
+    // Attacking p2 is rejected
+    const invalidAttack = validateAttack(nextView, "p1", "p2");
+    expect(invalidAttack.valid).toBe(false);
+    expect(invalidAttack.reason).toContain("Mưu lược Mê Hoặc");
+
+    // Attacking p3 is valid
+    const validAttack = validateAttack(nextView, "p1", "p3");
+    expect(validAttack.valid).toBe(true);
+
+    // After processing attack, forcedAttackTargetId is cleared
+    const afterAttackView = processAttack(nextView, "p3");
+    expect(afterAttackView.forcedAttackTargetId).toBeNull();
+  });
 });
 
