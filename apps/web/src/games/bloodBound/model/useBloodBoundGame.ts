@@ -21,6 +21,38 @@ export interface UseBloodBoundGameResult {
   sendCommand: (command: BloodBoundCommand) => string | null;
 }
 
+export function resolveNextBloodBoundView(
+  current: BloodBoundView | null,
+  next: BloodBoundView | null,
+  normalizedRoomId?: string
+): BloodBoundView | null {
+  if (!next) return current;
+  if (normalizedRoomId && next.roomId && next.roomId.toUpperCase() !== normalizedRoomId) {
+    return current;
+  }
+  if (current && normalizedRoomId && current.roomId && current.roomId.toUpperCase() !== normalizedRoomId) {
+    return next;
+  }
+  if (current?.phase === "GAME_OVER" && next.phase !== "GAME_OVER") {
+    return current;
+  }
+  if (!current) return next;
+  if (typeof next.version === "number" && typeof current.version === "number") {
+    return next.version >= current.version ? next : current;
+  }
+  if (next.roundNumber !== current.roundNumber) {
+    return next.roundNumber > current.roundNumber ? next : current;
+  }
+  const phaseOrder: Record<string, number> = {
+    LOOK_LEFT: 1,
+    ATTACK_CHOICE: 2,
+    INTERVENTION_WINDOW: 3,
+    WOUND_ASSIGNMENT: 4,
+    GAME_OVER: 5,
+  };
+  return (phaseOrder[next.phase] ?? 0) >= (phaseOrder[current.phase] ?? 0) ? next : current;
+}
+
 export function useBloodBoundGame(
   roomId: string | undefined,
   enabled: boolean
@@ -40,47 +72,25 @@ export function useBloodBoundGame(
   const [rejectCode, setRejectCode] = useState<string | null>(null);
 
   useEffect(() => {
+    setView(null);
+    setNotice(null);
+    setRejectCode(null);
+  }, [normalizedRoomId]);
+
+  useEffect(() => {
     const next = snapshot.data;
     if (!next) return;
-    setView((current) => {
-      if (current?.phase === "GAME_OVER" && next.phase !== "GAME_OVER") {
-        return current;
-      }
-      if (!current) return next;
-      if (typeof next.version === "number" && typeof current.version === "number") {
-        return next.version >= current.version ? next : current;
-      }
-      if (next.roundNumber !== current.roundNumber) {
-        return next.roundNumber > current.roundNumber ? next : current;
-      }
-      const phaseOrder: Record<string, number> = {
-        LOOK_LEFT: 1,
-        ATTACK_CHOICE: 2,
-        INTERVENTION_WINDOW: 3,
-        WOUND_ASSIGNMENT: 4,
-        GAME_OVER: 5,
-      };
-      return (phaseOrder[next.phase] ?? 0) >= (phaseOrder[current.phase] ?? 0) ? next : current;
-    });
+    setView((current) => resolveNextBloodBoundView(current, next, normalizedRoomId));
     setRejectCode(null);
-  }, [snapshot.data]);
+  }, [snapshot.data, normalizedRoomId]);
 
   const onView = useCallback((rawView: Record<string, unknown>, _envelope: WsEnvelope) => {
     const next = rawView as unknown as BloodBoundView;
     if (!next || next.gameId !== BLOOD_BOUND_ID) return;
-    setView((current) => {
-      if (current?.phase === "GAME_OVER" && next.phase !== "GAME_OVER") {
-        return current;
-      }
-      if (!current) return next;
-      if (typeof next.version === "number" && typeof current.version === "number") {
-        return next.version >= current.version ? next : current;
-      }
-      return next;
-    });
+    setView((current) => resolveNextBloodBoundView(current, next, normalizedRoomId));
     setRejectCode(null);
     setNotice(null);
-  }, []);
+  }, [normalizedRoomId]);
 
   const onRejected = useCallback((code: string, message: string) => {
     setRejectCode(code);

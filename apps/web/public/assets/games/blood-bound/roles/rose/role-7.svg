@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <radialGradient id="rose-bsk-bg" cx="50%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#58081a"/>
+      <stop offset="50%" stop-color="#190207"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </radialGradient>
+    <linearGradient id="rose-bsk-steel" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f43f5e"/>
+      <stop offset="35%" stop-color="#881337"/>
+      <stop offset="80%" stop-color="#2a040d"/>
+      <stop offset="100%" stop-color="#0f0104"/>
+    </linearGradient>
+    <linearGradient id="rose-blade" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="40%" stop-color="#fda4af"/>
+      <stop offset="80%" stop-color="#e11d48"/>
+      <stop offset="100%" stop-color="#4c0519"/>
+    </linearGradient>
+    <filter id="rose-bsk-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="5" flood-color="#f43f5e" flood-opacity="0.75"/>
+    </filter>
+  </defs>
+
+  <circle cx="64" cy="64" r="60" fill="url(#rose-bsk-bg)" stroke="#f43f5e" stroke-width="3" filter="url(#rose-bsk-glow)"/>
+  <circle cx="64" cy="64" r="54" fill="none" stroke="rgba(244, 63, 94, 0.35)" stroke-width="1.2" stroke-dasharray="3 3"/>
+
+  <!-- Vai giáp sắt gai sắc nhọn (Spiked Pauldrons) -->
+  <path d="M 20 128 L 36 78 L 64 86 L 92 78 L 108 128 Z" fill="#24030a" stroke="#881337" stroke-width="1.5"/>
+  <path d="M 18 90 L 32 72 L 44 86 Z" fill="url(#rose-bsk-steel)" stroke="#f43f5e" stroke-width="1.5"/>
+  <path d="M 110 90 L 96 72 L 84 86 Z" fill="url(#rose-bsk-steel)" stroke="#f43f5e" stroke-width="1.5"/>
+
+  <!-- Mũ giáp đấu sĩ rực lửa với sừng cong chiến tranh -->
+  <path d="M 40 50 C 40 22 52 14 64 14 C 76 14 88 22 88 50 C 92 68 86 78 86 78 L 42 78 C 42 78 36 68 40 50 Z"
+        fill="url(#rose-bsk-steel)" stroke="#e11d48" stroke-width="1.8"/>
+
+  <!-- Cặp sừng đỏ đe dọa (War Horns) -->
+  <path d="M 44 32 C 34 22 22 24 16 16 C 26 28 36 28 42 36 Z" fill="#e11d48" stroke="#fda4af" stroke-width="1"/>
+  <path d="M 84 32 C 94 22 106 24 112 16 C 102 28 92 28 86 36 Z" fill="#e11d48" stroke="#fda4af" stroke-width="1"/>
+
+  <!-- Mắt rực lửa cuồng nộ đỏ thẫm (Burning Rage Eyes) -->
+  <ellipse cx="53" cy="46" rx="6" ry="3.5" fill="#ff1744" filter="url(#rose-bsk-glow)"/>
+  <ellipse cx="75" cy="46" rx="6" ry="3.5" fill="#ff1744" filter="url(#rose-bsk-glow)"/>
+  <circle cx="53" cy="46" r="1.5" fill="#ffffff"/>
+  <circle cx="75" cy="46" r="1.5" fill="#ffffff"/>
+
+  <!-- Khe thở mặt nạ nhe răng đe dọa -->
+  <path d="M 50 62 L 64 68 L 78 62 L 72 74 L 56 74 Z" fill="#140105" stroke="#f43f5e" stroke-width="1.2"/>
+  <line x1="56" y1="65" x2="56" y2="71" stroke="#e11d48" stroke-width="1.5"/>
+  <line x1="64" y1="67" x2="64" y2="73" stroke="#e11d48" stroke-width="1.5"/>
+  <line x1="72" y1="65" x2="72" y2="71" stroke="#e11d48" stroke-width="1.5"/>
+
+  <!-- Lưỡi rìu chiến cuồng nộ đan chéo (Twin War Axes) -->
+  <g transform="translate(64, 98)">
+    <line x1="-24" y1="12" x2="24" y2="-12" stroke="#881337" stroke-width="3"/>
+    <line x1="-24" y1="-12" x2="24" y2="12" stroke="#881337" stroke-width="3"/>
+    <path d="M -22 -16 C -28 -8 -28 0 -20 6 L -16 -2 Z" fill="url(#rose-blade)" stroke="#fda4af" stroke-width="1"/>
+    <path d="M 22 -16 C 28 -8 28 0 20 6 L 16 -2 Z" fill="url(#rose-blade)" stroke="#fda4af" stroke-width="1"/>
+    <circle cx="0" cy="0" r="5" fill="#ff1744" stroke="#ffffff" stroke-width="1" filter="url(#rose-bsk-glow)"/>
+  </g>
+
+  <!-- Rank 7 -->
+  <circle cx="64" cy="116" r="10" fill="#24030a" stroke="#f43f5e" stroke-width="1.5"/>
+  <text x="64" y="120" text-anchor="middle" fill="#fda4af" font-size="10" font-weight="900" font-family="serif">VII</text>
+</svg>

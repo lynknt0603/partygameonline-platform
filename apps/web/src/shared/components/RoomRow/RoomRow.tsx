@@ -1,9 +1,12 @@
+import { useState } from "react";
 import { Lock, LockOpen, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { StatusBadge } from "@/shared/components/StatusBadge/StatusBadge";
 import { PlayerAvatar } from "@/shared/components/PlayerAvatar/PlayerAvatar";
 import { useGame } from "@/shared/hooks/useGames";
 import { useJoinRoom } from "@/shared/hooks/useRooms";
+import { useActiveGame } from "@/shared/hooks/useActiveGame";
+import { ActiveGameConflictDialog } from "@/shared/components/ActiveGameGuard/ActiveGameConflictDialog";
 import { useLocale, useT } from "@/shared/i18n/useT";
 import type { RoomView } from "@/shared/lobby/roomView";
 import { useSessionStore } from "@/shared/state/sessionStore";
@@ -20,15 +23,29 @@ export function RoomRow({ room }: RoomRowProps) {
   const join = useJoinRoom();
   const you = useSessionStore((state) => state.session?.playerId);
   const { game } = useGame(room.gameId);
+  const { activeGame, rejoin, abandon } = useActiveGame();
+  const [showConflict, setShowConflict] = useState(false);
   const live = room.status === "in_game";
   const member = room.players.some((player) => player.playerId === you);
   const title = locale === "vi" ? game?.displayNameVi : game?.displayName;
 
   const open = () => {
-    if (member || live) {
+    if (member || (live && member)) {
       navigate(live && member ? `/play/${room.id}` : `/rooms/${room.id}`);
       return;
     }
+    if (activeGame && activeGame.roomId.toUpperCase() !== room.id.toUpperCase()) {
+      setShowConflict(true);
+      return;
+    }
+    join.mutate(room.id);
+  };
+
+  const handleAbandonAndProceed = async () => {
+    if (activeGame) {
+      await abandon(activeGame.roomId);
+    }
+    setShowConflict(false);
     join.mutate(room.id);
   };
 
@@ -69,6 +86,17 @@ export function RoomRow({ room }: RoomRowProps) {
           {member ? t("join") : live ? t("spectate") : t("join")}
         </button>
       </div>
+
+      {showConflict && activeGame && (
+        <ActiveGameConflictDialog
+          open={showConflict}
+          activeRoomId={activeGame.roomId}
+          actionType="join"
+          onRejoin={() => rejoin(activeGame.roomId)}
+          onAbandonAndProceed={handleAbandonAndProceed}
+          onCancel={() => setShowConflict(false)}
+        />
+      )}
     </article>
   );
 }

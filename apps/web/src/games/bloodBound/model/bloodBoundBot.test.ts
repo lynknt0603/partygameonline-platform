@@ -259,5 +259,98 @@ describe("BloodBound Bot AI & Solo Simulation", () => {
     expect(decision.targetPlayerId).toBe(players[0].playerId);
     expect(decision.reasoning).toContain("Nhà Giả Kim");
   });
+
+  it("decideBotAttack utilizes left neighbor clue to avoid attacking ally on turn 1", () => {
+    const players = ensureFullPlayerList([{ playerId: "p1", displayName: "You" }], 6);
+    // p1 seat 0 (Rose), p2 seat 1 (Rose), p3 seat 2 (Fan)...
+    const { view, secretCards } = initBloodBoundGame("room-1", players, "p1", {
+      assignedRoles: {
+        [players[0].playerId]: { clan: "ROSE", rank: 1 },
+        [players[1].playerId]: { clan: "ROSE", rank: 2 },
+        [players[2].playerId]: { clan: "FAN", rank: 3 },
+      },
+    });
+
+    // p1 attacks. Left neighbor of p1 is p2 (seat 1). Both are ROSE.
+    // p2 has 0 revealed tokens, but p1 knows p2 is ROSE via left neighbor clue!
+    const state = {
+      ...view,
+      phase: "ATTACK_CHOICE" as const,
+      daggerHolderPlayerId: players[0].playerId,
+    };
+
+    const decision = decideBotAttack(state, players[0].playerId, secretCards);
+    // Must not choose p2 as primary target since p1 deduced p2 is ally!
+    expect(decision.targetPlayerId).not.toBe(players[1].playerId);
+  });
+
+  it("decideBotAbility Harlequin (Rank 3) places mystery question token on enemy", () => {
+    const players = ensureFullPlayerList([{ playerId: "p1", displayName: "You" }], 6);
+    const { view, secretCards } = initBloodBoundGame("room-1", players, "p1", {
+      assignedRoles: {
+        [players[0].playerId]: { clan: "ROSE", rank: 3 }, // Harlequin
+        [players[1].playerId]: { clan: "FAN", rank: 1 },  // Fan Leader
+      },
+    });
+
+    const state = {
+      ...view,
+      phase: "ATTACK_CHOICE" as const,
+      players: view.players.map((p) =>
+        p.playerId === players[0].playerId ? { ...p, hasRevealedRank: true } : p,
+      ),
+    };
+
+    const decision = decideBotAbility(state, players[0].playerId, secretCards);
+    expect(decision.useAbility).toBe(true);
+    expect(decision.targetPlayerId).toBe(players[1].playerId);
+    expect(decision.reasoning).toContain("Tắc Kè Hoa");
+  });
+
+  it("decideBotAbility Mentalist (Rank 5) forces reveal on enemy without crest", () => {
+    const players = ensureFullPlayerList([{ playerId: "p1", displayName: "You" }], 6);
+    const { view, secretCards } = initBloodBoundGame("room-1", players, "p1", {
+      assignedRoles: {
+        [players[0].playerId]: { clan: "ROSE", rank: 5 }, // Mentalist
+        [players[1].playerId]: { clan: "FAN", rank: 2 },  // Enemy
+      },
+    });
+
+    const state = {
+      ...view,
+      phase: "ATTACK_CHOICE" as const,
+      players: view.players.map((p) =>
+        p.playerId === players[0].playerId ? { ...p, hasRevealedRank: true } : p,
+      ),
+    };
+
+    const decision = decideBotAbility(state, players[0].playerId, secretCards);
+    expect(decision.useAbility).toBe(true);
+    expect(decision.targetPlayerId).toBe(players[1].playerId);
+    expect(decision.reasoning).toContain("Thần Trí");
+  });
+
+  it("decideBotAbility Courtesan (Rank 8) forces attack target on enemy leader", () => {
+    const players = ensureFullPlayerList([{ playerId: "p1", displayName: "You" }], 6);
+    const { view, secretCards } = initBloodBoundGame("room-1", players, "p1", {
+      assignedRoles: {
+        [players[0].playerId]: { clan: "ROSE", rank: 8 }, // Courtesan
+        [players[1].playerId]: { clan: "FAN", rank: 1 },  // Enemy Leader
+      },
+    });
+
+    const state = {
+      ...view,
+      phase: "ATTACK_CHOICE" as const,
+      players: view.players.map((p) =>
+        p.playerId === players[0].playerId ? { ...p, hasRevealedRank: true } : p,
+      ),
+    };
+
+    const decision = decideBotAbility(state, players[0].playerId, secretCards);
+    expect(decision.useAbility).toBe(true);
+    expect(decision.targetPlayerId).toBe(players[1].playerId);
+    expect(decision.reasoning).toContain("Mê Hoặc");
+  });
 });
 

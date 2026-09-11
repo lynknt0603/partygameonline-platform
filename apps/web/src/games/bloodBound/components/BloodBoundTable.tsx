@@ -1,6 +1,8 @@
 import React from "react";
-import type { BloodBoundCard, BloodBoundPlayerPublic } from "../model/bloodBoundTypes";
+import type { BloodBoundCard, BloodBoundPlayerPublic, BloodBoundPhase } from "../model/bloodBoundTypes";
 import { BloodBoundSeatCard } from "./BloodBoundSeatCard";
+import { BloodBoundCenterHub } from "./BloodBoundCenterHub";
+import type { SpeechBubbleData } from "./BloodBoundSpeechBubble";
 import styles from "../pages/BloodBoundPlayPage.module.css";
 
 interface BloodBoundTableProps {
@@ -14,6 +16,19 @@ interface BloodBoundTableProps {
   canDebug: boolean;
   debugMode: boolean;
   isGameOver: boolean;
+  phase: BloodBoundPhase;
+  canIIntervene: boolean;
+  attackerName?: string;
+  targetName?: string;
+  victimName?: string;
+  isVictimMe?: boolean;
+  daggerHolderName?: string;
+  interventionCountdown?: number | null;
+  totalCountdown?: number;
+  speechBubbles?: Record<string, SpeechBubbleData>;
+  onStartPlay: () => void;
+  onIntervene: () => void;
+  onPassIntervene: () => void;
   onSelectTarget: (playerId: string) => void;
 }
 
@@ -22,8 +37,8 @@ export function getSeatPosition(index: number, total: number): { left: string; t
 
   // Index 0 ("Bạn") starts at bottom (angle = 90 deg = PI/2)
   const angle = (index / total) * 2 * Math.PI + Math.PI / 2;
-  const radiusX = 39;
-  const radiusY = 32;
+  const radiusX = total > 12 ? 43 : total > 8 ? 41 : 39;
+  const radiusY = total > 12 ? 36 : total > 8 ? 34 : 32;
 
   const left = 50 + radiusX * Math.cos(angle);
   const top = 50 + radiusY * Math.sin(angle);
@@ -42,6 +57,19 @@ export const BloodBoundTable: React.FC<BloodBoundTableProps> = ({
   canDebug,
   debugMode,
   isGameOver,
+  phase,
+  canIIntervene,
+  attackerName,
+  targetName,
+  victimName,
+  isVictimMe,
+  daggerHolderName,
+  interventionCountdown,
+  totalCountdown,
+  speechBubbles,
+  onStartPlay,
+  onIntervene,
+  onPassIntervene,
   onSelectTarget,
 }) => {
   return (
@@ -107,57 +135,60 @@ export const BloodBoundTable: React.FC<BloodBoundTableProps> = ({
           <path d="M 320 310 A 180 110 0 0 1 440 215" fill="none" stroke="#c084fc" strokeWidth="2" strokeDasharray="5 4" markerEnd="url(#arrow-purple)" opacity="0.85" />
           <path d="M 560 215 A 180 110 0 0 1 680 310" fill="none" stroke="#34d399" strokeWidth="2" strokeDasharray="5 4" markerEnd="url(#arrow-green)" opacity="0.85" />
           <path d="M 680 340 A 180 110 0 0 1 560 435" fill="none" stroke="#f59e0b" strokeWidth="2" strokeDasharray="5 4" markerEnd="url(#arrow-amber)" opacity="0.85" />
-
-          {/* Central Compass Emblem */}
-          <g transform="translate(500, 325)">
-            <circle r="36" fill="rgba(15, 10, 24, 0.94)" stroke="rgba(245, 158, 11, 0.45)" strokeWidth="1.6" />
-            <circle r="30" fill="none" stroke="rgba(192, 132, 252, 0.25)" strokeWidth="1" strokeDasharray="3 3" />
-            <text y="-6" textAnchor="middle" fill="#fda4af" fontSize="8.5" fontWeight="bold" letterSpacing="0.8">
-              ⟲ BÊN TRÁI
-            </text>
-            <text y="7" textAnchor="middle" fill="#94a3b8" fontSize="7.2" letterSpacing="0.5">
-              LOOK LEFT
-            </text>
-            <text y="18" textAnchor="middle" fill="#fde68a" fontSize="7.2" fontWeight="600">
-              ↕ ĐỐI DIỆN
-            </text>
-          </g>
         </svg>
+
+        {/* Central Action Hub (Đặt ngay tâm bàn cờ, nổi bật, không che ghế) */}
+        <BloodBoundCenterHub
+          phase={phase}
+          isMyTurn={isMyTurn}
+          canIIntervene={canIIntervene}
+          attackerName={attackerName}
+          targetName={targetName}
+          victimName={victimName}
+          isVictimMe={isVictimMe}
+          daggerHolderName={daggerHolderName}
+          interventionCountdown={interventionCountdown}
+          totalCountdown={totalCountdown}
+          onStartPlay={onStartPlay}
+          onIntervene={onIntervene}
+          onPassIntervene={onPassIntervene}
+        />
 
         {/* Seat Cards Area */}
         <div className={styles.seatsRoundArea}>
-        {tableSeats.map((player, index) => {
-          const isYou = player.playerId === myPlayerId;
-          const isLeftNeighbor = index === 1;
-          const isOpposite = index === Math.floor(tableSeats.length / 2);
-          const isDaggerHolder = daggerHolderPlayerId === player.playerId;
-          const isTarget = currentTargetPlayerId === player.playerId;
-          const isIntervener = intervenedByPlayerId === player.playerId;
-          const secret = secretCards[player.playerId];
-          const pos = getSeatPosition(index, tableSeats.length);
+          {tableSeats.map((player, index) => {
+            const isYou = player.playerId === myPlayerId;
+            const isLeftNeighbor = index === 1;
+            const isOpposite = index === Math.floor(tableSeats.length / 2);
+            const isDaggerHolder = daggerHolderPlayerId === player.playerId;
+            const isTarget = currentTargetPlayerId === player.playerId;
+            const isIntervener = intervenedByPlayerId === player.playerId;
+            const secret = secretCards[player.playerId];
+            const pos = getSeatPosition(index, tableSeats.length);
 
-          return (
-            <BloodBoundSeatCard
-              key={player.playerId}
-              player={player}
-              index={index}
-              totalSeats={tableSeats.length}
-              isYou={isYou}
-              isLeftNeighbor={isLeftNeighbor}
-              isOpposite={isOpposite}
-              isDaggerHolder={isDaggerHolder}
-              isTarget={isTarget}
-              isIntervener={isIntervener}
-              secret={secret}
-              pos={pos}
-              isMyTurn={isMyTurn}
-              canDebug={canDebug}
-              debugMode={debugMode}
-              isGameOver={isGameOver}
-              onSelectTarget={onSelectTarget}
-            />
-          );
-        })}
+            return (
+              <BloodBoundSeatCard
+                key={player.playerId}
+                player={player}
+                index={index}
+                totalSeats={tableSeats.length}
+                isYou={isYou}
+                isLeftNeighbor={isLeftNeighbor}
+                isOpposite={isOpposite}
+                isDaggerHolder={isDaggerHolder}
+                isTarget={isTarget}
+                isIntervener={isIntervener}
+                secret={secret}
+                pos={pos}
+                isMyTurn={isMyTurn}
+                canDebug={canDebug}
+                debugMode={debugMode}
+                isGameOver={isGameOver}
+                speechBubble={speechBubbles?.[player.playerId]}
+                onSelectTarget={onSelectTarget}
+              />
+            );
+          })}
         </div>
       </div>
     </div>

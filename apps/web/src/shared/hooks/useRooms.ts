@@ -1,13 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { ApiError } from "@/shared/api/types";
-import { closeRoom, createRoom, fetchRoom, fetchRooms, joinRoom, kickRoom, leaveRoom, setReady, startRoom, updateRoomSettings } from "@/shared/api/rooms";
+import { addBotToRoom, closeRoom, createRoom, fetchRoom, fetchRooms, joinRoom, kickRoom, leaveRoom, setReady, startRoom, updateRoomSettings } from "@/shared/api/rooms";
 import type { NobTiming } from "@/games/nob/model/nobTiming";
 import type { NotInMyPotSettings } from "@/games/notInMyPot/model/notInMyPotSettings";
 import type { WheresTheBoneSettings } from "@/games/wheresTheBone/model/wheresTheBoneSettings";
+import type { LiarsNumberSettings } from "@/games/liarsNumber/model/liarsNumberSettings";
+import type { BloodBoundSettings } from "@/games/bloodBound/model/bloodBoundSettings";
 import { toRoomView } from "@/shared/lobby/roomView";
 import { useSessionStore } from "@/shared/state/sessionStore";
 import { memberLoginPath } from "@/shared/auth/memberAccess";
+import { clearActiveGame } from "@/shared/state/activeGameStorage";
+import { cacheSession } from "@/shared/api/session";
 
 export function useRooms() {
   return useQuery({
@@ -145,10 +149,39 @@ export function useCreateRoom() {
         return await createRoom(input);
       } catch (error) {
         if (error instanceof ApiError && error.errorCode === "ALREADY_IN_ROOM") {
+          // Tự động dọn phòng cũ: Người dùng muốn tạo phòng mới nên ưu tiên rời phòng cũ
+          const staleRoomId = useSessionStore.getState().session?.currentRoomId;
+          if (staleRoomId) {
+            try {
+              await leaveRoom(staleRoomId.toUpperCase());
+            } catch {
+              /* ignore error when leaving stale room */
+            }
+          }
+          clearActiveGame();
           await refresh();
-          const current = useSessionStore.getState().session?.currentRoomId;
-          if (current) {
-            return fetchRoom(current);
+          const session = useSessionStore.getState().session;
+          if (session?.currentRoomId) {
+            const updated = { ...session, currentRoomId: null };
+            useSessionStore.setState({ session: updated });
+            cacheSession(updated);
+          }
+          // Thử lại tạo phòng mới ngay lập tức
+          try {
+            return await createRoom(input);
+          } catch (retryError) {
+            if (retryError instanceof ApiError && retryError.errorCode === "ALREADY_IN_ROOM") {
+              await refresh();
+              const current = useSessionStore.getState().session?.currentRoomId;
+              if (current) {
+                try {
+                  return await fetchRoom(current);
+                } catch {
+                  /* ignore */
+                }
+              }
+            }
+            throw retryError;
           }
         }
         throw error;
@@ -170,22 +203,49 @@ export function useCreateRoom() {
 
 export function useLeaveRoom() {
   const navigate = useNavigate();
-  const refresh = useSessionStore((state) => state.refresh);
   const queryClient = useQueryClient();
 
+  const purgeRoomCache = (roomId?: string) => {
+    if (roomId) {
+      clearActiveGame(roomId.toUpperCase());
+    }
+    clearActiveGame();
+    const session = useSessionStore.getState().session;
+    if (session && (!roomId || session.currentRoomId?.toUpperCase() === roomId.toUpperCase())) {
+      const updated = { ...session, currentRoomId: null };
+      useSessionStore.setState({ session: updated });
+      cacheSession(updated);
+    }
+    if (roomId) {
+      queryClient.removeQueries({ queryKey: ["room", roomId.toUpperCase()] });
+    }
+    queryClient.removeQueries({ queryKey: ["room"] });
+  };
+
   return useMutation({
-    mutationFn: (roomId: string) => leaveRoom(roomId.toUpperCase()),
-    onSuccess: (_void, roomId) => {
-      void queryClient.invalidateQueries({ queryKey: ["rooms"] });
-      void queryClient.removeQueries({ queryKey: ["room", roomId.toUpperCase()] });
-      void refresh();
+    mutationFn: async (roomId: string) => {
+      const normalized = roomId.toUpperCase();
+      purgeRoomCache(normalized);
+      try {
+        await leaveRoom(normalized);
+      } catch (error) {
+        if (error instanceof ApiError && (error.errorCode === "NOT_ROOM_MEMBER" || error.errorCode === "ROOM_NOT_FOUND")) {
+          return;
+        }
+        throw error;
+      }
+    },
+    onSuccess: async (_void, roomId) => {
+      purgeRoomCache(roomId);
+      await queryClient.invalidateQueries({ queryKey: ["rooms"] });
+      void useSessionStore.getState().refresh();
       navigate("/rooms");
     },
-    onError: (error) => {
-      if (error instanceof ApiError && (error.errorCode === "NOT_ROOM_MEMBER" || error.errorCode === "ROOM_NOT_FOUND")) {
-        void refresh();
-        navigate("/rooms");
-      }
+    onError: async (_error, roomId) => {
+      purgeRoomCache(roomId);
+      await queryClient.invalidateQueries({ queryKey: ["rooms"] });
+      void useSessionStore.getState().refresh();
+      navigate("/rooms");
     },
   });
 }
@@ -197,6 +257,19 @@ export function useKickRoom(roomId: string) {
     mutationFn: (playerId: string) => kickRoom(normalized, playerId),
     onSuccess: (room) => {
       queryClient.setQueryData(["room", normalized], room);
+      void queryClient.invalidateQueries({ queryKey: ["rooms"] });
+    },
+  });
+}
+
+export function useAddBot(roomId: string) {
+  const queryClient = useQueryClient();
+  const normalized = roomId.toUpperCase();
+  return useMutation({
+    mutationFn: (options?: { botType?: "NORMAL" | "AI" }) => addBotToRoom(normalized, options?.botType ?? "NORMAL"),
+    onSuccess: (room) => {
+      queryClient.setQueryData(["room", normalized], room);
+      void queryClient.invalidateQueries({ queryKey: ["room", normalized] });
       void queryClient.invalidateQueries({ queryKey: ["rooms"] });
     },
   });
@@ -215,22 +288,49 @@ export function useReadyRoom(roomId: string) {
 
 export function useCloseRoom() {
   const navigate = useNavigate();
-  const refresh = useSessionStore((state) => state.refresh);
   const queryClient = useQueryClient();
 
+  const purgeRoomCache = (roomId?: string) => {
+    if (roomId) {
+      clearActiveGame(roomId.toUpperCase());
+    }
+    clearActiveGame();
+    const session = useSessionStore.getState().session;
+    if (session && (!roomId || session.currentRoomId?.toUpperCase() === roomId.toUpperCase())) {
+      const updated = { ...session, currentRoomId: null };
+      useSessionStore.setState({ session: updated });
+      cacheSession(updated);
+    }
+    if (roomId) {
+      queryClient.removeQueries({ queryKey: ["room", roomId.toUpperCase()] });
+    }
+    queryClient.removeQueries({ queryKey: ["room"] });
+  };
+
   return useMutation({
-    mutationFn: (roomId: string) => closeRoom(roomId.toUpperCase()),
-    onSuccess: (_void, roomId) => {
-      void queryClient.invalidateQueries({ queryKey: ["rooms"] });
-      void queryClient.removeQueries({ queryKey: ["room", roomId.toUpperCase()] });
-      void refresh();
+    mutationFn: async (roomId: string) => {
+      const normalized = roomId.toUpperCase();
+      purgeRoomCache(normalized);
+      try {
+        await closeRoom(normalized);
+      } catch (error) {
+        if (error instanceof ApiError && (error.errorCode === "ROOM_CLOSED" || error.errorCode === "ROOM_NOT_FOUND")) {
+          return;
+        }
+        throw error;
+      }
+    },
+    onSuccess: async (_void, roomId) => {
+      purgeRoomCache(roomId);
+      await queryClient.invalidateQueries({ queryKey: ["rooms"] });
+      void useSessionStore.getState().refresh();
       navigate("/rooms");
     },
-    onError: (error) => {
-      if (error instanceof ApiError && (error.errorCode === "ROOM_CLOSED" || error.errorCode === "ROOM_NOT_FOUND")) {
-        void refresh();
-        navigate("/rooms");
-      }
+    onError: async (_error, roomId) => {
+      purgeRoomCache(roomId);
+      await queryClient.invalidateQueries({ queryKey: ["rooms"] });
+      void useSessionStore.getState().refresh();
+      navigate("/rooms");
     },
   });
 }
@@ -238,7 +338,15 @@ export function useCloseRoom() {
 export function useUpdateRoomSettings(roomId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (settings: { nob?: NobTiming; notInMyPot?: NotInMyPotSettings; wheresTheBone?: WheresTheBoneSettings; locked?: boolean; maxPlayers?: number }) => updateRoomSettings(roomId.toUpperCase(), settings),
+    mutationFn: (settings: {
+      nob?: NobTiming;
+      notInMyPot?: NotInMyPotSettings;
+      wheresTheBone?: WheresTheBoneSettings;
+      liarsNumber?: LiarsNumberSettings;
+      bloodBound?: BloodBoundSettings;
+      locked?: boolean;
+      maxPlayers?: number;
+    }) => updateRoomSettings(roomId.toUpperCase(), settings),
     onSuccess: (room) => {
       queryClient.setQueryData(["room", roomId.toUpperCase()], room);
       queryClient.setQueryData(["room", room.id], room);

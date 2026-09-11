@@ -1,5 +1,6 @@
 import React from "react";
 import type { BloodBoundCard, BloodBoundPlayerPublic, BloodClan } from "../model/bloodBoundTypes";
+import { BloodBoundSpeechBubble, type SpeechBubbleData } from "./BloodBoundSpeechBubble";
 import styles from "../pages/BloodBoundPlayPage.module.css";
 
 function getRolePortraitUrl(rank?: number | null, clan?: BloodClan | string | null): string {
@@ -10,7 +11,10 @@ function getRolePortraitUrl(rank?: number | null, clan?: BloodClan | string | nu
       case 2: return "/assets/games/blood-bound/roles/rose/role-2.svg";
       case 3: return "/assets/games/blood-bound/roles/rose/role-3.svg";
       case 4: return "/assets/games/blood-bound/roles/rose/role-4.svg";
+      case 5: return "/assets/games/blood-bound/roles/rose/role-5.svg";
       case 6: return "/assets/games/blood-bound/roles/rose/role-6.svg";
+      case 7: return "/assets/games/blood-bound/roles/rose/role-7.svg";
+      case 8: return "/assets/games/blood-bound/roles/rose/role-8.svg";
       default: return "/assets/games/blood-bound/roles/mystery/role-mystery-rose.svg";
     }
   } else if (normClan === "FAN") {
@@ -19,7 +23,10 @@ function getRolePortraitUrl(rank?: number | null, clan?: BloodClan | string | nu
       case 2: return "/assets/games/blood-bound/roles/fan/role-2.svg";
       case 3: return "/assets/games/blood-bound/roles/fan/role-3.svg";
       case 4: return "/assets/games/blood-bound/roles/fan/role-4.svg";
+      case 5: return "/assets/games/blood-bound/roles/fan/role-5.svg";
       case 6: return "/assets/games/blood-bound/roles/fan/role-6.svg";
+      case 7: return "/assets/games/blood-bound/roles/fan/role-7.svg";
+      case 8: return "/assets/games/blood-bound/roles/fan/role-8.svg";
       default: return "/assets/games/blood-bound/roles/mystery/role-mystery-fan.svg";
     }
   } else if (normClan === "INQUISITOR" || rank === 8) {
@@ -31,8 +38,10 @@ function getRolePortraitUrl(rank?: number | null, clan?: BloodClan | string | nu
     case 2: return "/assets/games/blood-bound/roles/rose/role-2.svg";
     case 3: return "/assets/games/blood-bound/roles/rose/role-3.svg";
     case 4: return "/assets/games/blood-bound/roles/rose/role-4.svg";
+    case 5: return "/assets/games/blood-bound/roles/rose/role-5.svg";
     case 6: return "/assets/games/blood-bound/roles/rose/role-6.svg";
-    case 8: return "/assets/games/blood-bound/roles/inquisitor/role-8.svg";
+    case 7: return "/assets/games/blood-bound/roles/rose/role-7.svg";
+    case 8: return "/assets/games/blood-bound/roles/rose/role-8.svg";
     default: return "/assets/games/blood-bound/roles/role-mystery.svg";
   }
 }
@@ -53,23 +62,41 @@ interface BloodBoundSeatCardProps {
   canDebug: boolean;
   debugMode: boolean;
   isGameOver: boolean;
+  speechBubble?: SpeechBubbleData | null;
   onSelectTarget: (playerId: string) => void;
+}
+
+export function deduceClanFromTokens(tokens: { type: string; value?: string | number }[]): BloodClan | null {
+  const crestToken = tokens.find((t) => t.type === "CREST");
+  if (crestToken) {
+    const val = String(crestToken.value);
+    if (val.includes("INQUISITOR")) return "INQUISITOR";
+    if (val.includes("ROSE")) return "ROSE";
+    return "FAN";
+  }
+  const colorToken = tokens.find((t) => t.type === "COLOR");
+  if (colorToken?.value === "YELLOW") return "INQUISITOR";
+  if (colorToken?.value === "RED") return "ROSE";
+  if (colorToken?.value === "GREEN") return "FAN";
+  return null;
 }
 
 export const BloodBoundSeatCard: React.FC<BloodBoundSeatCardProps> = ({
   player,
+  totalSeats,
+  secret,
+  pos,
   isYou,
-  isLeftNeighbor,
-  isOpposite,
+  isMyTurn,
   isDaggerHolder,
   isTarget,
   isIntervener,
-  secret,
-  pos,
-  isMyTurn,
+  isLeftNeighbor,
+  isOpposite,
   canDebug,
   debugMode,
   isGameOver,
+  speechBubble,
   onSelectTarget,
 }) => {
   const rankToken = player.revealedTokens.find((t) => t.type === "RANK");
@@ -79,21 +106,13 @@ export const BloodBoundSeatCard: React.FC<BloodBoundSeatCardProps> = ({
   const trueClan = secret?.clan;
   const trueRank = secret?.rank;
 
-  let deducedClan: BloodClan | null = null;
-  const crestToken = player.revealedTokens.find((t) => t.type === "CREST");
-  if (crestToken) {
-    deducedClan = String(crestToken.value).includes("ROSE") ? "ROSE" : "FAN";
-  } else {
-    const colorToken = player.revealedTokens.find((t) => t.type === "COLOR");
-    if (colorToken?.value === "YELLOW") deducedClan = "INQUISITOR";
-    else if (colorToken?.value === "RED") deducedClan = "ROSE";
-    else if (colorToken?.value === "GREEN") deducedClan = "FAN";
-  }
+  const deducedClan = deduceClanFromTokens(player.revealedTokens);
 
   const displayClan = isRevealedToUser ? (trueClan ?? deducedClan) : deducedClan;
   const hasRankRevealed = Boolean(rankToken);
   const displayRank = isRevealedToUser ? (trueRank ?? tokenRank) : hasRankRevealed ? (tokenRank ?? trueRank) : null;
   const portraitUrl = getRolePortraitUrl(displayRank, displayClan);
+  const scale = totalSeats <= 8 ? 1 : totalSeats <= 10 ? 0.88 : totalSeats <= 12 ? 0.78 : 0.68;
 
   return (
     <div
@@ -105,6 +124,8 @@ export const BloodBoundSeatCard: React.FC<BloodBoundSeatCardProps> = ({
       style={{
         left: pos.left,
         top: pos.top,
+        transform: `translate(-50%, -50%) scale(${scale})`,
+        transformOrigin: "center center",
         cursor: isMyTurn && !isYou ? "pointer" : "default",
       }}
       onClick={() => onSelectTarget(player.playerId)}
@@ -118,6 +139,8 @@ export const BloodBoundSeatCard: React.FC<BloodBoundSeatCardProps> = ({
           : ""
       }
     >
+      <BloodBoundSpeechBubble data={speechBubble} />
+
       <div className={styles.seatAvatarRow}>
         <div
           className={`${styles.seatAvatarFrame} ${

@@ -134,6 +134,18 @@ export function decideBotAttack(
       }
     }
 
+    // Suy luận từ manh mối hàng xóm bên trái (Look Left Clue)
+    const botSeat = view.players.findIndex((p) => p.playerId === botPlayerId);
+    const isLeftNeighbor = botSeat >= 0 && (botSeat + 1) % view.players.length === target.seatIndex;
+    if (isLeftNeighbor && knownClan === "UNKNOWN") {
+      const neighborSecret = secretCards[target.playerId];
+      if (neighborSecret) {
+        knownClan = neighborSecret.clan;
+      } else if (view.you === botPlayerId && view.leftNeighborClue) {
+        knownClan = view.leftNeighborClue.clan;
+      }
+    }
+
     const isConfirmedLeader = knownRank === 1;
     const isConfirmedEnemy = knownClan !== "UNKNOWN" && knownClan !== botClan;
     const isConfirmedAlly = knownClan === botClan;
@@ -371,6 +383,27 @@ export function decideBotAbility(
     }
   }
 
+  // Rank 3: Harlequin - Tung ảo ảnh gắn token Dấu Hỏi (?) lên kẻ địch để gây nhiễu
+  if (rank === 3) {
+    const enemies = view.players.filter((p) => {
+      const card = secretCards[p.playerId];
+      return (
+        card &&
+        card.clan !== botClan &&
+        p.playerId !== botPlayerId &&
+        !p.revealedTokens.some((t) => t.type === "QUESTION")
+      );
+    });
+    const target = enemies[0] || view.players.find((p) => p.playerId !== botPlayerId);
+    if (target) {
+      return {
+        useAbility: true,
+        targetPlayerId: target.playerId,
+        reasoning: `🎭 [Tắc Kè Hoa] Gắn Token Dấu Hỏi (?) lên ${target.displayName} để gây nhiễu thông tin!`,
+      };
+    }
+  }
+
   // Rank 4: Alchemist - Hồi 1 vết thương cho đồng đội hoặc bản thân
   if (rank === 4) {
     const woundedAllies = view.players.filter((p) => {
@@ -384,6 +417,28 @@ export function decideBotAbility(
         useAbility: true,
         targetPlayerId: healTarget.playerId,
         reasoning: `🧪 [Nhà Giả Kim] Hồi phục 1 vết thương cho ${healTarget.displayName}!`,
+      };
+    }
+  }
+
+  // Rank 5: Mentalist - Ép đối thủ để lộ phù hiệu gia tộc
+  if (rank === 5) {
+    const enemiesWithoutCrest = view.players.filter((p) => {
+      const card = secretCards[p.playerId];
+      return (
+        card &&
+        card.clan !== botClan &&
+        p.playerId !== botPlayerId &&
+        !p.revealedTokens.some((t) => t.type === "CREST")
+      );
+    });
+    const target =
+      enemiesWithoutCrest[0] || view.players.find((p) => p.playerId !== botPlayerId);
+    if (target) {
+      return {
+        useAbility: true,
+        targetPlayerId: target.playerId,
+        reasoning: `🔮 [Thần Trí] Ngoại cảm ép ${target.displayName} phải để lộ phù hiệu gia tộc!`,
       };
     }
   }
@@ -417,6 +472,29 @@ export function decideBotAbility(
         useAbility: true,
         targetPlayerId: target.playerId,
         reasoning: `💥 [Cuồng Nộ] Phản đòn gây 1 vết thương lên ${target.displayName}!`,
+      };
+    }
+  }
+
+  // Rank 8: Courtesan - Ép đòn đánh tiếp theo nhắm vào mục tiêu chỉ định
+  if (rank === 8) {
+    const enemyLeader = view.players.find((p) => {
+      const card = secretCards[p.playerId];
+      return card && card.clan !== botClan && card.rank === 1 && p.playerId !== botPlayerId;
+    });
+    const woundedEnemy = view.players.find((p) => {
+      const card = secretCards[p.playerId];
+      return card && card.clan !== botClan && p.wounds >= 2 && p.playerId !== botPlayerId;
+    });
+    const target =
+      enemyLeader ||
+      woundedEnemy ||
+      view.players.find((p) => p.playerId !== botPlayerId);
+    if (target) {
+      return {
+        useAbility: true,
+        targetPlayerId: target.playerId,
+        reasoning: `💃 [Mê Hoặc] Dùng mưu kế ép đòn đánh tiếp theo phải nhắm vào ${target.displayName}!`,
       };
     }
   }

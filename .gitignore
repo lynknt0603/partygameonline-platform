@@ -20,3 +20,5 @@ prompts/
 promt/
 evd/
 github-achievements/
+*.png
+.playwright-mcp/

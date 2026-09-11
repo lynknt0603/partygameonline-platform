@@ -2,6 +2,7 @@ import {
   BLOOD_BOUND_ID,
   BLOOD_BOUND_ROLES,
   type BloodBoundCard,
+  type BloodBoundPhase,
   type BloodBoundPlayerPublic,
   type BloodBoundRoleRank,
   type BloodBoundView,
@@ -257,8 +258,8 @@ export function processAttack(
     publicLog: [
       ...view.publicLog,
       {
-        text: `${attacker?.displayName ?? "Attacker"} points the dagger at ${target?.displayName ?? "Target"}. Any intervention?`,
-        textVi: `${attacker?.displayName ?? "Người tấn công"} giương kiếm về phía ${target?.displayName ?? "Mục tiêu"}. Có ai can thiệp đỡ đòn không?`,
+        text: `${attacker?.displayName ?? "Attacker"} strikes at ${target?.displayName ?? "Target"}.`,
+        textVi: `⚔️ ${attacker?.displayName ?? "Người tấn công"} giương kiếm tấn công ${target?.displayName ?? "Mục tiêu"}.`,
         timestamp: new Date().toISOString(),
       },
     ],
@@ -358,6 +359,84 @@ export function validateAbility(
   return { valid: true };
 }
 
+/**
+ * Kiểm tra xem một vai trò có được phép chọn chính mình làm mục tiêu kỹ năng hay không.
+ * - Sát Thủ (Rank 2) và Cuồng Chiến (Rank 7) không thể nhắm vào chính mình.
+ * - Nhà Giả Kim (Rank 4) được phép tự hồi máu cho bản thân.
+ * - Hộ Vệ (Rank 6) được phép tự ban khiên cho bản thân.
+ */
+export function canAbilityTargetSelf(rank: BloodBoundRoleRank): boolean {
+  return rank !== 2 && rank !== 7;
+}
+
+/**
+ * Lọc danh sách mục tiêu hợp lệ cho kỹ năng của vai trò.
+ * Đảm bảo Nhà Giả Kim (Rank 4) và các vai trò hợp lệ khác có thể nhắm vào chính mình trên UI.
+ */
+export function getEligibleAbilityTargets(
+  players: BloodBoundPlayerPublic[],
+  actorPlayerId: string,
+  rank: BloodBoundRoleRank,
+): BloodBoundPlayerPublic[] {
+  const allowSelf = canAbilityTargetSelf(rank);
+  return players.filter((p) => {
+    if (p.wounds >= 4) return false;
+    if (!allowSelf && p.playerId === actorPlayerId) return false;
+    return true;
+  });
+}
+
+/**
+ * Kiểm tra xem một roomId có phải là phòng demo cục bộ của Huyết Thệ (Blood Bound) hay không.
+ * Phòng demo PHẢI có tiền tố 'demo-' hoặc 'demo_' (hoặc đúng bằng 'demo') kết hợp với định danh game.
+ * Tránh kiểm tra .includes() rộng để không chiếm dụng các phòng multiplayer thật như 'bloodbound-match-1', 'room-blood-bound'.
+ */
+export function isBloodBoundDemoRoom(roomId?: string | null): boolean {
+  if (!roomId) return false;
+  const lower = roomId.trim().toLowerCase();
+  const normalized = lower.replace(/_/g, "-");
+
+  if (
+    normalized === "demo" ||
+    normalized === "demo-blood-bound" ||
+    normalized === "demo-bloodbound" ||
+    normalized === "demo-huyet-the" ||
+    normalized === "demo-huyetthe" ||
+    normalized === "demo-crimson-vow"
+  ) {
+    return true;
+  }
+
+  if (normalized.startsWith("demo-")) {
+    const suffix = normalized.slice(5);
+    return (
+      suffix.startsWith("blood-bound") ||
+      suffix.startsWith("bloodbound") ||
+      suffix.startsWith("huyet-the") ||
+      suffix.startsWith("huyetthe") ||
+      suffix.startsWith("crimson-vow")
+    );
+  }
+
+  return false;
+}
+
+/**
+ * Kiểm tra xem người chơi có cần phải xác nhận trước khi thoát hay không:
+ * - Trong phòng demo: không cần xác nhận loại (trả về false)
+ * - Khi ván đấu đã kết thúc (GAME_OVER): không cần xác nhận loại (trả về false)
+ * - Trong ván đấu multiplayer thật đang diễn ra: bắt buộc phải xác nhận (trả về true)
+ */
+export function requiresExitConfirmation(
+  roomId: string | undefined | null,
+  phase: BloodBoundPhase
+): boolean {
+  if (isBloodBoundDemoRoom(roomId)) {
+    return false;
+  }
+  return phase !== "GAME_OVER";
+}
+
 
 /**
  * Xử lý khi có người can thiệp đỡ đòn:
@@ -370,6 +449,7 @@ export function processIntervene(
   _secretCard?: BloodBoundCard,
 ): BloodBoundView {
   const intervener = view.players.find((p) => p.playerId === intervenerPlayerId);
+  const target = view.players.find((p) => p.playerId === view.currentTargetPlayerId);
 
   return {
     ...view,
@@ -378,8 +458,8 @@ export function processIntervene(
     publicLog: [
       ...view.publicLog,
       {
-        text: `${intervener?.displayName ?? "A player"} boldly intervenes to take the strike!`,
-        textVi: `${intervener?.displayName ?? "Một người chơi"} dũng cảm nhảy ra đỡ đòn!`,
+        text: `${intervener?.displayName ?? "A player"} boldly intervenes to take the strike for ${target?.displayName ?? "the target"}!`,
+        textVi: `🛡️ ${intervener?.displayName ?? "Một người chơi"} dũng cảm nhảy ra đỡ đòn thay cho ${target?.displayName ?? "mục tiêu"}!`,
         timestamp: new Date().toISOString(),
       },
     ],
@@ -391,10 +471,19 @@ export function processIntervene(
  * -> Chuyển sang gán vết thương cho nạn nhân ban đầu
  */
 export function processPassIntervention(view: BloodBoundView): BloodBoundView {
+  const target = view.players.find((p) => p.playerId === view.currentTargetPlayerId);
   return {
     ...view,
     phase: "WOUND_ASSIGNMENT",
     intervenedByPlayerId: null,
+    publicLog: [
+      ...view.publicLog,
+      {
+        text: `No one intervened. The strike directly hits ${target?.displayName ?? "the target"}.`,
+        textVi: `🛡️ Không có ai tác động (bỏ qua đỡ đòn).`,
+        timestamp: new Date().toISOString(),
+      },
+    ],
   };
 }
 

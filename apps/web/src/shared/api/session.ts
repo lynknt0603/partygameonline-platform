@@ -39,6 +39,17 @@ export function cachedSession(): SessionDto | null {
 }
 
 export function storedDisplayName(): string {
+  if (typeof window !== "undefined") {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const urlName = params.get("name") || params.get("guest") || params.get("player");
+      if (urlName && urlName.trim().length > 0) {
+        return urlName.trim().slice(0, DISPLAY_NAME_MAX_LENGTH);
+      }
+    } catch {
+      /* ignore */
+    }
+  }
   const value = localStorage.getItem(NAME_KEY)?.trim();
   return value && value.length > 0 ? value.slice(0, DISPLAY_NAME_MAX_LENGTH) : "Player";
 }
@@ -119,23 +130,39 @@ export async function endSession(): Promise<void> {
 }
 
 export async function bootstrapSession(): Promise<SessionDto> {
+  if (typeof window !== "undefined") {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const queryToken = params.get("token")?.trim();
+      if (queryToken) {
+        storeAccessToken(queryToken);
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+  const desiredName = storedDisplayName();
   if (!readAccessToken()) {
-    return createGuest("Player");
+    return createGuest(desiredName);
   }
   try {
     const fetchedSession = await fetchSession();
-    const session = fetchedSession.kind === "MEMBER"
+    let session = fetchedSession.kind === "MEMBER"
       ? fetchedSession
-      : { ...fetchedSession, displayName: "Player" };
-    if (fetchedSession.kind !== "MEMBER") {
-      clearStoredIdentity();
+      : { ...fetchedSession, displayName: desiredName };
+    if (fetchedSession.kind !== "MEMBER" && fetchedSession.displayName !== desiredName) {
+      try {
+        session = await updateDisplayName(desiredName);
+      } catch {
+        /* ignore */
+      }
     }
     cacheSession(session);
     return session;
   } catch (error) {
     if (error instanceof Error && "status" in error && (error as { status: number }).status === 401) {
       clearStoredIdentity();
-      return createGuest("Player");
+      return createGuest(desiredName);
     }
     throw error;
   }
