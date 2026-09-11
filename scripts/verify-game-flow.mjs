@@ -130,7 +130,7 @@ async function runLiveVerification() {
     // 2. Tạo phòng 16 người
     const room = await createRoom(token, `Room_${randomSuffix}`, 16);
     createdRoomId = room.id;
-    checks.push(`[PASS] Room Created: id=${room.id}, capacity=${room.capacity}`);
+    checks.push(`[PASS] Room Created: id=${room.id}, maxPlayers=${room.maxPlayers}`);
 
     // 3. Cài đặt thời gian 45s
     const updatedRoom = await updateRoomSettings(token, room.id, 45, 16);
