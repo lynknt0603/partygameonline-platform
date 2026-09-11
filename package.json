@@ -8,6 +8,7 @@
     "build": "npm run build --prefix apps/web",
     "typecheck": "npm run typecheck --prefix apps/web",
     "test": "npm run test --prefix apps/web",
+    "test:flow": "node scripts/verify-game-flow.mjs",
     "test:browsers": "node scripts/launch-multiplayer-browsers.mjs",
     "scaffold:game": "node scripts/scaffold-game.mjs"
   }
