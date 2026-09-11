@@ -19,6 +19,14 @@ Tài liệu này chuẩn hóa toàn bộ kịch bản kiểm thử (Test Scenari
 | **TC-BB-09** | **P1** | Hộp thoại cảnh báo khi chủ động bấm Thoát phòng ("Bạn sẽ bị loại...") | Frontend (Play Page/Modal) | `bloodBoundRules.test.ts` | **PASS** (100%) |
 | **TC-BB-10** | **P1** | Khôi phục phiên khi máy tắt đột ngột & Cửa sổ báo Rejoin ngoài trang chủ | Frontend (Storage/Guard) | `activeGameStorage.test.ts` | **PASS** (100%) |
 | **TC-BB-11** | **P1** | Chặn xung đột khi tạo/join phòng khác & 2 lớp xác nhận để out phòng cũ | Frontend (Conflict Guard) | `activeGameStorage.test.ts` | **PASS** (100%) |
+| **TC-BB-12** | **P0** | Hỗ trợ phòng tối đa 16 người chơi & Chốt chặn biên sức chứa (2-16P) | Full-stack (Backend + UI) | `verify-game-flow.mjs` (TC-07..10) | **PASS** (100%) |
+| **TC-BB-13** | **P0** | Kích hoạt & Phân bổ 4 vai trò cấp cao (Ranks 5, 6, 7, 8) và SVG assets | Full-stack (Engine + Assets) | `verify-game-flow.mjs` (TC-25) | **PASS** (100%) |
+| **TC-BB-14** | **P1** | Responsive Table Layout (bán kính elip 43x36, scale thẻ ghế 0.68 khi > 12P) | Frontend (Table & Cards) | `BloodBoundTable.tsx` | **PASS** (100%) |
+| **TC-BB-15** | **P1** | Cấu hình thời gian lượt chơi linh hoạt (15s, 20s, 30s, 45s) | Full-stack (Settings + Timer) | `verify-game-flow.mjs` (TC-11..14) | **PASS** (100%) |
+| **TC-BB-16** | **P2** | Trình sinh tên phòng ngẫu nhiên tiếng Việt & Nút xúc xắc Reroll | Frontend (Rooms Page) | `RoomsPage.tsx` | **PASS** (100%) |
+| **TC-BB-17** | **P0** | Quản lý Bot trong Sảnh, Chốt chặn đầy phòng 16P (409) & Thiếu người (409) | Backend (Room + Bot Service) | `verify-game-flow.mjs` (TC-15..19) | **PASS** (100%) |
+| **TC-BB-18** | **P1** | Cơ chế Phù Hiệu (Crest) & Sổ tay Cheatsheet giải thích Thật / Giả | Frontend (Cheatsheet / Docs) | `BloodBoundCheatsheet.tsx` | **PASS** (100%) |
+| **TC-BB-19** | **P0** | Bộ kiểm thử tự động Headless E2E Token-Saver (`npm run test:flow`) | Platform CLI & Automation | `verify-game-flow.mjs` (29 TCs) | **PASS** (100%) |
 
 ---
 
@@ -182,6 +190,107 @@ Tài liệu này chuẩn hóa toàn bộ kịch bản kiểm thử (Test Scenari
 
 ---
 
+### TC-BB-12: Hỗ Trợ Phòng Tối Đa 16 Người Chơi & Chốt Chặn Biên Sức Chứa
+* **Vấn đề gốc**: Trước đây hệ thống giới hạn tối đa 12 người chơi. Cần mở rộng sức chứa lên 16 người cho game Huyết Thệ và thiết lập chốt chặn biên bảo vệ.
+* **Kịch bản kiểm thử**:
+  1. Tạo phòng với `maxPlayers = 16` -> Server chấp thuận, room có sức chứa 16 ghế.
+  2. Tạo phòng với `maxPlayers = 2` (< min 4) -> Bị từ chối với HTTP 400 `INVALID_MAX_PLAYERS`.
+  3. Tạo phòng với `maxPlayers = 20` (> max 16) -> Bị từ chối với HTTP 400 `VALIDATION_FAILED`.
+  4. Người chơi đang là host không thể tạo thêm phòng thứ hai -> HTTP 409 `ALREADY_IN_ROOM`.
+* **Mã kiểm thử tự động**:
+  * [verify-game-flow.mjs](file:///c:/Users/HUNG/.kiro/crew/workspace/boardgames/scripts/verify-game-flow.mjs): `TC-07`, `TC-08`, `TC-09`, `TC-10a`, `TC-10b`.
+
+---
+
+### TC-BB-13: Kích Hoạt & Phân Bổ 4 Vai Trò Cấp Cao (Ranks 5, 6, 7, 8)
+* **Vấn đề gốc**: Khi chơi dưới 10 người, các nhân vật cấp cao như Thuật Sĩ (Mentalist - 5), Hộ Vệ (Guardian - 6), Cuồng Nộ (Berserker - 7), Kỹ Nữ (Courtesan - 8) không xuất hiện. Khi nâng lên 16 người, toàn bộ bộ bài 16 lá của cả hai phe Hoa Hồng và Quạt phải được kích hoạt đầy đủ kèm assets đồ họa chuẩn Dark Gothic.
+* **Kịch bản kiểm thử**:
+  1. Ván đấu 16 người: bộ bài gồm chính xác 8 thẻ Rose (Ranks 1..8) và 8 thẻ Fan (Ranks 1..8).
+  2. Các nhân vật cấp cao được chia cho người chơi:
+     * Rank 5: Thuật Sĩ (Mentalist) — soi 2 manh mối ẩn của đối thủ.
+     * Rank 6: Hộ Vệ (Guardian) — ban khiên bảo vệ bất tử 1 đòn.
+     * Rank 7: Cuồng Nộ (Berserker) — phản đòn ép kẻ tấn công chịu 1 vết thương.
+     * Rank 8: Kỹ Nữ (Courtesan) — thao túng mục tiêu tấn công của lượt sau.
+  3. Kiểm tra file SVG vector chất lượng cao: `apps/web/public/assets/games/blood-bound/roles/{rose,fan}/role-{5,7,8}.svg`.
+* **Mã kiểm thử tự động**:
+  * [verify-game-flow.mjs](file:///c:/Users/HUNG/.kiro/crew/workspace/boardgames/scripts/verify-game-flow.mjs): `TC-23`, `TC-25`.
+
+---
+
+### TC-BB-14: Bố Cục Bàn Đấu Co Giãn Tự Động (Responsive Table Scaling)
+* **Vấn đề gốc**: Khi có tới 16 người chơi trên bàn đấu, nếu dùng bán kính elip cũ, các thẻ ghế sẽ bị đè chồng lên nhau hoặc tràn ra khỏi màn hình. Ngược lại trên màn hình desktop lớn, giao diện dễ bị khoảng đen hoang vắng.
+* **Kịch bản kiểm thử**:
+  1. Khi `totalSeats <= 12`: Bán kính elip mặc định `radiusX = 40`, `radiusY = 32`, scale thẻ ghế `scale = 0.85` (hoặc 1.0).
+  2. Khi `totalSeats > 12` (13 - 16 người):
+     * Bán kính tự động mở rộng: `radiusX = 43`, `radiusY = 36`.
+     * Tỷ lệ thẻ ghế tự động thu gọn: `scale = 0.68` để đảm bảo 16 ghế phân bổ đều đặn, không chạm nhau.
+     * Container bàn chơi mở rộng `width: min(1120px, 94vw)` triệt tiêu khoảng đen thừa.
+* **Mã kiểm thử**:
+  * [BloodBoundTable.tsx](file:///c:/Users/HUNG/.kiro/crew/workspace/boardgames/apps/web/src/games/bloodBound/components/BloodBoundTable.tsx).
+
+---
+
+### TC-BB-15: Cấu Hình Thời Gian Lượt Chơi Linh Hoạt (15s, 20s, 30s, 45s)
+* **Vấn đề gốc**: Ván đấu 16 người cần nhiều thời gian suy luận hơn (30s hoặc 45s), nhưng giao diện phòng trước đây bị khóa cứng 15s hoặc 20s.
+* **Kịch bản kiểm thử**:
+  1. Tại Sảnh chờ phòng, Host chọn chip thời gian `30s` hoặc `45s`.
+  2. Host lưu cài đặt: `PUT /api/v1/rooms/{id}/settings` cập nhật `{ bloodBound: { turnSeconds: 45, interventionSeconds: 15 } }`.
+  3. Kiểm tra query `GET /api/v1/rooms/{id}`: `turnSeconds` trả về đúng 45s và `interventionSeconds` duy trì 15s.
+* **Mã kiểm thử tự động**:
+  * [verify-game-flow.mjs](file:///c:/Users/HUNG/.kiro/crew/workspace/boardgames/scripts/verify-game-flow.mjs): `TC-11`, `TC-12`, `TC-13`, `TC-14`.
+
+---
+
+### TC-BB-16: Trình Sinh Tên Phòng Ngẫu Nhiên Tiếng Việt & Reroll Xúc Xắc
+* **Vấn đề gốc**: Người chơi phải tự nhập tên phòng thủ công, dễ gây nhàm chán hoặc trùng lặp, và khi đổi tựa game thì tên phòng không đổi theo.
+* **Kịch bản kiểm thử**:
+  1. Mở modal Tạo phòng mới: trường tên phòng tự động được điền sẵn một cái tên ma mị tiếng Việt (ví dụ: *"Lâu Đài Huyết Nguyệt"*, *"Thánh Địa Ám Ảnh"*, *"Mật Viện Quạt Xanh"*...).
+  2. Bấm nút xúc xắc [🎲 Đổi tên]: tên phòng lập tức đổi sang một tên ngẫu nhiên khác.
+  3. Chọn đổi sang game khác (ví dụ: *Thỏ Tìm Cà Rốt* hoặc *Vạc Phù Thủy*): tên phòng tự động thay đổi theo phong cách của tựa game mới.
+* **Mã kiểm thử**:
+  * [RoomsPage.tsx](file:///c:/Users/HUNG/.kiro/crew/workspace/boardgames/apps/web/src/pages/RoomsPage.tsx).
+
+---
+
+### TC-BB-17: Quản Lý Bot Trong Sảnh & Chốt Chặn Biên Phòng Đầy / Thiếu Người
+* **Vấn đề gốc**: Cần kiểm soát chặt chẽ việc thêm bot, đuổi bot và kiểm tra các giới hạn số người trước khi bắt đầu trận.
+* **Kịch bản kiểm thử**:
+  1. Thêm bot qua `POST /api/v1/rooms/{id}/bot` với body `{ botType: "NORMAL" }` -> Thành công.
+  2. Đuổi bot qua `POST /api/v1/rooms/{id}/kick/{botId}` -> Bot bị xóa khỏi danh sách, giải phóng ghế.
+  3. Nạp 15 bots để đạt tối đa 16/16 ghế -> Thành công.
+  4. Cố thêm người/bot thứ 17 khi phòng đã đầy 16 người -> Server từ chối với HTTP 409 `ROOM_FULL`.
+  5. Cố bắt đầu ván khi phòng mới có 1 người -> Server từ chối với HTTP 409 `NOT_ENOUGH_PLAYERS`.
+* **Mã kiểm thử tự động**:
+  * [verify-game-flow.mjs](file:///c:/Users/HUNG/.kiro/crew/workspace/boardgames/scripts/verify-game-flow.mjs): `TC-15`, `TC-16`, `TC-17`, `TC-18`, `TC-19`.
+
+---
+
+### TC-BB-18: Cơ Chế Phù Hiệu (Crest) & Sổ Tay Cheatsheet Giải Thích Thật / Giả
+* **Vấn đề gốc**: Người chơi mới dễ nhầm lẫn giữa Token Màu (Color Token), Phù Hiệu (Crest Token) và Cấp số (Rank Token), không rõ loại nào có thể bị Tắc Kè Hoa (Harlequin) làm giả.
+* **Kịch bản kiểm thử**:
+  1. Mở Sổ tay Hướng dẫn / Cheatsheet tab bên phải bàn cờ.
+  2. Hiển thị mục chuyên sâu `🛡️ Phù Hiệu (Crest) Là Gì & Cơ Chế Thật / Giả?`:
+     * **Token Màu (Color)**: Có thể bị Tắc Kè Hoa (Rank 3) làm giả (lộ màu ngược với phe thật).
+     * **Phù Hiệu Gia Tộc (Crest)**: **100% SỰ THẬT**, không thể làm giả. Cầm phù hiệu nào thì chắc chắn thuộc gia tộc đó.
+     * **Cấp Số (Rank)**: 100% sự thật cấp bậc.
+  3. Bảng so sánh trực quan với icon và màu sắc tương phản cao.
+* **Mã kiểm thử**:
+  * [BloodBoundCheatsheet.tsx](file:///c:/Users/HUNG/.kiro/crew/workspace/boardgames/apps/web/src/games/bloodBound/components/BloodBoundCheatsheet.tsx).
+
+---
+
+### TC-BB-19: Bộ Kiểm Thử Tự Động Headless E2E Token-Saver (`npm run test:flow`)
+* **Vấn đề gốc**: Mỗi lần kiểm tra hồi quy bằng Browser Subagent tiêu tốn 50.000 - 80.000 tokens và mất 2 - 3 phút.
+* **Kịch bản kiểm thử**:
+  1. Chạy `npm run test:flow`.
+  2. Toàn bộ 29 Test Cases được thực thi tự động qua API trong 1.5 - 7 giây.
+  3. Báo cáo ngắn gọn tiêu hao ~150 tokens cho AI.
+  4. Hỗ trợ chạy riêng từng suite: `--suite=catalog`, `--suite=auth`, `--suite=rooms`, `--suite=timers`, `--suite=lobby`, `--suite=gameplay`, `--suite=cleanup`.
+* **Mã kiểm thử tự động**:
+  * [verify-game-flow.mjs](file:///c:/Users/HUNG/.kiro/crew/workspace/boardgames/scripts/verify-game-flow.mjs) & [.agents/skills/verify-game-flow/SKILL.md](file:///c:/Users/HUNG/.kiro/crew/workspace/boardgames/.agents/skills/verify-game-flow/SKILL.md).
+
+---
+
 ## 3. Kịch Bản Kiểm Thử Trực Tiếp Trên Trình Duyệt Qua Chrome MCP
 
 Kịch bản end-to-end (E2E) thực chiến với 6 người chơi trên Web UI:
@@ -218,18 +327,28 @@ Kịch bản end-to-end (E2E) thực chiến với 6 người chơi trên Web UI
 ## 4. Lệnh Chạy Toàn Bộ Bộ Test (Verification Commands)
 
 ```bash
-# 1. Chạy toàn bộ Unit Test Backend (bao gồm TimeoutScheduler, EloPolicy, GameEngine)
+# 1. Chạy bộ kiểm thử tự động Headless E2E Flow (29 Test Cases - Tiết kiệm Token)
+npm run test:flow
+
+# Hoặc chạy riêng từng Suite chuyên biệt:
+node scripts/verify-game-flow.mjs --suite=catalog
+node scripts/verify-game-flow.mjs --suite=timers
+node scripts/verify-game-flow.mjs --suite=lobby
+node scripts/verify-game-flow.mjs --suite=gameplay
+
+# 2. Chạy toàn bộ Unit Test Backend (bao gồm TimeoutScheduler, EloPolicy, GameEngine)
 ./mvnw test -Dtest=*BloodBound* --file apps/server/pom.xml
 
-# 2. Chạy toàn bộ Unit Test Frontend (bao gồm Rules, Hook, Bot, Cheatsheet, Audio)
+# 3. Chạy toàn bộ Unit Test Frontend (bao gồm Rules, Hook, Bot, Cheatsheet, Audio)
 npm test --prefix apps/web
 
-# 3. Kiểm tra kiểu dữ liệu TypeScript nghiêm ngặt
+# 4. Kiểm tra kiểu dữ liệu TypeScript nghiêm ngặt
 npm run typecheck --prefix apps/web
 
-# 4. Kiểm tra đóng gói Production Bundle
+# 5. Kiểm tra đóng gói Production Bundle
 npm run build --prefix apps/web
 ```
 
 ---
 *Tài liệu được cập nhật tự động và đồng bộ với phiên bản mã nguồn mới nhất của BoardVerse Platform.*
+
