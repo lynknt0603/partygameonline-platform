@@ -161,6 +161,7 @@ export function initBloodBoundGame(
     daggerHolderPlayerId: startingDaggerPlayerId,
     currentTargetPlayerId: null,
     intervenedByPlayerId: null,
+    lastAttackerPlayerId: null,
     players,
     mySecretCard: viewerCard,
     leftNeighborClue,
@@ -189,6 +190,7 @@ export function processAcknowledgeLookLeft(view: BloodBoundView): BloodBoundView
   return {
     ...view,
     phase: "ATTACK_CHOICE",
+    timeRemainingSeconds: view.turnSeconds ?? 30,
     publicLog: [
       ...view.publicLog,
       {
@@ -254,7 +256,8 @@ export function processAttack(
     currentTargetPlayerId: targetPlayerId,
     intervenedByPlayerId: null,
     forcedAttackTargetId: null,
-    timeRemainingSeconds: 10,
+    lastAttackerPlayerId: view.daggerHolderPlayerId,
+    timeRemainingSeconds: view.interventionSeconds ?? 15,
     publicLog: [
       ...view.publicLog,
       {
@@ -343,11 +346,25 @@ export function validateAbility(
       reasonVi: "Không thể nhắm vào chính mình",
     };
   }
-  if (rank === 7 && targetPlayerId && targetPlayerId !== view.daggerHolderPlayerId) {
+  if (rank === 7 && actorPlayerId !== view.daggerHolderPlayerId) {
+    return {
+      valid: false,
+      reason: "Berserker may only react while holding the dagger",
+      reasonVi: "Cuồng Nộ chỉ có thể phản đòn khi đang cầm Đoản Kiếm",
+    };
+  }
+  if (rank === 7 && targetPlayerId && targetPlayerId !== view.lastAttackerPlayerId) {
     return {
       valid: false,
       reason: "Berserker can only reflect damage to the attacker",
       reasonVi: "Cuồng Nộ chỉ có thể phản đòn lên người vừa tấn công mình",
+    };
+  }
+  if (!targetPlayerId) {
+    return {
+      valid: false,
+      reason: "This ability requires a target",
+      reasonVi: "Kỹ năng này cần chọn mục tiêu",
     };
   }
   if (targetPlayerId) {
@@ -361,6 +378,18 @@ export function validateAbility(
         reason: "Target is already captured",
         reasonVi: "Mục tiêu đã bị bắt giữ",
       };
+    }
+    if (rank === 5) {
+      const hasColor = target.revealedTokens.some((t) => t.type === "COLOR");
+      const hasCrest = target.revealedTokens.some((t) => t.type === "CREST");
+      const hasRank = target.revealedTokens.some((t) => t.type === "RANK");
+      if (hasColor && hasCrest && hasRank) {
+        return {
+          valid: false,
+          reason: "Target has already revealed all core clues",
+          reasonVi: "Mục tiêu đã lộ đủ các manh mối chính",
+        };
+      }
     }
   }
   return { valid: true };
@@ -384,11 +413,19 @@ export function getEligibleAbilityTargets(
   players: BloodBoundPlayerPublic[],
   actorPlayerId: string,
   rank: BloodBoundRoleRank,
+  lastAttackerPlayerId?: string | null,
 ): BloodBoundPlayerPublic[] {
   const allowSelf = canAbilityTargetSelf(rank);
   return players.filter((p) => {
     if (p.wounds >= 4) return false;
     if (!allowSelf && p.playerId === actorPlayerId) return false;
+    if (rank === 7 && p.playerId !== lastAttackerPlayerId) return false;
+    if (rank === 5) {
+      const hasColor = p.revealedTokens.some((t) => t.type === "COLOR");
+      const hasCrest = p.revealedTokens.some((t) => t.type === "CREST");
+      const hasRank = p.revealedTokens.some((t) => t.type === "RANK");
+      if (hasColor && hasCrest && hasRank) return false;
+    }
     return true;
   });
 }
@@ -536,6 +573,7 @@ export function processWoundReveal(
       players: updatedPlayers,
       currentTargetPlayerId: null,
       intervenedByPlayerId: null,
+      lastAttackerPlayerId: null,
       publicLog: [
         ...view.publicLog,
         {
@@ -773,8 +811,8 @@ export function applyRoleAbility(
           };
         } else {
           tokenToReveal = {
-            type: "QUESTION",
-            value: "?",
+            type: "RANK",
+            value: targetCard?.rank ?? 1,
           };
         }
 
@@ -783,6 +821,7 @@ export function applyRoleAbility(
             return {
               ...p,
               revealedTokens: [...p.revealedTokens, tokenToReveal],
+              hasRevealedRank: tokenToReveal.type === "RANK" ? true : p.hasRevealedRank,
             };
           }
           return p;
@@ -807,7 +846,7 @@ export function applyRoleAbility(
       break;
 
     case 7: { // Berserker: Phản đòn 1 vết thương lên chính kẻ tấn công
-      const berserkerTargetId = targetPlayerId ?? view.daggerHolderPlayerId;
+      const berserkerTargetId = targetPlayerId ?? view.lastAttackerPlayerId;
       if (berserkerTargetId && berserkerTargetId !== actorPlayerId) {
         let lethal = false;
         updatedPlayers = view.players.map((p) => {
@@ -867,7 +906,8 @@ export function applyRoleAbility(
     phase: isGameOver ? "GAME_OVER" : view.phase,
     winnerClan: isGameOver ? winnerClan : view.winnerClan,
     capturedPlayerId: isGameOver ? capturedPlayerId : view.capturedPlayerId,
-    forcedAttackTargetId: targetPlayerId ?? view.forcedAttackTargetId,
+    forcedAttackTargetId: roleRank === 8 && targetPlayerId ? targetPlayerId : view.forcedAttackTargetId,
+    lastAttackerPlayerId: roleRank === 7 ? null : view.lastAttackerPlayerId,
     players: updatedPlayers,
     publicLog: [
       ...view.publicLog,

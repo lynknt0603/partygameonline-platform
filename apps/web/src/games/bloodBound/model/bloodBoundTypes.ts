@@ -114,6 +114,7 @@ export interface BloodBoundView {
   currentTargetPlayerId: string | null;
   intervenedByPlayerId: string | null;
   forcedAttackTargetId?: string | null;
+  lastAttackerPlayerId?: string | null;
   players: BloodBoundPlayerPublic[];
   mySecretCard: { clan: BloodClan; rank: BloodBoundRoleRank; roleInfo?: BloodBoundRoleInfo } | null;
   leftNeighborClue: { clan: BloodClan; crest: string } | null;

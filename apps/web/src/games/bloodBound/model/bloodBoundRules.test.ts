@@ -454,6 +454,36 @@ describe("Blood Bound Rules - Role Customization & Shuffling", () => {
     expect(check.reasonVi).toContain("chính mình");
   });
 
+  it("tracks the attacker and uses the configured intervention duration", () => {
+    const { view } = initBloodBoundGame("room-bb-timer", [
+      { playerId: "p1", displayName: "Alice" },
+      { playerId: "p2", displayName: "Bob" },
+    ], "p1");
+    view.phase = "ATTACK_CHOICE";
+    view.interventionSeconds = 7;
+
+    const nextView = processAttack(view, "p2");
+
+    expect(nextView.lastAttackerPlayerId).toBe("p1");
+    expect(nextView.timeRemainingSeconds).toBe(7);
+  });
+
+  it("limits Berserker ability targets to the player who made the last attack", () => {
+    const { view } = initBloodBoundGame("room-bb-reflect", [
+      { playerId: "p1", displayName: "Alice" },
+      { playerId: "p2", displayName: "Bob" },
+      { playerId: "p3", displayName: "Charlie" },
+      { playerId: "p4", displayName: "David" },
+    ], "p1");
+    view.phase = "ATTACK_CHOICE";
+    view.lastAttackerPlayerId = "p2";
+    view.players[0].hasRevealedRank = true;
+
+    expect(validateAbility(view, "p1", 7, "p2").valid).toBe(true);
+    expect(validateAbility(view, "p1", 7, "p3").valid).toBe(false);
+    expect(getEligibleAbilityTargets(view.players, "p1", 7, "p2").map((p) => p.playerId)).toEqual(["p2"]);
+  });
+
   it("Rank 8 Courtesan ability forces the next attack to target chosen player", () => {
     const { view, secretCards } = initBloodBoundGame("room-bb-rank8", [
       { playerId: "p1", displayName: "Alice" },

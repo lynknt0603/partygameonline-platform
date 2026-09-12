@@ -240,6 +240,10 @@
   z-index: 10;
 }
 
+.seatCardRound.isYou.isTarget {
+  z-index: 25;
+}
+
 .seatCardRound.isLeftNeighbor {
   border-color: #f43f5e;
 }

@@ -24,6 +24,7 @@ import {
   applyRoleAbility,
   validateAttack,
   validateIntervene,
+  validateAbility,
   getEligibleAbilityTargets,
   isBloodBoundDemoRoom,
   requiresExitConfirmation,
@@ -371,13 +372,9 @@ export function BloodBoundPlayPage({
     }
   }, [isServerAuthoritative, sendCommand]);
 
+  const roomBloodBoundSettings = room && "bloodBoundSettings" in room ? room.bloodBoundSettings : null;
   const configuredInterventionSeconds =
-    activeView.interventionSeconds ??
-    (room && "settings" in room
-      ? (room.settings as { bloodBound?: { interventionSeconds?: number }; interventionSeconds?: number } | undefined)?.bloodBound?.interventionSeconds ??
-        (room.settings as { interventionSeconds?: number } | undefined)?.interventionSeconds
-      : undefined) ??
-    15;
+    activeView.interventionSeconds ?? roomBloodBoundSettings?.interventionSeconds ?? 15;
 
   // 4d. Đếm ngược Cửa Sổ Can Thiệp theo cấu hình phòng / deadline server
   useEffect(() => {
@@ -642,6 +639,8 @@ export function BloodBoundPlayPage({
 
   const handleUseAbilityTarget = (targetPlayerId: string) => {
     if (!myCard || you?.hasUsedAbility) return;
+    const validation = validateAbility(activeView, myPlayerId, myCard.rank, targetPlayerId);
+    if (!validation.valid) return;
     const target = activeView.players.find((p) => p.playerId === targetPlayerId);
     if (target) {
       triggerBubble(myPlayerId, `✨ Dùng kỹ năng ${myCard.roleInfo?.roleNameVi ?? "Vai trò"} lên ${target.displayName}!`, "ability", 3500);
@@ -879,7 +878,8 @@ export function BloodBoundPlayPage({
         </div>
 
         <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-          {you?.hasRevealedRank && !you?.hasUsedAbility && myCard && myCard.rank !== 1 && (
+          {you?.hasRevealedRank && !you?.hasUsedAbility && myCard && myCard.rank !== 1
+            && (myCard.rank !== 7 || (isMyTurn && Boolean(activeView.lastAttackerPlayerId))) && (
             <button className={styles.btnPrimary} onClick={() => setShowAbilityModal(true)}>
               <Heart size={16} /> Kích Hoạt Kỹ Năng {myCard.roleInfo?.roleNameVi ?? "Vai trò"} (Cấp {myCard.rank})
             </button>
@@ -915,7 +915,12 @@ export function BloodBoundPlayPage({
               </strong>
             </div>
             <div className={styles.targetGrid}>
-              {getEligibleAbilityTargets(activeView.players, myPlayerId, myCard.rank).map((target) => (
+              {getEligibleAbilityTargets(
+                activeView.players,
+                myPlayerId,
+                myCard.rank,
+                activeView.lastAttackerPlayerId,
+              ).map((target) => (
                 <button
                   key={target.playerId}
                   type="button"
