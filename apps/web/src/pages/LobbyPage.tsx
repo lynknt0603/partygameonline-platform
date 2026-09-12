@@ -1,17 +1,23 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Copy, Link2, MessageCircle, Settings } from "lucide-react";
+import { ArrowLeft, Bot, Brain, Copy, Link2, MessageCircle, Settings, Zap } from "lucide-react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { WHERES_THE_BONE_ID } from "@/games/wheresTheBone";
 import { ConfirmDialog } from "@/shared/components/ConfirmDialog/ConfirmDialog";
+import { useQueryClient } from "@tanstack/react-query";
 import { PlayerSeat } from "@/shared/components/PlayerSeat/PlayerSeat";
 import { useGame } from "@/shared/hooks/useGames";
-import { useCloseRoom, useJoinRoom, useKickRoom, useLeaveRoom, useReadyRoom, useRoom, useStartRoom } from "@/shared/hooks/useRooms";
+import { useAddBot, useCloseRoom, useJoinRoom, useKickRoom, useLeaveRoom, useReadyRoom, useRoom, useStartRoom } from "@/shared/hooks/useRooms";
 import { useRoomRealtime } from "@/shared/hooks/useRoomRealtime";
 import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
 import { useLocale, useT } from "@/shared/i18n/useT";
 import { seatsForRoom } from "@/shared/lobby/roomView";
 import { useSessionStore } from "@/shared/state/sessionStore";
 import { useLobbyChat } from "@/shared/hooks/useLobbyChat";
+import { useActiveGame } from "@/shared/hooks/useActiveGame";
+import { ActiveGameConflictDialog } from "@/shared/components/ActiveGameGuard/ActiveGameConflictDialog";
+import { clearActiveGame } from "@/shared/state/activeGameStorage";
+import { cacheSession } from "@/shared/api/session";
+import { leaveRoom } from "@/shared/api/rooms";
 import { LobbyChat } from "./LobbyChat";
 import { RoomSettingsPanel } from "./RoomSettingsPanel";
 import styles from "./LobbyPage.module.css";
@@ -28,6 +34,7 @@ export function LobbyPage() {
   const { game } = useGame(room?.gameId);
   const join = useJoinRoom();
   const kick = useKickRoom(roomId);
+  const addBot = useAddBot(roomId);
   const leave = useLeaveRoom();
   const ready = useReadyRoom(roomId);
   const start = useStartRoom(roomId);
@@ -36,6 +43,9 @@ export function LobbyPage() {
   const [hostOpen, setHostOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [kickTargetId, setKickTargetId] = useState<string | null>(null);
+  const { activeGame, rejoin, abandon } = useActiveGame();
+  const [showConflict, setShowConflict] = useState(false);
+  const queryClient = useQueryClient();
 
   useRoomRealtime(roomId);
   const chat = useLobbyChat(roomId, youId);
@@ -45,9 +55,12 @@ export function LobbyPage() {
   // tab reconnects while a join event is in flight (or a proxy drops it).
   // Refresh only while waiting so an open lobby stays authoritative without
   // adding polling traffic once the game has started.
+  const isWaiting = room?.status === "waiting";
+  const isInGame = room?.status === "in_game";
+
   const refetchRoom = roomQuery.refetch;
   useEffect(() => {
-    if (!roomId || room?.status !== "waiting") {
+    if (!roomId || !isWaiting) {
       return;
     }
     let stopped = false;
@@ -73,25 +86,105 @@ export function LobbyPage() {
       stopped = true;
       window.clearInterval(timer);
     };
-  }, [refetchRoom, room?.status, roomId]);
+  }, [refetchRoom, isWaiting, roomId]);
 
   useEffect(() => {
     if (!room || !youId) {
       return;
     }
     const member = room.players.some((player) => player.playerId === youId);
-    if (!member && room.status === "waiting" && !joinAttempted.current) {
+    if (!member && isWaiting && !joinAttempted.current) {
+      if (activeGame && activeGame.roomId.toUpperCase() !== room.id.toUpperCase()) {
+        setShowConflict(true);
+        return;
+      }
       joinAttempted.current = true;
       join.mutate(room.id);
     }
-    if (room.status === "in_game" && member) {
+    if (isInGame && member) {
       navigate(`/play/${room.id.toUpperCase()}`, { replace: true });
     }
-  }, [room, youId, join, navigate]);
+  }, [room, youId, join, navigate, isWaiting, isInGame, activeGame]);
+
+  const handleAbandonAndProceed = async () => {
+    if (activeGame) {
+      await abandon(activeGame.roomId);
+    }
+    setShowConflict(false);
+    if (room) {
+      joinAttempted.current = true;
+      join.mutate(room.id);
+    }
+  };
+
+  const isTransitioningToGameRef = useRef(false);
+  const isMemberRef = useRef(false);
+  const isWaitingRef = useRef(true);
+
+  useEffect(() => {
+    isWaitingRef.current = isWaiting;
+  }, [isWaiting]);
+
+  useEffect(() => {
+    if (isInGame) {
+      isTransitioningToGameRef.current = true;
+    }
+  }, [isInGame]);
+
+  useEffect(() => {
+    if (room && youId) {
+      const isMember = room.players.some((player) => player.playerId === youId);
+      if (isMember) {
+        isMemberRef.current = true;
+      }
+    }
+  }, [room, youId]);
+
+  const handleLeave = () => {
+    clearActiveGame(roomId);
+    clearActiveGame();
+    const session = useSessionStore.getState().session;
+    if (session && (!roomId || session.currentRoomId?.toUpperCase() === roomId.toUpperCase())) {
+      const updated = { ...session, currentRoomId: null };
+      useSessionStore.setState({ session: updated });
+      cacheSession(updated);
+    }
+    if (room?.id) {
+      leave.mutate(room.id);
+    } else {
+      if (roomId) {
+        void leaveRoom(roomId.toUpperCase()).catch(() => {});
+        queryClient.removeQueries({ queryKey: ["room", roomId.toUpperCase()] });
+      }
+      queryClient.removeQueries({ queryKey: ["room"] });
+      void queryClient.invalidateQueries({ queryKey: ["rooms"] });
+      navigate("/rooms");
+    }
+  };
+
+
+  useEffect(() => {
+    const handlePageHide = () => {
+      if (roomId && !isTransitioningToGameRef.current && isWaitingRef.current && isMemberRef.current) {
+        clearActiveGame(roomId);
+        clearActiveGame();
+        const session = useSessionStore.getState().session;
+        if (session && session.currentRoomId?.toUpperCase() === roomId.toUpperCase()) {
+          const updated = { ...session, currentRoomId: null };
+          useSessionStore.setState({ session: updated });
+          cacheSession(updated);
+        }
+      }
+    };
+    window.addEventListener("pagehide", handlePageHide);
+    return () => {
+      window.removeEventListener("pagehide", handlePageHide);
+    };
+  }, [roomId]);
 
   const seats = useMemo(() => (room ? seatsForRoom(room, youId) : []), [room, youId]);
   const you = seats.find((seat) => seat.isYou);
-  const isHost = Boolean(you?.isHost);
+  const isHost = Boolean(room && youId && (room.hostPlayerId === youId || you?.isHost));
   const kickTarget = room?.players.find((player) => player.playerId === kickTargetId);
   const occupied = seats.filter((seat) => seat.state !== "empty");
   const waiting = occupied.filter((seat) => !seat.isHost && seat.state !== "ready");
@@ -99,6 +192,23 @@ export function LobbyPage() {
   const requiredPlayers = requiresFullTable ? (room?.capacity ?? game?.maxPlayers ?? 4) : (game?.minPlayers ?? 2);
   const canStart = occupied.length >= requiredPlayers && waiting.length === 0;
   const gameTitle = locale === "vi" ? game?.displayNameVi : game?.displayName;
+
+  const [isFillingBots, setIsFillingBots] = useState(false);
+  const handleFillBots = async () => {
+    if (!room || occupied.length >= room.capacity || isFillingBots) return;
+    setIsFillingBots(true);
+    try {
+      const needed = room.capacity - occupied.length;
+      for (let i = 0; i < needed; i++) {
+        const type = i % 2 === 0 ? "NORMAL" : "AI";
+        await addBot.mutateAsync({ botType: type });
+      }
+    } catch {
+      /* ignore */
+    } finally {
+      setIsFillingBots(false);
+    }
+  };
 
   if (roomQuery.isError) {
     return <Navigate to="/rooms" replace />;
@@ -134,7 +244,7 @@ export function LobbyPage() {
   return (
     <div className={styles.page}>
       <header className={styles.top}>
-        <button type="button" className={styles.icon} onClick={() => navigate("/rooms")}>
+        <button type="button" className={styles.icon} onClick={handleLeave}>
           <ArrowLeft size={18} />
           <span>{t("navRooms")}</span>
         </button>
@@ -190,12 +300,61 @@ export function LobbyPage() {
                 key={seat.id}
                 player={seat}
                 compact
-                onKick={isHost && room.status === "waiting" ? (id) => {
+                onKick={isHost && isWaiting ? (id) => {
                   kick.reset();
                   setKickTargetId(id);
                 } : undefined}
+                onAddBot={isHost && isWaiting && occupied.length < room.capacity ? (botType) => addBot.mutate({ botType }) : undefined}
+                isAddingBot={addBot.isPending}
               />
             ))}
+            {isHost && isWaiting && occupied.length < room.capacity && (
+              <div className={styles.botControlBar}>
+                <span className={styles.botControlLabel}>Thêm Bot vào phòng:</span>
+                <div className={styles.botButtonRow}>
+                  <button
+                    type="button"
+                    className={styles.botQuickBtn}
+                    onClick={() => addBot.mutate({ botType: "NORMAL" })}
+                    disabled={addBot.isPending || isFillingBots || occupied.length >= room.capacity}
+                    title="Thêm 1 Bot Thường tuân thủ quy tắc luật chơi"
+                  >
+                    <Bot size={15} />
+                    <span>+ Bot Thường</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`${styles.botQuickBtn} ${styles.aiQuickBtn}`}
+                    onClick={() => addBot.mutate({ botType: "AI" })}
+                    disabled={addBot.isPending || isFillingBots || occupied.length >= room.capacity}
+                    title="Thêm 1 Bot AI có chiến thuật cao"
+                  >
+                    <Brain size={15} />
+                    <span>+ Bot AI</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`${styles.botQuickBtn} ${styles.fillQuickBtn}`}
+                    onClick={handleFillBots}
+                    disabled={addBot.isPending || isFillingBots || occupied.length >= room.capacity}
+                    title="Tự động thêm Bot vào tất cả các ghế trống"
+                  >
+                    <Zap size={15} />
+                    <span>{isFillingBots ? "Đang thêm..." : "⚡ Lấp đầy Bot"}</span>
+                  </button>
+                </div>
+              </div>
+            )}
+            {addBot.isError && (
+              <p className={styles.botErrorMsg}>
+                ⚠️ {addBot.error instanceof Error ? addBot.error.message : "Không thể thêm bot lúc này"}
+              </p>
+            )}
+            {isHost && isWaiting && occupied.length < room.capacity && (
+              <p className={styles.hostBotHint}>
+                💡 Chủ phòng có thể dùng các nút trên hoặc nhấn trực tiếp vào các ghế trống để thêm Bot.
+              </p>
+            )}
           </section>
         </>
       ) : (
@@ -212,13 +371,62 @@ export function LobbyPage() {
               <PlayerSeat
                 key={seat.id}
                 player={seat}
-                onKick={isHost && room.status === "waiting" ? (id) => {
+                onKick={isHost && isWaiting ? (id) => {
                   kick.reset();
                   setKickTargetId(id);
                 } : undefined}
+                onAddBot={isHost && isWaiting && occupied.length < room.capacity ? (botType) => addBot.mutate({ botType }) : undefined}
+                isAddingBot={addBot.isPending}
               />
             ))}
           </div>
+          {isHost && isWaiting && occupied.length < room.capacity && (
+            <div className={styles.botControlBar}>
+              <span className={styles.botControlLabel}>Thêm Bot vào phòng:</span>
+              <div className={styles.botButtonRow}>
+                <button
+                  type="button"
+                  className={styles.botQuickBtn}
+                  onClick={() => addBot.mutate({ botType: "NORMAL" })}
+                  disabled={addBot.isPending || isFillingBots || occupied.length >= room.capacity}
+                  title="Thêm 1 Bot Thường tuân thủ quy tắc luật chơi"
+                >
+                  <Bot size={15} />
+                  <span>+ Bot Thường</span>
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.botQuickBtn} ${styles.aiQuickBtn}`}
+                  onClick={() => addBot.mutate({ botType: "AI" })}
+                  disabled={addBot.isPending || isFillingBots || occupied.length >= room.capacity}
+                  title="Thêm 1 Bot AI có chiến thuật cao"
+                >
+                  <Brain size={15} />
+                  <span>+ Bot AI</span>
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.botQuickBtn} ${styles.fillQuickBtn}`}
+                  onClick={handleFillBots}
+                  disabled={addBot.isPending || isFillingBots || occupied.length >= room.capacity}
+                  title="Tự động thêm Bot vào tất cả các ghế trống"
+                >
+                  <Zap size={15} />
+                  <span>{isFillingBots ? "Đang thêm..." : "⚡ Lấp đầy Bot"}</span>
+                </button>
+              </div>
+            </div>
+          )}
+          {addBot.isError && (
+            <p className={styles.botErrorMsg}>
+              ⚠️ {addBot.error instanceof Error ? addBot.error.message : "Không thể thêm bot lúc này"}
+            </p>
+          )}
+          {isHost && isWaiting && occupied.length < room.capacity && (
+            <p className={styles.hostBotHint}>
+              💡 Chủ phòng có thể dùng các nút trên hoặc nhấn trực tiếp vào các ghế trống để thêm Bot.
+            </p>
+          )}
         </div>
       )}
 
@@ -253,7 +461,7 @@ export function LobbyPage() {
           {waitLabel}
         </p>
         <footer className={styles.footer}>
-          <button type="button" className={styles.ghost} onClick={() => leave.mutate(room.id)}>
+          <button type="button" className={styles.ghost} onClick={handleLeave}>
             {t("leaveRoom")}
           </button>
           {isHost ? null : (
@@ -318,6 +526,19 @@ export function LobbyPage() {
           }
         }}
       />
+      {showConflict && activeGame && (
+        <ActiveGameConflictDialog
+          open={showConflict}
+          activeRoomId={activeGame.roomId}
+          actionType="join"
+          onRejoin={() => rejoin(activeGame.roomId)}
+          onAbandonAndProceed={handleAbandonAndProceed}
+          onCancel={() => {
+            setShowConflict(false);
+            navigate("/rooms");
+          }}
+        />
+      )}
     </div>
   );
 }

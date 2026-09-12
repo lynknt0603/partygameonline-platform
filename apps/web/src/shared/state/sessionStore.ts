@@ -24,6 +24,7 @@ interface SessionState {
   login: (payload: AuthPayload) => Promise<SessionDto>;
   register: (payload: RegisterPayload) => Promise<SessionDto>;
   logout: () => Promise<void>;
+  enterOfflineDemo: () => void;
 }
 
 export const useSessionStore = create<SessionState>((set, get) => ({
@@ -101,5 +102,17 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     } catch {
       set({ session: null, ready: true, error: null });
     }
+  },
+  enterOfflineDemo: () => {
+    const demoSession: SessionDto = {
+      playerId: "player-1",
+      displayName: "Chỉ Huy (Demo)",
+      kind: "MEMBER",
+      accessToken: "demo-token",
+      avatarUrl: null,
+      currentRoomId: null,
+    };
+    cacheSession(demoSession);
+    set({ session: demoSession, ready: true, error: null });
   },
 }));

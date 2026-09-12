@@ -70,6 +70,32 @@ const WHERES_THE_BONE_ROLES: Array<{
   },
 ];
 
+const BLOOD_BOUND_CLANS: Array<{
+  id: Exclude<RankingBloodline, null>;
+  label: string;
+  image: string;
+  className: string;
+}> = [
+  {
+    id: "ROSE",
+    label: "Gia Tộc Hoa Hồng",
+    image: "/assets/games/blood-bound/clans/clan-rose.svg",
+    className: "rose",
+  },
+  {
+    id: "FAN",
+    label: "Gia Tộc Quạt",
+    image: "/assets/games/blood-bound/clans/clan-fan.svg",
+    className: "fan",
+  },
+  {
+    id: "INQUISITOR",
+    label: "Kẻ Phán Xét",
+    image: "/assets/games/blood-bound/clans/clan-inquisitor.svg",
+    className: "inquisitor",
+  },
+];
+
 const SORT_OPTIONS: Array<{ id: RankingSort; labelKey: MessageKey; icon: typeof Crown }> = [
   { id: "highestElo", labelKey: "rankingHighestElo", icon: Crown },
   { id: "wins", labelKey: "rankingMatchesWon", icon: Trophy },
@@ -83,6 +109,7 @@ const RANKING_GAMES: Array<{ id: RankingGameId; label: string }> = [
   { id: "not-in-my-pot", label: "Not In My Pot" },
   { id: "wheres-the-bone", label: "Where's the Bone" },
   { id: "liars-number", label: "Liar’s Number" },
+  { id: "blood-bound", label: "Huyết Thệ" },
 ];
 
 function formatNumber(value: number): string {
@@ -150,6 +177,12 @@ function bloodlineLabel(value: string | null | undefined, t: Translator): string
       return "WEREWOLF";
     case "HALFBLOOD":
       return "HALFBLOOD";
+    case "ROSE":
+      return "Hoa Hồng";
+    case "FAN":
+      return "Quạt";
+    case "INQUISITOR":
+      return "Phán Xét";
     default:
       return t("rankingBloodline");
   }
@@ -310,12 +343,15 @@ export function RankingPage() {
   const isNotInMyPot = gameId === "not-in-my-pot";
   const isWheresTheBone = gameId === "wheres-the-bone";
   const isLiarsNumber = gameId === "liars-number";
-  const useCurrentElo = isLiarsNumber;
+  const isBloodBound = gameId === "blood-bound";
+  const useCurrentElo = isLiarsNumber || isBloodBound;
   const isFactionRanking = isNotInMyPotFactionSort(sort);
   const selectedGameName = RANKING_GAMES.find((game) => game.id === gameId)?.label ?? gameId;
   const visibleSortOptions = SORT_OPTIONS.filter((option) =>
     isLiarsNumber
       ? option.id === "highestElo" || option.id === "wins"
+      : isBloodBound
+      ? option.id === "highestElo" || option.id === "wins" || option.id === "bloodlineWins"
       : isNob
       ? option.id !== "vegetarianWins" && option.id !== "meatEaterWins"
       : isNotInMyPot
@@ -328,7 +364,7 @@ export function RankingPage() {
     queryFn: () => fetchRanking({
       gameId,
       sort,
-      bloodline: isNob ? bloodline : null,
+      bloodline: isNob || isBloodBound ? bloodline : null,
       role: isWheresTheBone ? role : null,
       page,
       size: 7,
@@ -409,7 +445,7 @@ export function RankingPage() {
                 aria-selected={sort === id && bloodline === null && role === null}
               >
                 <Icon size={20} className={styles.filterIcon} aria-hidden="true" />
-                <span>{isLiarsNumber && id === "highestElo" ? t("rankingCurrentElo") : t(labelKey)}</span>
+                <span>{(isLiarsNumber || isBloodBound) && id === "highestElo" ? t("rankingCurrentElo") : t(labelKey)}</span>
               </button>
             ))}
           </div>
@@ -429,6 +465,23 @@ export function RankingPage() {
                 <span className={styles.bloodlineFilterLabel}>{t(item.labelKey)}</span>
                 <ChevronRight size={16} className={styles.bloodlineChevron} aria-hidden="true" />
               </button>
+              ))}
+            </div>
+          ) : isBloodBound ? (
+            <div className={styles.bloodlineFilters}>
+              {BLOOD_BOUND_CLANS.map((item) => (
+                <button
+                  type="button"
+                  key={item.id}
+                  className={`${styles.bloodlineFilter} ${bloodline === item.id ? styles.bloodlineActive : ""}`}
+                  onClick={() => selectBloodline(item.id)}
+                >
+                  <div className={styles.bloodlineCrestWrapper}>
+                    <img src={item.image} alt="" className={styles.bloodlineCrestImg} aria-hidden="true" style={{ width: 24, height: 24 }} />
+                  </div>
+                  <span className={styles.bloodlineFilterLabel}>{item.label}</span>
+                  <ChevronRight size={16} className={styles.bloodlineChevron} aria-hidden="true" />
+                </button>
               ))}
             </div>
           ) : isWheresTheBone ? (

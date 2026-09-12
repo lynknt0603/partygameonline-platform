@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <radialGradient id="fan-bg-grad" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#064e3b"/>
+      <stop offset="50%" stop-color="#022c22"/>
+      <stop offset="100%" stop-color="#01140e"/>
+    </radialGradient>
+    <linearGradient id="fan-jade-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a7f3d0"/>
+      <stop offset="30%" stop-color="#34d399"/>
+      <stop offset="70%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <linearGradient id="fan-blade-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#6ee7b7"/>
+      <stop offset="40%" stop-color="#10b981"/>
+      <stop offset="80%" stop-color="#047857"/>
+      <stop offset="100%" stop-color="#064e3b"/>
+    </linearGradient>
+    <linearGradient id="fan-gold-blade" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ecfdf5"/>
+      <stop offset="40%" stop-color="#a7f3d0"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+    <filter id="fan-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#10b981" flood-opacity="0.6"/>
+    </filter>
+  </defs>
+
+  <!-- Vòng tròn ngọc bích Đông Phương (Emerald Jade Medallion) -->
+  <circle cx="64" cy="64" r="59" fill="url(#fan-bg-grad)" stroke="url(#fan-jade-grad)" stroke-width="3.5" filter="url(#fan-glow)"/>
+  <circle cx="64" cy="64" r="53" fill="none" stroke="rgba(110, 231, 183, 0.45)" stroke-width="1.8" stroke-dasharray="4 3"/>
+
+  <!-- Hào quang phong lôi / khí tức phong linh (Emerald wind gusts) -->
+  <path d="M 22 50 Q 34 34 50 32" fill="none" stroke="#6ee7b7" stroke-width="1.5" opacity="0.6"/>
+  <path d="M 106 50 Q 94 34 78 32" fill="none" stroke="#6ee7b7" stroke-width="1.5" opacity="0.6"/>
+
+  <!-- CHIẾN QUẠT THẦN CƠ (Lethal Emerald War Fan) -->
+  <!-- Vùng nan quạt xòe chính -->
+  <path d="M 18 64 C 18 28 42 15 64 15 C 86 15 110 28 110 64 C 94 58 78 58 64 88 C 50 58 34 58 18 64 Z"
+        fill="url(#fan-blade-grad)" stroke="#022c22" stroke-width="2.5" stroke-linejoin="round"/>
+
+  <!-- Lưỡi dao ngọc bích sắc bén trên đỉnh từng nan quạt -->
+  <path d="M 18 64 C 26 38 44 22 64 22 C 84 22 102 38 110 64 L 105 59 C 96 36 82 26 64 26 C 46 26 32 36 23 59 Z"
+        fill="url(#fan-gold-blade)"/>
+
+  <!-- Các rãnh nan quạt ngọc bích & gân thép (Fold lines & jade ribs) -->
+  <line x1="64" y1="18" x2="64" y2="84" stroke="#a7f3d0" stroke-width="2.2"/>
+  <line x1="44" y1="24" x2="61" y2="84" stroke="#34d399" stroke-width="1.8"/>
+  <line x1="84" y1="24" x2="67" y2="84" stroke="#34d399" stroke-width="1.8"/>
+  <line x1="28" y1="40" x2="58" y2="84" stroke="#059669" stroke-width="1.5"/>
+  <line x1="100" y1="40" x2="70" y2="84" stroke="#059669" stroke-width="1.5"/>
+
+  <!-- Hoa văn Họa Tiết Liên Hoa Phong Vũ trên mặt quạt -->
+  <path d="M 52 46 Q 64 34 76 46 Q 64 56 52 46 Z" fill="none" stroke="#d1fae5" stroke-width="1.6"/>
+  <circle cx="64" cy="45" r="2.5" fill="#a7f3d0"/>
+
+  <!-- Cán quạt ngọc bích viền ngọc (Jade Pommel) -->
+  <circle cx="64" cy="86" r="9" fill="url(#fan-jade-grad)" stroke="#064e3b" stroke-width="2"/>
+  <circle cx="64" cy="86" r="5.5" fill="#022c22"/>
+  <circle cx="62" cy="84" r="2" fill="#d1fae5"/>
+
+  <!-- Dây tua rua ngọc bội xanh lục bảo (Emerald Tassel) -->
+  <path d="M 64 95 L 64 102" stroke="#34d399" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Khánh ngọc bội -->
+  <circle cx="64" cy="104" r="5.5" fill="#10b981" stroke="#a7f3d0" stroke-width="1.5"/>
+  <circle cx="64" cy="104" r="2" fill="#064e3b"/>
+  <!-- Chùm tua lụa xanh lục bảo rủ xuống -->
+  <path d="M 62 109 L 56 122 L 72 122 L 66 109 Z" fill="#059669" stroke="#10b981" stroke-width="1"/>
+  <path d="M 64 109 L 68 122 L 70 122 L 66 109 Z" fill="#34d399"/>
+
+  <!-- Ruy băng phù hiệu chữ FAN CLAN xanh ngọc -->
+  <g transform="translate(64, 114)">
+    <path d="M -32 -6 L 32 -6 L 26 6 L -26 6 Z" fill="#021c15" stroke="url(#fan-jade-grad)" stroke-width="1.2"/>
+    <text y="3" text-anchor="middle" fill="#6ee7b7" font-size="7" font-weight="900" letter-spacing="2" font-family="serif">FAN CLAN</text>
+  </g>
+</svg>

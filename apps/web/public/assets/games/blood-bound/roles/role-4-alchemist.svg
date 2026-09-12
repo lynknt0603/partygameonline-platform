@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <radialGradient id="alc-bg" cx="50%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#064e3b"/>
+      <stop offset="60%" stop-color="#022c22"/>
+      <stop offset="100%" stop-color="#01140f"/>
+    </radialGradient>
+    <linearGradient id="alc-brass" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="40%" stop-color="#ca8a04"/>
+      <stop offset="100%" stop-color="#78350f"/>
+    </linearGradient>
+    <radialGradient id="potion-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#67e8f9"/>
+      <stop offset="60%" stop-color="#06b6d4"/>
+      <stop offset="100%" stop-color="#0891b2"/>
+    </radialGradient>
+    <filter id="alc-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#06b6d4" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+
+  <!-- Khung chân dung tròn mạ đồng cổ kính -->
+  <circle cx="64" cy="64" r="60" fill="url(#alc-bg)" stroke="url(#alc-brass)" stroke-width="3" filter="url(#alc-glow)"/>
+  <circle cx="64" cy="64" r="54" fill="none" stroke="rgba(6, 182, 212, 0.3)" stroke-width="1.2" stroke-dasharray="3 3"/>
+
+  <!-- Áo choàng da cổ cao & đai ống nghiệm (Apothecary coat) -->
+  <path d="M 32 128 L 44 88 L 64 80 L 84 88 L 96 128 Z" fill="#1c1917" stroke="#44403c" stroke-width="1.5"/>
+
+  <!-- Mũ trùm & Tóc xoăn nhà giả kim -->
+  <path d="M 64 20 C 44 20 38 34 38 56 C 38 74 46 84 64 88 C 82 84 90 74 90 56 C 90 34 84 20 64 20 Z"
+        fill="#292524" stroke="#44403c" stroke-width="1.8"/>
+
+  <!-- Kính bảo hộ giả kim thuật mạ đồng (Occult Brass Goggles) -->
+  <rect x="42" y="44" width="44" height="4" rx="2" fill="#78350f"/>
+  <!-- Mắt kính trái -->
+  <circle cx="52" cy="48" r="9" fill="url(#alc-brass)" stroke="#451a03" stroke-width="1.5"/>
+  <circle cx="52" cy="48" r="6" fill="#0891b2"/>
+  <circle cx="50" cy="46" r="2.5" fill="#a5f3fc"/>
+  <!-- Mắt kính phải -->
+  <circle cx="76" cy="48" r="9" fill="url(#alc-brass)" stroke="#451a03" stroke-width="1.5"/>
+  <circle cx="76" cy="48" r="6" fill="#0891b2"/>
+  <circle cx="74" cy="46" r="2.5" fill="#a5f3fc"/>
+
+  <!-- Mặt nạ lọc độc cổ điển / Khăn da (Respirator mask) -->
+  <path d="M 50 60 L 64 78 L 78 60 Z" fill="#44403c" stroke="url(#alc-brass)" stroke-width="1"/>
+  <circle cx="64" cy="68" r="3" fill="#78350f"/>
+
+  <!-- BÌNH THUỐC TIÊN PHÁT SÁNG CẦM TRÊN TAY (Healing Potion Flask) -->
+  <g transform="translate(64, 100)">
+    <!-- Cổ bình thủy tinh -->
+    <rect x="-4" y="-14" width="8" height="6" fill="#e2e8f0" opacity="0.8"/>
+    <rect x="-5" y="-16" width="10" height="3" fill="#78350f"/>
+    <!-- Thân bình cầu phát sáng ma thuật -->
+    <circle cx="0" cy="0" r="14" fill="url(#potion-glow)" stroke="#ffffff" stroke-width="1.2" opacity="0.95"/>
+    <ellipse cx="-4" cy="-4" rx="4" ry="2" fill="#ffffff" opacity="0.8"/>
+    <!-- Bong bóng ma thuật hồi phục -->
+    <circle cx="3" cy="3" r="2" fill="#ffffff" opacity="0.9"/>
+    <circle cx="-2" cy="5" r="1.2" fill="#ffffff" opacity="0.7"/>
+  </g>
+
+  <!-- Huy hiệu Rank 4 ở đáy -->
+  <circle cx="64" cy="116" r="10" fill="#022c22" stroke="url(#alc-brass)" stroke-width="1.5"/>
+  <text x="64" y="120" text-anchor="middle" fill="#fef08a" font-size="10" font-weight="900" font-family="serif">IV</text>
+</svg>

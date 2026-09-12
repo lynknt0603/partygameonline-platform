@@ -1,12 +1,18 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
+import { Dices } from "lucide-react";
 import { PageHeading } from "@/shared/components/PageHeading/PageHeading";
 import { RoomRow } from "@/shared/components/RoomRow/RoomRow";
 import { useCreateRoom, useJoinRoom, useRooms } from "@/shared/hooks/useRooms";
 import { useGames } from "@/shared/hooks/useGames";
 import { useLocale, useT } from "@/shared/i18n/useT";
+import { useActiveGame } from "@/shared/hooks/useActiveGame";
+import { ActiveGameConflictDialog } from "@/shared/components/ActiveGameGuard/ActiveGameConflictDialog";
+import { generateRandomRoomName } from "@/shared/utils/randomRoomNames";
 import styles from "./RoomsPage.module.css";
 
 export function RoomsPage() {
+  const navigate = useNavigate();
   const t = useT();
   const locale = useLocale();
   const rooms = useRooms();
@@ -15,12 +21,16 @@ export function RoomsPage() {
   const join = useJoinRoom();
   const [code, setCode] = useState("");
   const [gameId, setGameId] = useState("");
-  const [roomName, setRoomName] = useState("");
-  const [maxPlayers, setMaxPlayers] = useState(4);
-  const [visibility, setVisibility] = useState<"PUBLIC" | "PRIVATE">("PUBLIC");
   const availableGames = games.data?.filter((game) => game.enabled) ?? [];
   const firstGameId = availableGames[0]?.id;
   const selectedGame = availableGames.find((game) => game.id === gameId) ?? availableGames[0];
+
+  const hasUserEditedNameRef = useRef(false);
+  const [roomName, setRoomName] = useState(() =>
+    generateRandomRoomName("blood-bound", locale === "vi" ? "vi" : "en")
+  );
+  const [maxPlayers, setMaxPlayers] = useState(4);
+  const [visibility, setVisibility] = useState<"PUBLIC" | "PRIVATE">("PUBLIC");
 
   useEffect(() => {
     if (!gameId && firstGameId) {
@@ -32,26 +42,89 @@ export function RoomsPage() {
     if (!selectedGame) {
       return;
     }
-    setMaxPlayers((current) => Math.min(selectedGame.maxPlayers, Math.max(selectedGame.minPlayers, current)));
+    if (selectedGame.id === "blood-bound") {
+      setMaxPlayers((current) => Math.min(selectedGame.maxPlayers, Math.max(selectedGame.minPlayers, current || 8)));
+    } else {
+      setMaxPlayers((current) => Math.min(selectedGame.maxPlayers, Math.max(selectedGame.minPlayers, current)));
+    }
   }, [selectedGame?.id, selectedGame?.maxPlayers, selectedGame?.minPlayers]);
+
+  // Tự động cập nhật tên phòng ngẫu nhiên theo tựa game khi đổi game (nếu người dùng chưa tự sửa)
+  useEffect(() => {
+    if (!selectedGame) {
+      return;
+    }
+    if (!hasUserEditedNameRef.current) {
+      setRoomName(generateRandomRoomName(selectedGame.id, locale === "vi" ? "vi" : "en"));
+    }
+  }, [selectedGame?.id, locale]);
+
+  const handleRerollRoomName = () => {
+    hasUserEditedNameRef.current = false;
+    setRoomName(generateRandomRoomName(selectedGame?.id, locale === "vi" ? "vi" : "en"));
+  };
+
+  const { activeGame, rejoin, abandon } = useActiveGame();
+  const [conflictAction, setConflictAction] = useState<{
+    type: "create" | "join";
+    payload?: {
+      gameId?: string;
+      name?: string;
+      maxPlayers?: number;
+      visibility?: "PUBLIC" | "PRIVATE";
+      roomId?: string;
+    };
+  } | null>(null);
 
   const submitCreate = (event: FormEvent) => {
     event.preventDefault();
-    if (!selectedGame || !roomName.trim()) {
+    if (!selectedGame) {
       return;
     }
-    create.mutate({
+    const finalRoomName = roomName.trim() || generateRandomRoomName(selectedGame.id, locale === "vi" ? "vi" : "en");
+    if (!roomName.trim()) {
+      setRoomName(finalRoomName);
+    }
+    const payload = {
       gameId: selectedGame.id,
-      name: roomName.trim().slice(0, 40),
+      name: finalRoomName.slice(0, 40),
       maxPlayers,
       visibility,
-    });
+    };
+    if (activeGame) {
+      setConflictAction({ type: "create", payload });
+      return;
+    }
+    create.mutate(payload);
   };
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    if (code.trim()) {
-      join.mutate(code.trim());
+    const target = code.trim().toUpperCase();
+    if (!target) return;
+    if (activeGame && activeGame.roomId.toUpperCase() !== target) {
+      setConflictAction({ type: "join", payload: { roomId: target } });
+      return;
+    }
+    join.mutate(target);
+  };
+
+  const handleAbandonAndProceed = async () => {
+    if (activeGame) {
+      await abandon(activeGame.roomId);
+    }
+    const action = conflictAction;
+    setConflictAction(null);
+    if (!action) return;
+    if (action.type === "create" && action.payload?.gameId && action.payload?.name) {
+      create.mutate({
+        gameId: action.payload.gameId,
+        name: action.payload.name,
+        maxPlayers: action.payload.maxPlayers ?? 4,
+        visibility: action.payload.visibility ?? "PUBLIC",
+      });
+    } else if (action.type === "join" && action.payload?.roomId) {
+      join.mutate(action.payload.roomId);
     }
   };
 
@@ -70,7 +143,13 @@ export function RoomsPage() {
             <select
               className={styles.control}
               value={selectedGame?.id ?? ""}
-              onChange={(event) => setGameId(event.target.value)}
+              onChange={(event) => {
+                const nextId = event.target.value;
+                setGameId(nextId);
+                if (nextId === "blood-bound") {
+                  setMaxPlayers((current) => Math.min(16, Math.max(4, current || 8)));
+                }
+              }}
               disabled={games.isLoading || availableGames.length === 0 || create.isPending}
             >
               {availableGames.map((game) => (
@@ -82,11 +161,26 @@ export function RoomsPage() {
           </label>
 
           <label className={styles.field}>
-            <span>{t("roomName")}</span>
+            <div className={styles.labelRow}>
+              <span>{t("roomName")}</span>
+              <button
+                type="button"
+                className={styles.rerollButton}
+                onClick={handleRerollRoomName}
+                title={t("rerollRoomNameTitle")}
+                disabled={create.isPending}
+              >
+                <Dices size={15} />
+                <span>{t("rerollRoomName")}</span>
+              </button>
+            </div>
             <input
               className={styles.control}
               value={roomName}
-              onChange={(event) => setRoomName(event.target.value)}
+              onChange={(event) => {
+                hasUserEditedNameRef.current = true;
+                setRoomName(event.target.value);
+              }}
               placeholder={t("roomNamePlaceholder")}
               maxLength={40}
               required
@@ -134,12 +228,29 @@ export function RoomsPage() {
           <button
             type="submit"
             className={styles.primary}
-            disabled={create.isPending || !selectedGame || !roomName.trim()}
+            disabled={create.isPending || !selectedGame}
           >
             {create.isPending ? t("creatingRoom") : t("createRoom")}
           </button>
         </form>
-        {create.error ? <p className={styles.error}>{create.error.message}</p> : null}
+        {create.error ? (
+          <div className={styles.errorBox} role="alert">
+            <p className={styles.errorText}>
+              {create.error.message === "SERVER_UNREACHABLE"
+                ? t("serverUnreachableTip")
+                : create.error.message}
+            </p>
+            {create.error.message === "SERVER_UNREACHABLE" && selectedGame && (
+              <button
+                type="button"
+                className={styles.demoFallbackBtn}
+                onClick={() => navigate(`/play/demo-${selectedGame.id}`)}
+              >
+                🎮 {t("playDemoFallback")}
+              </button>
+            )}
+          </div>
+        ) : null}
       </section>
 
       <section className={`${styles.panel} theme-panel`}>
@@ -169,6 +280,17 @@ export function RoomsPage() {
         ))}
       </div>
       {rooms.data?.length === 0 ? <p>{t("emptyRooms")}</p> : null}
+
+      {conflictAction && activeGame && (
+        <ActiveGameConflictDialog
+          open={Boolean(conflictAction)}
+          activeRoomId={activeGame.roomId}
+          actionType={conflictAction.type}
+          onRejoin={() => rejoin(activeGame.roomId)}
+          onAbandonAndProceed={handleAbandonAndProceed}
+          onCancel={() => setConflictAction(null)}
+        />
+      )}
     </div>
   );
 }

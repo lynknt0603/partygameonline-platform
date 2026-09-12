@@ -21,4 +21,14 @@ export {
 } from "./model/nobTypes";
 export { sendNobAction } from "./model/nobActions";
 export { fetchNobSnapshot } from "./model/nobSnapshot";
+export {
+  createInitialNobGame,
+  validateNobAction,
+  resolveDraftPick,
+  resolveHunterDecision,
+  resolveReaction,
+  evaluateNobVictory,
+  checkAndApplyVictory,
+  type NobActionPayload,
+} from "./model/nobRuleEngine";
 export { NobPlayPage } from "./pages/NobPlayPage";

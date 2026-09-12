@@ -204,3 +204,104 @@
   justify-content: space-between;
   padding-bottom: calc(var(--space-2) + var(--sab));
 }
+
+.hostBotHint {
+  margin: var(--space-2) auto 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-align: center;
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  max-width: fit-content;
+}
+
+.botControlBar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding: 10px 16px;
+  border-radius: var(--radius-lg, 12px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  max-width: 100%;
+}
+
+.botControlLabel {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.botButtonRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.botQuickBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  background: rgba(59, 130, 246, 0.12);
+  color: #60a5fa;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.botQuickBtn:hover:not(:disabled) {
+  background: rgba(59, 130, 246, 0.22);
+  border-color: #60a5fa;
+  transform: translateY(-1px);
+}
+
+.aiQuickBtn {
+  border-color: rgba(168, 85, 247, 0.4);
+  background: rgba(168, 85, 247, 0.14);
+  color: #c084fc;
+}
+
+.aiQuickBtn:hover:not(:disabled) {
+  background: rgba(168, 85, 247, 0.25);
+  border-color: #c084fc;
+}
+
+.fillQuickBtn {
+  border-color: rgba(234, 179, 8, 0.4);
+  background: rgba(234, 179, 8, 0.14);
+  color: #facc15;
+}
+
+.fillQuickBtn:hover:not(:disabled) {
+  background: rgba(234, 179, 8, 0.25);
+  border-color: #facc15;
+}
+
+.botQuickBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.botErrorMsg {
+  margin: var(--space-1) auto 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--danger, #ef4444);
+  text-align: center;
+}

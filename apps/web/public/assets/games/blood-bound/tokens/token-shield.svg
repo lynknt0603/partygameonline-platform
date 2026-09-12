@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <filter id="chibi-shield-shadow" x="-10%" y="-10%" width="125%" height="125%">
+      <feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#0369a1" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Huy hiệu nền tròn -->
+  <circle cx="64" cy="64" r="60" fill="#F0F9FF" stroke="#0284C7" stroke-width="4.5" filter="url(#chibi-shield-shadow)"/>
+  <circle cx="64" cy="64" r="53" fill="#E0F2FE" stroke="#7DD3FC" stroke-width="1.5" stroke-dasharray="3 3"/>
+
+  <!-- Khiên Hiệp Sĩ Chibi Hình Bầu Dục / Cánh Sen Kiên Cố -->
+  <!-- Viền ngoài bằng vàng kim -->
+  <path d="M64 20 C90 20 102 32 102 62 C102 88 80 104 64 112 C48 104 26 88 26 62 C26 32 38 20 64 20 Z"
+        fill="#FBBF24" stroke="#78350F" stroke-width="3.5" stroke-linejoin="round"/>
+
+  <!-- Lòng khiên chính (Màu Xanh Băng RPG Cel-shaded) -->
+  <path d="M64 27 C84 27 94 36 94 62 C94 84 76 98 64 105 C52 98 34 84 34 62 C34 36 44 27 64 27 Z"
+        fill="#38BDF8" stroke="#0369A1" stroke-width="2.5" stroke-linejoin="round"/>
+
+  <!-- Mảng đổ bóng Cel-shading nửa phải khiên -->
+  <path d="M64 27 C78 27 94 36 94 62 C94 84 76 98 64 105 Z" fill="#0284C7"/>
+
+  <!-- Cánh thiên thần / Chữ thập hộ mệnh trung tâm khiên -->
+  <path d="M64 42 L68 54 L80 58 L68 62 L64 74 L60 62 L48 58 L60 54 Z" fill="#FFFFFF" stroke="#0C4A6E" stroke-width="2" stroke-linejoin="round"/>
+  <!-- Nửa bóng của chữ thập -->
+  <path d="M64 42 L68 54 L80 58 L68 62 L64 74 Z" fill="#BAE6FD"/>
+
+  <!-- Viên đá ma thuật hộ vệ phát sáng ở tâm -->
+  <circle cx="64" cy="58" r="4.5" fill="#38BDF8" stroke="#0C4A6E" stroke-width="1.5"/>
+  <circle cx="62.5" cy="56.5" r="1.5" fill="#FFFFFF"/>
+
+  <!-- Hai má hồng Chibi trên khiên ngộ nghĩnh -->
+  <circle cx="46" cy="74" r="4" fill="#F472B6" opacity="0.8"/>
+  <circle cx="82" cy="74" r="4" fill="#F472B6" opacity="0.8"/>
+
+  <!-- Mắt Chibi tinh nghịch trên khiên -->
+  <ellipse cx="52" cy="68" rx="3.5" ry="4.5" fill="#0C4A6E"/>
+  <circle cx="51" cy="66.5" r="1.2" fill="#FFFFFF"/>
+  <ellipse cx="76" cy="68" rx="3.5" ry="4.5" fill="#0C4A6E"/>
+  <circle cx="75" cy="66.5" r="1.2" fill="#FFFFFF"/>
+
+  <!-- Nụ cười tự tin kiên cố của khiên -->
+  <path d="M61 74 Q64 77 67 74" fill="none" stroke="#0C4A6E" stroke-width="2" stroke-linecap="round"/>
+</svg>

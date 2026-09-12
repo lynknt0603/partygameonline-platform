@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <radialGradient id="rose-crt-bg" cx="50%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#4c0519"/>
+      <stop offset="50%" stop-color="#1f0208"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </radialGradient>
+    <linearGradient id="rose-silk" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fda4af"/>
+      <stop offset="50%" stop-color="#e11d48"/>
+      <stop offset="100%" stop-color="#4c0519"/>
+    </linearGradient>
+    <filter id="rose-crt-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="5" flood-color="#f43f5e" flood-opacity="0.65"/>
+    </filter>
+  </defs>
+
+  <circle cx="64" cy="64" r="60" fill="url(#rose-crt-bg)" stroke="#f43f5e" stroke-width="3" filter="url(#rose-crt-glow)"/>
+  <circle cx="64" cy="64" r="54" fill="none" stroke="rgba(244, 63, 94, 0.35)" stroke-width="1.2" stroke-dasharray="3 3"/>
+
+  <!-- Áo dạ hội lụa nhung đỏ quý tộc -->
+  <path d="M 28 128 L 42 86 L 64 90 L 86 86 L 100 128 Z" fill="#24030a" stroke="#881337" stroke-width="1.5"/>
+
+  <!-- Tóc bồng bềnh quý phái đỏ rượu & vương miện nhỏ -->
+  <path d="M 34 50 C 30 24 46 16 64 16 C 82 16 98 24 94 50 C 100 68 90 76 90 76 L 38 76 C 38 76 28 68 34 50 Z"
+        fill="#3b0712" stroke="#e11d48" stroke-width="1.5"/>
+  <path d="M 46 48 C 46 66 52 74 64 78 C 76 74 82 66 82 48 C 82 38 76 34 64 34 C 52 34 46 38 46 48 Z"
+        fill="#fce7f3" stroke="#9f1239" stroke-width="1.2"/>
+
+  <!-- Lông vũ kiêu sa cài tóc (Feather Plume) -->
+  <path d="M 76 20 C 88 10 98 12 104 6 C 98 18 90 24 78 24 Z" fill="url(#rose-silk)" stroke="#fda4af" stroke-width="1"/>
+
+  <!-- Mặt nạ dạ hội hoa hồng ren đỏ (Venetian Masquerade Mask) -->
+  <path d="M 42 46 C 42 38 52 38 60 44 C 64 47 64 47 68 44 C 76 38 86 38 86 46 C 86 56 74 60 64 56 C 54 60 42 56 42 46 Z"
+        fill="#1e0307" stroke="#f43f5e" stroke-width="1.8" filter="url(#rose-crt-glow)"/>
+
+  <!-- Khe mắt quyến rũ sau mặt nạ -->
+  <ellipse cx="52" cy="46" rx="5" ry="2.8" fill="#fda4af"/>
+  <ellipse cx="76" cy="46" rx="5" ry="2.8" fill="#fda4af"/>
+  <circle cx="53" cy="46" r="1.5" fill="#1e0307"/>
+  <circle cx="77" cy="46" r="1.5" fill="#1e0307"/>
+
+  <!-- Nốt ruồi duyên & đôi môi đỏ quyến rũ -->
+  <circle cx="58" cy="62" r="0.8" fill="#4c0519"/>
+  <path d="M 59 66 Q 64 70 69 66" fill="none" stroke="#e11d48" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Đóa hoa hồng đỏ nở rộ trước ngực (Blooming Red Rose) -->
+  <g transform="translate(64, 98)">
+    <circle cx="0" cy="0" r="10" fill="#e11d48" stroke="#fda4af" stroke-width="1.5" filter="url(#rose-crt-glow)"/>
+    <path d="M -6 -4 C -2 -8 2 -8 6 -4 C 8 2 2 6 0 6 C -2 6 -8 2 -6 -4 Z" fill="#9f1239"/>
+    <circle cx="0" cy="0" r="3" fill="#ffffff" opacity="0.9"/>
+  </g>
+
+  <!-- Rank 8 -->
+  <circle cx="64" cy="116" r="10" fill="#24030a" stroke="#f43f5e" stroke-width="1.5"/>
+  <text x="64" y="120" text-anchor="middle" fill="#fda4af" font-size="10" font-weight="900" font-family="serif">VIII</text>
+</svg>
