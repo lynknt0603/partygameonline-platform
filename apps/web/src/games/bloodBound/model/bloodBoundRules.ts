@@ -343,6 +343,13 @@ export function validateAbility(
       reasonVi: "Không thể nhắm vào chính mình",
     };
   }
+  if (rank === 7 && targetPlayerId && targetPlayerId !== view.daggerHolderPlayerId) {
+    return {
+      valid: false,
+      reason: "Berserker can only reflect damage to the attacker",
+      reasonVi: "Cuồng Nộ chỉ có thể phản đòn lên người vừa tấn công mình",
+    };
+  }
   if (targetPlayerId) {
     const target = view.players.find((p) => p.playerId === targetPlayerId);
     if (!target) {
@@ -746,20 +753,42 @@ export function applyRoleAbility(
       }
       break;
 
-    case 5: // Mentalist: Ép đối phương để lộ manh mối phù hiệu
+    case 5: // Mentalist: Ép đối phương để lộ manh mối chưa công khai
       if (targetPlayerId) {
+        const target = view.players.find((p) => p.playerId === targetPlayerId);
+        const targetCard = secretCards?.[targetPlayerId];
+        const targetClan = targetCard?.clan ?? "ROSE";
+        const hasColor = target?.revealedTokens.some((t) => t.type === "COLOR");
+        const hasCrest = target?.revealedTokens.some((t) => t.type === "CREST");
+        let tokenToReveal: RevealedToken;
+        if (!hasColor) {
+          tokenToReveal = {
+            type: "COLOR",
+            value: targetClan === "ROSE" ? "RED" : targetClan === "FAN" ? "GREEN" : "YELLOW",
+          };
+        } else if (!hasCrest) {
+          tokenToReveal = {
+            type: "CREST",
+            value: `${targetClan}-CREST`,
+          };
+        } else {
+          tokenToReveal = {
+            type: "QUESTION",
+            value: "?",
+          };
+        }
+
         updatedPlayers = view.players.map((p) => {
           if (p.playerId === targetPlayerId) {
             return {
               ...p,
-              revealedTokens: [...p.revealedTokens, { type: "CREST" as ClueTokenType, value: "MENTALIST_EYE" }],
+              revealedTokens: [...p.revealedTokens, tokenToReveal],
             };
           }
           return p;
         });
-        const target = view.players.find((p) => p.playerId === targetPlayerId);
-        logText = `Mentalist ${actor.displayName} peers into the thoughts of ${target?.displayName ?? "target"}, forcing a clue token reveal!`;
-        logTextVi = `Thần Trí ${actor.displayName} dùng ngoại cảm nhìn thấu ${target?.displayName ?? "mục tiêu"}, ép lộ phù hiệu manh mối!`;
+        logText = `Mentalist ${actor.displayName} peers into the thoughts of ${target?.displayName ?? "target"}, forcing a clue token reveal (${tokenToReveal.type})!`;
+        logTextVi = `Thần Trí ${actor.displayName} dùng ngoại cảm nhìn thấu ${target?.displayName ?? "mục tiêu"}, ép lộ manh mối (${tokenToReveal.type === "COLOR" ? "Màu phe" : tokenToReveal.type === "CREST" ? "Phù hiệu" : "Dấu hỏi"})!`;
       }
       break;
 
@@ -777,28 +806,30 @@ export function applyRoleAbility(
       }
       break;
 
-    case 7: // Berserker: Cuồng nộ phản đòn 1 vết thương
-      if (targetPlayerId) {
+    case 7: { // Berserker: Phản đòn 1 vết thương lên chính kẻ tấn công
+      const berserkerTargetId = targetPlayerId ?? view.daggerHolderPlayerId;
+      if (berserkerTargetId && berserkerTargetId !== actorPlayerId) {
         let lethal = false;
         updatedPlayers = view.players.map((p) => {
-          if (p.playerId === targetPlayerId) {
+          if (p.playerId === berserkerTargetId) {
             const nextWounds = p.wounds + 1;
             if (nextWounds >= 4) lethal = true;
             return { ...p, wounds: Math.min(4, nextWounds) };
           }
           return p;
         });
-        const target = view.players.find((p) => p.playerId === targetPlayerId);
-        logText = `Berserker ${actor.displayName} unleashes wrath, dealing 1 wound to ${target?.displayName ?? "target"}!`;
-        logTextVi = `Cuồng Nộ ${actor.displayName} bộc phát thịnh nộ, gây 1 vết thương lên ${target?.displayName ?? "mục tiêu"}!`;
+        const target = view.players.find((p) => p.playerId === berserkerTargetId);
+        logText = `Berserker ${actor.displayName} strikes back, dealing 1 wound to attacker ${target?.displayName ?? "attacker"}!`;
+        logTextVi = `Cuồng Nộ ${actor.displayName} phản đòn trừng phạt, gây 1 vết thương lên kẻ tấn công ${target?.displayName ?? "kẻ tấn công"}!`;
 
         if (lethal) {
           isGameOver = true;
-          capturedPlayerId = targetPlayerId;
-          const targetCard = secretCards?.[targetPlayerId];
+          capturedPlayerId = berserkerTargetId;
+          const targetCard = secretCards?.[berserkerTargetId];
           const isLeader = targetCard ? targetCard.rank === 1 : false;
           const actorClan = secretCards?.[actorPlayerId]?.clan ?? "ROSE";
-          const targetClan = targetCard?.clan ?? (actorClan === "ROSE" ? "FAN" : "ROSE");
+          const targetClan = targetCard?.clan ?? "FAN";
+
           if (targetClan === "INQUISITOR") {
             winnerClan = "INQUISITOR";
           } else if (actorClan !== targetClan && isLeader) {
@@ -809,6 +840,7 @@ export function applyRoleAbility(
         }
       }
       break;
+    }
 
     case 8: // Courtesan / Inquisitor: Mưu kế thao túng
       if (targetPlayerId) {

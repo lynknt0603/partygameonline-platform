@@ -29,21 +29,11 @@ function getRolePortraitUrl(rank?: number | null, clan?: BloodClan | string | nu
       case 8: return "/assets/games/blood-bound/roles/fan/role-8.svg";
       default: return "/assets/games/blood-bound/roles/mystery/role-mystery-fan.svg";
     }
-  } else if (normClan === "INQUISITOR" || rank === 8) {
+  } else if (normClan === "INQUISITOR") {
     return "/assets/games/blood-bound/roles/inquisitor/role-8.svg";
   }
 
-  switch (rank) {
-    case 1: return "/assets/games/blood-bound/roles/rose/role-1.svg";
-    case 2: return "/assets/games/blood-bound/roles/rose/role-2.svg";
-    case 3: return "/assets/games/blood-bound/roles/rose/role-3.svg";
-    case 4: return "/assets/games/blood-bound/roles/rose/role-4.svg";
-    case 5: return "/assets/games/blood-bound/roles/rose/role-5.svg";
-    case 6: return "/assets/games/blood-bound/roles/rose/role-6.svg";
-    case 7: return "/assets/games/blood-bound/roles/rose/role-7.svg";
-    case 8: return "/assets/games/blood-bound/roles/rose/role-8.svg";
-    default: return "/assets/games/blood-bound/roles/role-mystery.svg";
-  }
+  return "/assets/games/blood-bound/roles/role-mystery.svg";
 }
 
 interface BloodBoundSeatCardProps {

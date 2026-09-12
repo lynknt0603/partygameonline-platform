@@ -282,7 +282,15 @@ describe("Blood Bound Rules - Character Abilities", () => {
     const { view } = initBloodBoundGame("room-bb-1", players, "p1");
     const nextView = applyRoleAbility(view, "p1", 5, "p2");
     const p2 = nextView.players.find((p) => p.playerId === "p2");
-    expect(p2?.revealedTokens.some((t) => t.type === "CREST")).toBe(true);
+    expect(p2?.revealedTokens.some((t) => t.type === "COLOR")).toBe(true);
+
+    const resetAbilityView = {
+      ...nextView,
+      players: nextView.players.map((p) => (p.playerId === "p1" ? { ...p, hasUsedAbility: false } : p)),
+    };
+    const secondView = applyRoleAbility(resetAbilityView, "p1", 5, "p2");
+    const p2AfterSecond = secondView.players.find((p) => p.playerId === "p2");
+    expect(p2AfterSecond?.revealedTokens.some((t) => t.type === "CREST")).toBe(true);
   });
 
   it("Berserker ability deals 1 retaliatory wound", () => {

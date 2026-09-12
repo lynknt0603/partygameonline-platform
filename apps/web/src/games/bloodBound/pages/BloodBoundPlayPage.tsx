@@ -180,7 +180,6 @@ export function BloodBoundPlayPage({
   const [speechBubbles, setSpeechBubbles] = useState<Record<string, SpeechBubbleData>>({});
   const [interventionCountdown, setInterventionCountdown] = useState<number | null>(null);
   const countdownIntervalRef = useRef<number | null>(null);
-  const totalCountdown = 4.5;
 
   const triggerBubble = useCallback(
     (playerId: string, text: string, type: SpeechBubbleData["type"] = "info", durationMs: number = 3200) => {
@@ -318,12 +317,25 @@ export function BloodBoundPlayPage({
 
   const tableSecretCards = useMemo(() => {
     if (isServerAuthoritative) {
+      if (activeView.phase === "GAME_OVER" && activeView.finalSecretCards) {
+        const fullMap: Record<string, BloodBoundCard> = {};
+        for (const [pid, card] of Object.entries(activeView.finalSecretCards)) {
+          const hydrated = hydrateBloodBoundCard(card);
+          if (hydrated) {
+            fullMap[pid] = hydrated;
+          }
+        }
+        return fullMap;
+      }
       return myCard ? { [myPlayerId]: myCard } : {};
     }
     return secretCards;
-  }, [isServerAuthoritative, myCard, myPlayerId, secretCards]);
+  }, [isServerAuthoritative, activeView.phase, activeView.finalSecretCards, myCard, myPlayerId, secretCards]);
 
   const winningPlayers = useMemo(() => {
+    if (activeView.winnerPlayerIds && activeView.winnerPlayerIds.length > 0) {
+      return activeView.winnerPlayerIds;
+    }
     if (!activeView.winnerClan) return [];
     return activeView.players
       .filter((p) => {
@@ -331,7 +343,7 @@ export function BloodBoundPlayPage({
         return card && card.clan === activeView.winnerClan;
       })
       .map((p) => p.playerId);
-  }, [activeView.winnerClan, activeView.players, tableSecretCards]);
+  }, [activeView.winnerPlayerIds, activeView.winnerClan, activeView.players, tableSecretCards]);
 
   const gameOverReason = useMemo(() => {
     if (activeView.phase !== "GAME_OVER") return null;
@@ -359,14 +371,36 @@ export function BloodBoundPlayPage({
     }
   }, [isServerAuthoritative, sendCommand]);
 
-  // 4d. Đếm ngược Cửa Sổ Can Thiệp (Cho phép người chơi có 4.5s suy nghĩ, không bị rush)
+  const configuredInterventionSeconds =
+    activeView.interventionSeconds ??
+    (room && "settings" in room
+      ? (room.settings as { bloodBound?: { interventionSeconds?: number }; interventionSeconds?: number } | undefined)?.bloodBound?.interventionSeconds ??
+        (room.settings as { interventionSeconds?: number } | undefined)?.interventionSeconds
+      : undefined) ??
+    15;
+
+  // 4d. Đếm ngược Cửa Sổ Can Thiệp theo cấu hình phòng / deadline server
   useEffect(() => {
     if (activeView.phase === "INTERVENTION_WINDOW" && canIIntervene && !autoPlayHuman) {
-      setInterventionCountdown(totalCountdown);
+      const getInitialRemain = () => {
+        if (activeView.phaseDeadline) {
+          return Math.max(0, (new Date(activeView.phaseDeadline).getTime() - Date.now()) / 1000);
+        }
+        return configuredInterventionSeconds;
+      };
+
+      const startRemain = getInitialRemain();
+      setInterventionCountdown(startRemain);
       const startTime = Date.now();
+
       countdownIntervalRef.current = window.setInterval(() => {
-        const elapsedSec = (Date.now() - startTime) / 1000;
-        const remain = Math.max(0, totalCountdown - elapsedSec);
+        let remain: number;
+        if (activeView.phaseDeadline) {
+          remain = Math.max(0, (new Date(activeView.phaseDeadline).getTime() - Date.now()) / 1000);
+        } else {
+          const elapsedSec = (Date.now() - startTime) / 1000;
+          remain = Math.max(0, startRemain - elapsedSec);
+        }
         setInterventionCountdown(remain);
         if (remain <= 0) {
           if (countdownIntervalRef.current) {
@@ -376,6 +410,7 @@ export function BloodBoundPlayPage({
           handlePassIntervene();
         }
       }, 100);
+
       return () => {
         if (countdownIntervalRef.current) {
           clearInterval(countdownIntervalRef.current);
@@ -389,7 +424,14 @@ export function BloodBoundPlayPage({
         countdownIntervalRef.current = null;
       }
     }
-  }, [activeView.phase, canIIntervene, autoPlayHuman, handlePassIntervene, totalCountdown]);
+  }, [
+    activeView.phase,
+    activeView.phaseDeadline,
+    configuredInterventionSeconds,
+    canIIntervene,
+    autoPlayHuman,
+    handlePassIntervene,
+  ]);
 
   // 5. Bot Decision Loop (Chỉ chạy khi ở chế độ Client Simulation)
   const autoPlayTimerRef = useRef<number | null>(null);
@@ -775,7 +817,7 @@ export function BloodBoundPlayPage({
           isVictimMe={isVictimMe}
           daggerHolderName={attackerPlayer?.displayName}
           interventionCountdown={interventionCountdown}
-          totalCountdown={totalCountdown}
+          totalCountdown={configuredInterventionSeconds}
           speechBubbles={speechBubbles}
           onStartPlay={handleStartPlay}
           onIntervene={handleIntervene}

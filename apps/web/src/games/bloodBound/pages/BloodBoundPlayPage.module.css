@@ -217,24 +217,27 @@
 .seatCardRound:hover {
   border-color: rgba(255, 255, 255, 0.35);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.75);
-  z-index: 7;
+  z-index: 15;
 }
 
 .seatCardRound.isDagger {
   border-color: #f59e0b;
   box-shadow: 0 0 16px rgba(245, 158, 11, 0.45);
+  z-index: 20;
 }
 
 .seatCardRound.isTarget {
   border-color: #ef4444;
   box-shadow: 0 0 16px rgba(239, 68, 68, 0.5);
-  animation: pulse 1.5s infinite;
+  z-index: 25;
+  animation: pulseGlow 1.5s infinite ease-in-out;
 }
 
 .seatCardRound.isYou {
   border-color: #38bdf8;
   background: rgba(14, 28, 48, 0.95);
   box-shadow: 0 0 16px rgba(56, 189, 248, 0.4);
+  z-index: 10;
 }
 
 .seatCardRound.isLeftNeighbor {
@@ -245,9 +248,15 @@
   border-color: #f59e0b;
 }
 
-@keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.02); }
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 16px rgba(239, 68, 68, 0.5);
+    border-color: #ef4444;
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(239, 68, 68, 0.95);
+    border-color: #f87171;
+  }
 }
 
 .seatAvatarRow {

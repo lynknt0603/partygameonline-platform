@@ -119,6 +119,11 @@ export interface BloodBoundView {
   leftNeighborClue: { clan: BloodClan; crest: string } | null;
   timeRemainingSeconds?: number;
   winnerClan: BloodClan | null;
+  winnerPlayerIds?: string[];
+  finalSecretCards?: Record<string, { clan: BloodClan; rank: BloodBoundRoleRank; roleInfo?: BloodBoundRoleInfo }>;
+  phaseDeadline?: string | null;
+  turnSeconds?: number;
+  interventionSeconds?: number;
   capturedPlayerId: string | null;
   publicLog: Array<{ text: string; textVi: string; timestamp: string }>;
 }
