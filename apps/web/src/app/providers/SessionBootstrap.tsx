@@ -47,15 +47,27 @@ export function SessionBootstrap({ children }: { children: ReactNode }) {
       <div className={styles.wrap} role="alert">
         <p className={styles.title}>{t("sessionError")}</p>
         <p className={styles.hint}>{t("sessionErrorHint")}</p>
-        <button
-          type="button"
-          className={styles.retry}
-          onClick={() => {
-            void bootstrap();
-          }}
-        >
-          {t("tryAgain")}
-        </button>
+        <div style={{ display: "flex", gap: "12px", marginTop: "16px", flexWrap: "wrap", justifyContent: "center" }}>
+          <button
+            type="button"
+            className={styles.retry}
+            onClick={() => {
+              void bootstrap();
+            }}
+          >
+            {t("tryAgain")}
+          </button>
+          <button
+            type="button"
+            className={styles.retry}
+            style={{ background: "var(--brand, #8a1c1c)", color: "var(--on-brand, #ffffff)" }}
+            onClick={() => {
+              useSessionStore.getState().enterOfflineDemo();
+            }}
+          >
+            🎮 Chơi thử nghiệm (Offline Demo)
+          </button>
+        </div>
       </div>
     );
   }

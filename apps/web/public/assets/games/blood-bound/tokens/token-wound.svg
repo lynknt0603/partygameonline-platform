@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <filter id="chibi-wound-shadow" x="-10%" y="-10%" width="125%" height="125%">
+      <feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#881337" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Huy hiệu nền tròn -->
+  <circle cx="64" cy="64" r="60" fill="#FFF1F2" stroke="#E11D48" stroke-width="4.5" filter="url(#chibi-wound-shadow)"/>
+  <circle cx="64" cy="64" r="53" fill="#FFE4E6" stroke="#FDA4AF" stroke-width="1.5" stroke-dasharray="3 3"/>
+
+  <!-- GIỌT MÁU VẾT THƯƠNG CHIBI (Mập mạp, biểu cảm nhăn nhó hài hước) -->
+  <!-- Hình thể giọt máu tròn trịa -->
+  <path d="M64 22 C64 22 34 56 34 80 C34 98 47 110 64 110 C81 110 94 98 94 80 C94 56 64 22 64 22 Z"
+        fill="#FF2A55" stroke="#4C0519" stroke-width="3.5" stroke-linejoin="round"/>
+
+  <!-- Mảng bóng Cel-shading nửa phải giọt máu -->
+  <path d="M64 22 C64 22 78 50 86 66 C92 78 94 88 94 80 C94 98 81 110 64 110 C78 110 94 98 94 80 C94 56 64 22 64 22 Z"
+        fill="#BE123C"/>
+
+  <!-- Điểm highlight sáng hình hạt đậu (Cel highlight) -->
+  <ellipse cx="48" cy="54" rx="5" ry="9" transform="rotate(-25, 48, 54)" fill="#FFA5BA"/>
+  <circle cx="43" cy="72" r="3" fill="#FFA5BA"/>
+
+  <!-- Miếng băng gạc cứu thương mini dán chéo dễ thương -->
+  <g transform="rotate(18, 72, 88)">
+    <rect x="62" y="82" width="22" height="9" rx="3" fill="#FEF08A" stroke="#854D0E" stroke-width="1.5"/>
+    <circle cx="73" cy="86.5" r="1.5" fill="#EF4444"/>
+  </g>
+
+  <!-- BIỂU CẢM KHUÔN MẶT CHIBI "OUCH! NHẸ TAY THÔI!" -->
+  <!-- Mắt nhắm tịt hình chữ "> <" đau điếng dễ thương -->
+  <path d="M48 68 L55 73 L48 78" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M78 68 L71 73 L78 78" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Giọt mồ hôi anime rơi bên trán (Sweat drop) -->
+  <path d="M38 52 C38 48 43 42 43 42 C43 42 48 48 48 52 C48 55 45 58 43 58 C41 58 38 55 38 52 Z"
+        fill="#38BDF8" stroke="#0284C7" stroke-width="1.5"/>
+  <circle cx="41.5" cy="53" r="1" fill="#FFFFFF"/>
+
+  <!-- Miệng chữ "o" thét lên hài hước -->
+  <ellipse cx="63" cy="80" rx="4" ry="5.5" fill="#4C0519"/>
+  <ellipse cx="63" cy="82" rx="2.5" ry="3" fill="#FDA4AF"/>
+</svg>

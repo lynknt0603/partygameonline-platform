@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <radialGradient id="harl-bg" cx="50%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#3b0764"/>
+      <stop offset="60%" stop-color="#1e0538"/>
+      <stop offset="100%" stop-color="#0a0114"/>
+    </radialGradient>
+    <linearGradient id="harl-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="50%" stop-color="#eab308"/>
+      <stop offset="100%" stop-color="#854d0e"/>
+    </linearGradient>
+    <filter id="harl-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#a855f7" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+
+  <!-- Khung chân dung tròn mạ vàng Tím Ma Quái -->
+  <circle cx="64" cy="64" r="60" fill="url(#harl-bg)" stroke="url(#harl-gold)" stroke-width="3" filter="url(#harl-glow)"/>
+  <circle cx="64" cy="64" r="54" fill="none" stroke="rgba(192, 132, 252, 0.3)" stroke-width="1.2" stroke-dasharray="3 3"/>
+
+  <!-- Lông vũ rực rỡ trên mũ dạ hội (Venetian Plumes) -->
+  <path d="M 64 36 C 54 14 36 12 32 20 C 38 28 50 32 64 36 Z" fill="#e11d48"/>
+  <path d="M 64 36 C 64 10 76 8 82 16 C 78 26 72 32 64 36 Z" fill="#059669"/>
+  <path d="M 64 36 C 60 8 68 6 72 14 C 68 22 66 28 64 36 Z" fill="#eab308"/>
+
+  <!-- Cổ áo cánh xòe hề xiếc / Jester Ruff Collar -->
+  <path d="M 28 128 L 44 94 L 54 102 L 64 92 L 74 102 L 84 94 L 100 128 Z" fill="#581c87" stroke="url(#harl-gold)" stroke-width="1.5"/>
+
+  <!-- MẶT NẠ 2 MÀU CÁCH BIỆT (Split Harlequin Mask: Rose vs Fan) -->
+  <!-- Nửa mặt nạ TRÁI: Đỏ Rose -->
+  <path d="M 64 36 C 50 36 42 46 42 62 C 42 78 52 86 64 88 Z" fill="#e11d48" stroke="#4c0519" stroke-width="1.5"/>
+  <!-- Nửa mặt nạ PHẢI: Xanh Fan -->
+  <path d="M 64 36 C 78 36 86 46 86 62 C 86 78 76 86 64 88 Z" fill="#059669" stroke="#064e3b" stroke-width="1.5"/>
+  <!-- Đường phân đôi mạ vàng ở sống mũi -->
+  <line x1="64" y1="36" x2="64" y2="88" stroke="url(#harl-gold)" stroke-width="2"/>
+
+  <!-- Hốc mắt hí kịch nghệ thuật (Theatrical eyes) -->
+  <!-- Mắt trái -->
+  <path d="M 48 54 Q 56 48 60 56 Q 54 60 48 54 Z" fill="#000000"/>
+  <circle cx="55" cy="54" r="1.5" fill="#fde047"/>
+  <!-- Giọt nước mắt hề đỏ -->
+  <polygon points="54,64 56,70 52,70" fill="#fef08a"/>
+
+  <!-- Mắt phải -->
+  <path d="M 80 54 Q 72 48 68 56 Q 74 60 80 54 Z" fill="#000000"/>
+  <circle cx="73" cy="54" r="1.5" fill="#fde047"/>
+  <!-- Giọt nước mắt hề xanh -->
+  <polygon points="74,64 76,70 72,70" fill="#fef08a"/>
+
+  <!-- Nụ cười bí hiểm kịch nghệ (Enigmatic smirk) -->
+  <path d="M 52 74 Q 64 82 76 74" fill="none" stroke="#000000" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Huy hiệu Rank 3 ở đáy -->
+  <circle cx="64" cy="116" r="10" fill="#1e0538" stroke="url(#harl-gold)" stroke-width="1.5"/>
+  <text x="64" y="120" text-anchor="middle" fill="#fef08a" font-size="10" font-weight="900" font-family="serif">III</text>
+</svg>

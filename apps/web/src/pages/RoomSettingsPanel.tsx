@@ -21,6 +21,13 @@ import {
   NIMP_TURN_PRESETS,
   type NotInMyPotSettings,
 } from "@/games/notInMyPot/model/notInMyPotSettings";
+import {
+  BLOOD_BOUND_ID,
+  BLOOD_BOUND_DEFAULT_SETTINGS,
+  BLOOD_BOUND_TURN_PRESETS,
+  BLOOD_BOUND_INTERVENTION_PRESETS,
+  type BloodBoundSettings,
+} from "@/games/bloodBound";
 import { useUpdateRoomSettings } from "@/shared/hooks/useRooms";
 import { useT } from "@/shared/i18n/useT";
 import type { RoomView } from "@/shared/lobby/roomView";
@@ -57,10 +64,12 @@ export function RoomSettingsPanel({ room, minCap, maxCap, isHost, onClose, onClo
   const [notInMyPot, setNotInMyPot] = useState<NotInMyPotSettings>(room.notInMyPotSettings ?? NIMP_DEFAULT_SETTINGS);
   const [wheresTheBone, setWheresTheBone] = useState<WheresTheBoneSettings>(room.wheresTheBoneSettings ?? WHERES_THE_BONE_DEFAULT_SETTINGS);
   const [liarsNumber, setLiarsNumber] = useState<LiarsNumberSettings>(room.liarsNumberSettings ?? LIARS_NUMBER_DEFAULT_SETTINGS);
+  const [bloodBound, setBloodBound] = useState<BloodBoundSettings>(room.bloodBoundSettings ?? BLOOD_BOUND_DEFAULT_SETTINGS);
   const isNob = room.gameId === NOB_CATALOGUE_ID;
   const isNotInMyPot = room.gameId === NOT_IN_MY_POT_ID;
   const isWheresTheBone = room.gameId === WHERES_THE_BONE_ID;
   const isLiarsNumber = room.gameId === LIARS_NUMBER_ID;
+  const isBloodBound = room.gameId === BLOOD_BOUND_ID;
   const maxPlayersError = players < room.players.length
     ? t("maxPlayersBelowCurrent").replace("{count}", String(room.players.length))
     : null;
@@ -72,7 +81,17 @@ export function RoomSettingsPanel({ room, minCap, maxCap, isHost, onClose, onClo
       onClose();
       return;
     }
-    const gameSettings = isNob ? { nob } : isNotInMyPot ? { notInMyPot } : isWheresTheBone ? { wheresTheBone } : isLiarsNumber ? { liarsNumber } : {};
+    const gameSettings = isNob
+      ? { nob }
+      : isNotInMyPot
+      ? { notInMyPot }
+      : isWheresTheBone
+      ? { wheresTheBone }
+      : isLiarsNumber
+      ? { liarsNumber }
+      : isBloodBound
+      ? { bloodBound }
+      : {};
     update.mutate({ ...gameSettings, locked, maxPlayers: players }, { onSuccess: () => onClose() });
   };
 
@@ -209,6 +228,29 @@ export function RoomSettingsPanel({ room, minCap, maxCap, isHost, onClose, onClo
               disabled={!canEdit}
               formatPreset={(preset) => preset === 0 ? "∞" : `${preset}s`}
               onChange={(next) => setLiarsNumber({ turnSeconds: next })}
+            />
+            {!canEdit ? <p className={styles.bubble}>{waiting ? t("nobTimersHostOnly") : t("nobTimersLocked")}</p> : null}
+          </section>
+        ) : null}
+
+        {isBloodBound ? (
+          <section className={styles.timerBlock}>
+            <h3>{t("bloodBoundSettings")}</h3>
+            <TimerRow
+              label={`${t("bloodBoundTurnSeconds")} · ${bloodBound.turnSeconds}s`}
+              value={bloodBound.turnSeconds}
+              presets={BLOOD_BOUND_TURN_PRESETS}
+              disabled={!canEdit}
+              formatPreset={(preset) => `${preset}s`}
+              onChange={(next) => setBloodBound((current) => ({ ...current, turnSeconds: next }))}
+            />
+            <TimerRow
+              label={`${t("bloodBoundInterventionSeconds")} · ${bloodBound.interventionSeconds}s`}
+              value={bloodBound.interventionSeconds}
+              presets={BLOOD_BOUND_INTERVENTION_PRESETS}
+              disabled={!canEdit}
+              formatPreset={(preset) => `${preset}s`}
+              onChange={(next) => setBloodBound((current) => ({ ...current, interventionSeconds: next }))}
             />
             {!canEdit ? <p className={styles.bubble}>{waiting ? t("nobTimersHostOnly") : t("nobTimersLocked")}</p> : null}
           </section>

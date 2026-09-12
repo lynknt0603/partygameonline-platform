@@ -2,6 +2,7 @@ import type { NobTiming } from "@/games/nob/model/nobTiming";
 import type { NotInMyPotSettings } from "@/games/notInMyPot/model/notInMyPotSettings";
 import type { WheresTheBoneSettings } from "@/games/wheresTheBone/model/wheresTheBoneSettings";
 import type { LiarsNumberSettings } from "@/games/liarsNumber/model/liarsNumberSettings";
+import type { BloodBoundSettings } from "@/games/bloodBound/model/bloodBoundSettings";
 import { api } from "./http";
 import type { RoomDto } from "./types";
 
@@ -37,6 +38,13 @@ export function kickRoom(roomId: string, playerId: string): Promise<RoomDto> {
   return api<RoomDto>(`/api/v1/rooms/${roomId}/kick/${encodeURIComponent(playerId)}`, { method: "POST" });
 }
 
+export function addBotToRoom(roomId: string, botType: "NORMAL" | "AI" = "NORMAL"): Promise<RoomDto> {
+  return api<RoomDto>(`/api/v1/rooms/${roomId}/bot`, {
+    method: "POST",
+    body: JSON.stringify({ botType }),
+  });
+}
+
 export function setReady(roomId: string, ready: boolean): Promise<RoomDto> {
   return api<RoomDto>(`/api/v1/rooms/${roomId}/ready`, {
     method: "PUT",
@@ -54,7 +62,15 @@ export function closeRoom(roomId: string): Promise<void> {
 
 export function updateRoomSettings(
   roomId: string,
-  body: { nob?: NobTiming; notInMyPot?: NotInMyPotSettings; wheresTheBone?: WheresTheBoneSettings; liarsNumber?: LiarsNumberSettings; locked?: boolean; maxPlayers?: number },
+  body: {
+    nob?: NobTiming;
+    notInMyPot?: NotInMyPotSettings;
+    wheresTheBone?: WheresTheBoneSettings;
+    liarsNumber?: LiarsNumberSettings;
+    bloodBound?: BloodBoundSettings;
+    locked?: boolean;
+    maxPlayers?: number;
+  },
 ): Promise<RoomDto> {
   return api<RoomDto>(`/api/v1/rooms/${roomId}/settings`, {
     method: "PUT",

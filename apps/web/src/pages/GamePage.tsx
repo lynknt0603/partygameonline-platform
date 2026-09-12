@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { Navigate, useParams } from "react-router-dom";
 import { fetchNobSnapshot, NOB_CATALOGUE_ID, NobPlayPage, parseNobView, type NobView } from "@/games/nob";
+import {
+  BLOOD_BOUND_ID,
+  BloodBoundPlayPage,
+  isBloodBoundDemoRoom,
+  useBloodBoundGame,
+} from "@/games/bloodBound";
 import { NOT_IN_MY_POT_ID, NotInMyPotPlayPage, useNotInMyPotGame } from "@/games/notInMyPot";
 import { WHERES_THE_BONE_ID, WheresTheBonePlayPage, useWheresTheBoneGame } from "@/games/wheresTheBone";
 import { LIARS_NUMBER_ID, LiarsNumberPlayPage, useLiarsNumberGame } from "@/games/liarsNumber";
@@ -23,10 +29,13 @@ export function GamePage() {
   const isNob = room?.gameId === NOB_CATALOGUE_ID;
   const isNotInMyPot = room?.gameId === NOT_IN_MY_POT_ID;
   const isWheresTheBone = room?.gameId === WHERES_THE_BONE_ID;
+  const isBloodBound = room?.gameId === BLOOD_BOUND_ID;
   const isLiarsNumber = room?.gameId === LIARS_NUMBER_ID;
-  const notInMyPot = useNotInMyPotGame(roomId, Boolean(isNotInMyPot && room?.status === "in_game"));
-  const wheresTheBone = useWheresTheBoneGame(roomId, Boolean(isWheresTheBone && room?.status === "in_game"));
-  const liarsNumber = useLiarsNumberGame(roomId, Boolean(isLiarsNumber && room?.status === "in_game"));
+  const isInGame = room?.status === "in_game";
+  const notInMyPot = useNotInMyPotGame(roomId, Boolean(isNotInMyPot && isInGame));
+  const wheresTheBone = useWheresTheBoneGame(roomId, Boolean(isWheresTheBone && isInGame));
+  const liarsNumber = useLiarsNumberGame(roomId, Boolean(isLiarsNumber && isInGame));
+  const bloodBound = useBloodBoundGame(roomId, Boolean(isBloodBound && isInGame));
 
   useEffect(() => {
     if (session && roomId) {
@@ -35,7 +44,7 @@ export function GamePage() {
   }, [session, roomId]);
 
   useEffect(() => {
-    if (!roomId || !isNob || room?.status !== "in_game") {
+    if (!roomId || !isNob || !isInGame) {
       return;
     }
     let cancelled = false;
@@ -98,6 +107,16 @@ export function GamePage() {
     },
   });
 
+  const isDemoBloodBound = isBloodBoundDemoRoom(roomId);
+  if (isDemoBloodBound) {
+    return (
+      <>
+        <ConnectionStatusBadge />
+        <BloodBoundPlayPage roomId={roomId} room={room} />
+      </>
+    );
+  }
+
   if (roomQuery.isPending) {
     return <main aria-live="polite">Loading game…</main>;
   }
@@ -151,6 +170,23 @@ export function GamePage() {
             notice={liarsNumber.notice}
             rejectCode={liarsNumber.rejectCode}
             sendCommand={liarsNumber.sendCommand}
+          />
+        </>
+      );
+    }
+    if (room.gameId === BLOOD_BOUND_ID) {
+      return (
+        <>
+          <ConnectionStatusBadge />
+          <BloodBoundPlayPage
+            roomId={roomId}
+            room={room}
+            view={bloodBound.view}
+            snapshotPending={bloodBound.snapshotPending}
+            snapshotError={bloodBound.snapshotError}
+            notice={bloodBound.notice}
+            rejectCode={bloodBound.rejectCode}
+            sendCommand={bloodBound.sendCommand}
           />
         </>
       );

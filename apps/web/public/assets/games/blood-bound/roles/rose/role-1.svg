@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <radialGradient id="rose-lead-bg" cx="50%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#4c0519"/>
+      <stop offset="60%" stop-color="#1f0308"/>
+      <stop offset="100%" stop-color="#090103"/>
+    </radialGradient>
+    <linearGradient id="rose-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="40%" stop-color="#eab308"/>
+      <stop offset="80%" stop-color="#ca8a04"/>
+      <stop offset="100%" stop-color="#713f12"/>
+    </linearGradient>
+    <filter id="rose-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#f43f5e" flood-opacity="0.6"/>
+    </filter>
+  </defs>
+
+  <circle cx="64" cy="64" r="60" fill="url(#rose-lead-bg)" stroke="#f43f5e" stroke-width="3" filter="url(#rose-glow)"/>
+  <circle cx="64" cy="64" r="54" fill="none" stroke="rgba(244, 63, 94, 0.35)" stroke-width="1.2" stroke-dasharray="3 3"/>
+
+  <!-- Cổ áo dạ hội Gothic đỏ thẫm dựng cao -->
+  <path d="M 28 120 L 40 76 L 64 88 L 88 76 L 100 120 Z" fill="#2a040d" stroke="#881337" stroke-width="1.8"/>
+  <path d="M 40 76 L 18 48 L 42 74 Z" fill="#9f1239" stroke="#4c0519" stroke-width="1.2"/>
+  <path d="M 88 76 L 110 48 L 86 74 Z" fill="#9f1239" stroke="#4c0519" stroke-width="1.2"/>
+
+  <!-- Thân áo nhung đỏ hoa hồng & Vương miện vàng -->
+  <path d="M 36 128 C 42 98 86 98 92 128 Z" fill="#be123c" stroke="url(#rose-gold)" stroke-width="1.5"/>
+  <polygon points="64,88 71,96 64,104 57,96" fill="#e11d48" stroke="url(#rose-gold)" stroke-width="1.5"/>
+  <circle cx="64" cy="96" r="2.5" fill="#ffffff" opacity="0.9"/>
+
+  <!-- Khuôn mặt Lãnh Chúa Hoa Hồng -->
+  <path d="M 40 54 C 38 34 50 24 64 24 C 78 24 90 34 88 54 C 92 64 86 76 86 76 C 82 66 80 60 76 58 C 64 62 52 58 48 76 C 48 76 42 64 40 54 Z"
+        fill="#e2e8f0" stroke="#475569" stroke-width="1.2"/>
+  <path d="M 48 50 C 48 68 54 78 64 82 C 74 78 80 68 80 50 C 80 40 74 36 64 36 C 54 36 48 40 48 50 Z"
+        fill="#fde2e4" stroke="#9f1239" stroke-width="1.2"/>
+  <ellipse cx="56" cy="54" rx="3" ry="1.8" fill="#e11d48"/>
+  <circle cx="56.5" cy="53.5" r="0.8" fill="#ffffff"/>
+  <ellipse cx="72" cy="54" rx="3" ry="1.8" fill="#e11d48"/>
+  <circle cx="72.5" cy="53.5" r="0.8" fill="#ffffff"/>
+
+  <!-- Vương miện hoa hồng hoàng gia -->
+  <path d="M 46 32 L 52 16 L 64 24 L 76 16 L 82 32 Z" fill="url(#rose-gold)" stroke="#713f12" stroke-width="1.5" stroke-linejoin="round"/>
+  <circle cx="52" cy="16" r="2" fill="#e11d48"/>
+  <circle cx="64" cy="24" r="2.5" fill="#ffffff"/>
+  <circle cx="76" cy="16" r="2" fill="#e11d48"/>
+
+  <!-- Huy hiệu Rank 1 Rose -->
+  <circle cx="64" cy="116" r="10" fill="#4c0519" stroke="#f43f5e" stroke-width="1.5"/>
+  <text x="64" y="120" text-anchor="middle" fill="#fda4af" font-size="11" font-weight="900" font-family="serif">I</text>
+</svg>

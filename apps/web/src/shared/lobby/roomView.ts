@@ -4,6 +4,7 @@ import { notInMyPotSettingsFromUnknown, type NotInMyPotSettings } from "@/games/
 import type { SeatState } from "@/shared/types/status";
 import { wheresTheBoneSettingsFromUnknown, type WheresTheBoneSettings } from "@/games/wheresTheBone/model/wheresTheBoneSettings";
 import { liarsNumberSettingsFromUnknown, type LiarsNumberSettings } from "@/games/liarsNumber/model/liarsNumberSettings";
+import { bloodBoundSettingsFromUnknown, type BloodBoundSettings } from "@/games/bloodBound/model/bloodBoundSettings";
 
 export interface LobbySeat {
   id: string;
@@ -32,6 +33,7 @@ export interface RoomView {
   notInMyPotSettings: NotInMyPotSettings | null;
   wheresTheBoneSettings: WheresTheBoneSettings | null;
   liarsNumberSettings: LiarsNumberSettings | null;
+  bloodBoundSettings: BloodBoundSettings | null;
   locked: boolean;
 }
 
@@ -54,6 +56,7 @@ export function toRoomView(room: RoomDto): RoomView {
     notInMyPotSettings: notInMyPotSettingsFromUnknown(room.settings),
     wheresTheBoneSettings: wheresTheBoneSettingsFromUnknown(room.settings),
     liarsNumberSettings: liarsNumberSettingsFromUnknown(room.settings),
+    bloodBoundSettings: bloodBoundSettingsFromUnknown(room.settings),
     locked: roomLockedFromUnknown(room.settings),
   };
 }
