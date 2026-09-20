@@ -10,6 +10,7 @@ import {
   Gauge,
   Info,
   Lock,
+  KeyRound,
   Medal,
   Moon,
   Swords,
@@ -19,7 +20,8 @@ import { PageHeading } from "@/shared/components/PageHeading/PageHeading";
 import { PlayerAvatar } from "@/shared/components/PlayerAvatar/PlayerAvatar";
 import { AVATAR_ASSETS, avatarUrlForPlayer } from "@/shared/avatar/avatar";
 import { fetchPlayerStats, fetchPublicPlayerStats } from "@/shared/api/stats";
-import { DISPLAY_NAME_MAX_LENGTH } from "@/shared/api/types";
+import { changePassword } from "@/shared/api/session";
+import { ApiError, DISPLAY_NAME_MAX_LENGTH } from "@/shared/api/types";
 import { useLocale, useT } from "@/shared/i18n/useT";
 import { useSessionStore } from "@/shared/state/sessionStore";
 import { Link } from "react-router-dom";
@@ -70,10 +72,16 @@ export function ProfilePage({ profileUsername }: { profileUsername?: string } = 
   const [copied, setCopied] = useState(false);
   const [editing, setEditing] = useState(false);
   const [avatarEditing, setAvatarEditing] = useState(false);
+  const [passwordEditing, setPasswordEditing] = useState(false);
   const [selectedAvatarKey, setSelectedAvatarKey] = useState<string | null>(null);
   const [nameInput, setNameInput] = useState(session?.displayName ?? "BloodMoon");
   const [hideGameStats, setHideGameStats] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
   const isPublicProfile = Boolean(profileUsername);
 
   const { data: stats, isError, refetch } = useQuery({
@@ -183,6 +191,59 @@ export function ProfilePage({ profileUsername }: { profileUsername?: string } = 
     }
   };
 
+  const openPasswordEditor = () => {
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmNewPassword("");
+    setPasswordError(null);
+    setPasswordSuccess(null);
+    setPasswordEditing(true);
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError(null);
+    setPasswordSuccess(null);
+    if (!currentPassword) {
+      setPasswordError(t("currentPasswordRequired"));
+      return;
+    }
+    if (!newPassword) {
+      setPasswordError(t("newPasswordRequired"));
+      return;
+    }
+    if (newPassword.length < 3) {
+      setPasswordError(t("passwordTooShort"));
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      setPasswordError(t("passwordMismatch"));
+      return;
+    }
+    if (newPassword === currentPassword) {
+      setPasswordError(t("passwordUnchanged"));
+      return;
+    }
+    setIsSaving(true);
+    try {
+      await changePassword(currentPassword, newPassword);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmNewPassword("");
+      setPasswordSuccess(t("passwordChanged"));
+    } catch (error) {
+      if (error instanceof ApiError && error.errorCode === "INVALID_CURRENT_PASSWORD") {
+        setPasswordError(t("invalidCurrentPassword"));
+      } else if (error instanceof ApiError && error.errorCode === "PASSWORD_UNCHANGED") {
+        setPasswordError(t("passwordUnchanged"));
+      } else {
+        setPasswordError(error instanceof Error ? error.message : t("changePasswordFailed"));
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const availableAvatars = stats?.avatars?.length
     ? stats.avatars
     : AVATAR_ASSETS.map((avatar) => ({
@@ -267,18 +328,26 @@ export function ProfilePage({ profileUsername }: { profileUsername?: string } = 
           </div>
 
           {!isPublicProfile ? (
-            <button
-              type="button"
-              className={styles.editProfileBtn}
-              onClick={() => {
-                setNameInput(displayName);
-                setHideGameStats(Boolean(stats?.gameStatsHidden));
-                setEditing(true);
-              }}
-            >
-              <Edit3 size={15} aria-hidden="true" />
-              <span>{t("editProfile")}</span>
-            </button>
+            <div className={styles.accountActions}>
+              <button
+                type="button"
+                className={styles.editProfileBtn}
+                onClick={() => {
+                  setNameInput(displayName);
+                  setHideGameStats(Boolean(stats?.gameStatsHidden));
+                  setEditing(true);
+                }}
+              >
+                <Edit3 size={15} aria-hidden="true" />
+                <span>{t("editProfile")}</span>
+              </button>
+              {session?.kind === "MEMBER" ? (
+                <button type="button" className={styles.editProfileBtn} onClick={openPasswordEditor}>
+                  <KeyRound size={15} aria-hidden="true" />
+                  <span>{t("changePassword")}</span>
+                </button>
+              ) : null}
+            </div>
           ) : null}
         </div>
       </section>
@@ -318,6 +387,59 @@ export function ProfilePage({ profileUsername }: { profileUsername?: string } = 
                 </button>
                 <button type="submit" className={styles.saveBtn} disabled={isSaving}>
                   {isSaving ? t("saving") : t("save")}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
+
+      {passwordEditing ? (
+        <div className={styles.modalBackdrop} onClick={() => setPasswordEditing(false)}>
+          <div className={`${styles.editModal} theme-panel`} onClick={(e) => e.stopPropagation()}>
+            <h3>{t("changePassword")}</h3>
+            <form onSubmit={handleChangePassword} className={styles.editForm}>
+              <label htmlFor="currentPasswordInput">{t("currentPassword")}</label>
+              <input
+                id="currentPasswordInput"
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                autoComplete="current-password"
+                maxLength={128}
+                required
+                autoFocus
+              />
+              <label htmlFor="newPasswordInput">{t("newPassword")}</label>
+              <input
+                id="newPasswordInput"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                autoComplete="new-password"
+                minLength={3}
+                maxLength={128}
+                required
+              />
+              <label htmlFor="confirmNewPasswordInput">{t("confirmNewPassword")}</label>
+              <input
+                id="confirmNewPasswordInput"
+                type="password"
+                value={confirmNewPassword}
+                onChange={(e) => setConfirmNewPassword(e.target.value)}
+                autoComplete="new-password"
+                minLength={3}
+                maxLength={128}
+                required
+              />
+              {passwordError ? <p className={styles.formError} role="alert">{passwordError}</p> : null}
+              {passwordSuccess ? <p className={styles.formSuccess} role="status">{passwordSuccess}</p> : null}
+              <div className={styles.editModalActions}>
+                <button type="button" className={styles.cancelBtn} onClick={() => setPasswordEditing(false)}>
+                  {t("cancel")}
+                </button>
+                <button type="submit" className={styles.saveBtn} disabled={isSaving}>
+                  {isSaving ? t("saving") : t("changePassword")}
                 </button>
               </div>
             </form>

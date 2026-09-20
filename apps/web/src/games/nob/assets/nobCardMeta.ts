@@ -109,9 +109,9 @@ export const NOB_CARD_META: Record<string, NobCardMeta> = {
     tooltipVi: "Hoán đổi Gia Tộc của 2 người chơi.",
     tooltipEn: "Exchange the Bloodlines of 2 players.",
     descriptionVi:
-      "Chọn 2 người chơi còn sống. Bạn có thể hoán đổi Gia Tộc của họ. Nếu Gia Tộc của chính bạn bị đổi, bạn không được biết Gia Tộc mới.",
+      "Chọn 2 người chơi còn sống khác bạn. Bạn có thể hoán đổi Gia Tộc của họ.",
     descriptionEn:
-      "Choose 2 living players. You may exchange their Bloodlines. If your own Bloodline is exchanged, you do not learn your new Bloodline.",
+      "Choose 2 other living players. You may exchange their Bloodlines.",
   }),
   "NOB-SH-02": shapeshifter(2, {
     tooltipVi: "Thu hồi một Bài Đã Dùng và giữ hoặc sử dụng nó.",

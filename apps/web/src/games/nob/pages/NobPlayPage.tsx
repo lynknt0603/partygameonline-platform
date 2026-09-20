@@ -39,6 +39,7 @@ import {
   NOB_REACTION_OPTIONS,
   sendNobAction,
 } from "../model/nobActions";
+import { nobSeatTargetState } from "../model/nobTargeting";
 import type { NobCardInstance, NobPlayerPublic, NobView } from "../model/nobTypes";
 import styles from "./NobPlayPage.module.css";
 
@@ -428,7 +429,13 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
 
   useEffect(() => {
     setSelectedTargetId(null);
-  }, [pending?.decisionId, view?.phase]);
+  }, [view?.phase]);
+
+  useEffect(() => {
+    if (pending?.type !== "CHOOSE_TARGET") {
+      setSelectedTargetId(null);
+    }
+  }, [pending?.type]);
 
   useEffect(() => {
     if (pending?.type === "CHOOSE_TARGET" || pending?.type === "CHOOSE_HIDDEN_CARD") {
@@ -944,12 +951,16 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
         <section className={styles.table}>
           <div className={styles.seats} data-target-mode={pending?.type === "CHOOSE_TARGET" ? "true" : "false"}>
             {tableSeats.map((seat, index) => {
-              const targetable = Boolean(
-                youAreActor &&
-                  pending?.type === "CHOOSE_TARGET" &&
-                  pending.allowedTargetIds.includes(seat.playerId) &&
-                  !frozen,
-              );
+              const targetState = nobSeatTargetState({
+                pendingType: pending?.type,
+                allowedTargetIds: youAreActor ? (pending?.allowedTargetIds ?? []) : [],
+                playerId: seat.playerId,
+                alive: seat.alive !== false,
+                frozen,
+                actorId,
+                hideActor: hideSubmitterName,
+              });
+              const { targetable, blocked } = targetState;
               const submitted = Boolean(
                 !hideSubmitterName && view?.submittedPlayerIds?.includes(seat.playerId),
               );
@@ -960,9 +971,6 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
               const line = publicLine ?? peekedLine ?? null;
               const board = seatCardBoard(seat);
               const isYouSeat = Boolean(seat.you || seat.playerId === view?.you);
-              const blocked = Boolean(
-                pending?.type === "CHOOSE_TARGET" && seat.alive !== false && !targetable && !isYouSeat,
-              );
               return (
                 <div
                   key={seat.playerId}
@@ -972,7 +980,7 @@ export function NobPlayPage({ room, view, notice, rejectCode }: NobPlayPageProps
                   data-dead={seat.alive === false ? "true" : "false"}
                   data-blocked={blocked ? "true" : "false"}
                   data-target={targetable ? "true" : "false"}
-                  data-actor={!hideSubmitterName && actorId === seat.playerId ? "true" : "false"}
+                  data-actor={targetState.actorHighlighted ? "true" : "false"}
                   data-submitted={submitted ? "true" : "false"}
                   data-selected={
                     selectedTargetId === seat.playerId ||

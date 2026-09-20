@@ -1,7 +1,9 @@
 /**
  * Script giả lập bot tham gia phòng chơi (Lobby & In-Game)
- * Tự động chơi Liar's Number bằng hành động ngẫu nhiên.
- * Với Not In My Pot, bot vẫn ưu tiên thẻ OUT_OF_HOUSE (Đuổi Khỏi Nhà / Out You Go!).
+ * Hỗ trợ tự động chơi các game:
+ *  - Night of Bloodlines (Đêm Huyết Nguyệt)
+ *  - Not In My Pot (Nồi Lẩu Của Ai)
+ *  - Where's the Bone (Chó Trộm Xương)
  * 
  * Cách dùng: node scripts/bot-players.mjs <ROOM_ID> [SỐ_LƯỢNG_BOT=7]
  * Bắt buộc: BOT_PASSWORD=<mật khẩu bot>
@@ -39,7 +41,7 @@ if (!isCleanMode && !roomId) {
 }
 
 if (!BOT_PASSWORD) {
-  console.error('❌ Thiếu BOT_PASSWORD. Không dùng mật khẩu mặc định; hãy đặt biến môi trường BOT_PASSWORD.');
+  console.error('❌ Thiếu BOT_PASSWORD. Hãy đặt biến môi trường BOT_PASSWORD trước khi chạy bot.');
   process.exit(1);
 }
 
@@ -51,10 +53,11 @@ function authHeaders(bot, json = false) {
 }
 
 async function authenticateBot(index) {
-  const username = `bot_player_${index + 1}`;
+  let username = `bot_player_${index + 1}`;
   const password = BOT_PASSWORD;
   const rawName = BOT_NAMES[index] || `🤖 Bot_${index + 1}`;
   const name = rawName.slice(0, 10);
+
   // 1. Đăng ký hoặc Đăng nhập tài khoản Member
   let authRes = await fetch(`${BASE_URL}/api/v1/auth/register`, {
     method: 'POST',
@@ -70,6 +73,18 @@ async function authenticateBot(index) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ username, password })
+    });
+  }
+
+  // Fallback nếu tài khoản cũ bị lệch mật khẩu
+  if (!authRes.ok) {
+    username = `bot_${index + 1}_${Date.now().toString(36).slice(-4)}`;
+    authRes = await fetch(`${BASE_URL}/api/v1/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ username, password, displayName: name })
     });
   }
 
@@ -143,150 +158,70 @@ function sendWsCommand(bot, payload) {
   if (!bot.ws || bot.ws.readyState !== 1) { // 1 = OPEN
     return null;
   }
-  const requestId = typeof crypto !== 'undefined' && crypto.randomUUID
+  const commandId = typeof crypto !== 'undefined' && crypto.randomUUID
     ? crypto.randomUUID()
     : `cmd_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
   const envelope = {
     version: 1,
     type: 'GAME_ACTION',
-    requestId,
     roomId: bot.targetRoomId,
+    requestId: commandId,
     lastServerSequence: bot.lastServerSequence || 0,
     payload: {
-      commandId: requestId,
+      commandId,
       ...payload
     }
   };
   bot.ws.send(JSON.stringify(envelope));
-  return requestId;
+  return commandId;
 }
 
 function extractViewFromMessage(msg) {
   if (!msg) return null;
   if (msg.payload?.view) return msg.payload.view;
   if (msg.view) return msg.view;
-  if (
-    ['not-in-my-pot', 'liars-number'].includes(msg.payload?.gameType) ||
-    ['not-in-my-pot', 'liars-number'].includes(msg.gameType)
-  ) {
-    return msg.payload || msg;
-  }
+  if (msg.payload?.gameType) return msg.payload;
+  if (msg.gameType) return msg;
   return null;
 }
 
-function randomItem(items) {
-  if (!Array.isArray(items) || items.length === 0) return null;
-  return items[Math.floor(Math.random() * items.length)];
-}
-
-async function handleLiarsNumberTurn(bot, view) {
-  if (!view || view.gameType !== 'liars-number' || view.finished || view.phase === 'GAME_OVER') return;
-
-  const legalActions = Array.isArray(view.legalActions) ? view.legalActions : [];
-  if (legalActions.length === 0) return;
-
-  const actionKey = `liars_${view.roundNumber || 0}_${view.phase}_${view.stateVersion || 0}`;
-  if (bot.lastActionKey === actionKey || bot.isActing) return;
-
-  bot.lastActionKey = actionKey;
-  bot.isActing = true;
-  await new Promise((resolve) => setTimeout(resolve, 500 + Math.floor(Math.random() * 700)));
-
+async function fetchGameSnapshot(bot) {
   try {
-    const type = randomItem(legalActions);
-    let command = null;
-    let description = type;
-
-    switch (type) {
-      case 'SELECT_CARD': {
-        const card = randomItem((view.myHand || []).filter((item) => item.cardId));
-        if (card) {
-          command = { type, cardId: card.cardId };
-          description = `chọn ngẫu nhiên lá ${card.label || card.cardId}`;
-        }
-        break;
-      }
-      case 'SELECT_TARGET': {
-        const fallbackTargets = (view.players || [])
-          .filter((player) => player.playerId !== bot.playerId && !player.you)
-          .map((player) => player.playerId);
-        const targetPlayerId = randomItem(view.availableTargetPlayerIds || []) || randomItem(fallbackTargets);
-        if (targetPlayerId) {
-          command = { type, targetPlayerId };
-          const target = (view.players || []).find((player) => player.playerId === targetPlayerId);
-          description = `chuyền bài cho ${target?.displayName || targetPlayerId}`;
-        }
-        break;
-      }
-      case 'DECLARE_TYPE':
-      case 'PASS_DECLARE_TYPE': {
-        const declaredType = 1 + Math.floor(Math.random() * 8);
-        command = { type, declaredType };
-        description = `tuyên bố số ${declaredType}`;
-        break;
-      }
-      case 'GUESS': {
-        const guess = Math.random() < 0.5 ? 'TRUE' : 'FALSE';
-        command = { type, guess };
-        description = `đoán ${guess === 'TRUE' ? 'NÓI THẬT' : 'NÓI DỐI'}`;
-        break;
-      }
-      case 'PEEK_AND_PASS':
-        command = { type };
-        description = 'xem bài rồi chuyền tiếp';
-        break;
-      case 'SELECT_PASS_TARGET': {
-        const targetPlayerId = randomItem(view.availablePassTargetPlayerIds || []);
-        if (targetPlayerId) {
-          command = { type, targetPlayerId };
-          const target = (view.players || []).find((player) => player.playerId === targetPlayerId);
-          description = `chuyền tiếp cho ${target?.displayName || targetPlayerId}`;
-        }
-        break;
-      }
-      default:
-        break;
+    let snapUrl = null;
+    if (bot.gameId === 'night-of-bloodlines') {
+      snapUrl = `${BASE_URL}/api/v1/games/nob/rooms/${bot.targetRoomId}/snapshot`;
+    } else if (bot.gameId === 'wheres-the-bone') {
+      snapUrl = `${BASE_URL}/api/v1/games/wheres-the-bone/rooms/${bot.targetRoomId}/snapshot`;
+    } else if (bot.gameId === 'liars-number') {
+      snapUrl = `${BASE_URL}/api/v1/games/liars-number/rooms/${bot.targetRoomId}/snapshot`;
+    } else {
+      snapUrl = `${BASE_URL}/api/v1/games/not-in-my-pot/rooms/${bot.targetRoomId}/snapshot`;
     }
-
-    if (!command) {
-      bot.lastActionKey = null;
-      return;
+    const snapRes = await fetch(snapUrl, { headers: authHeaders(bot) });
+    if (snapRes.ok) {
+      return await snapRes.json();
     }
-
-    sendWsCommand(bot, {
-      expectedVersion: view.stateVersion,
-      ...command
-    });
-    console.log(`🎲 [${bot.name}] Liar's Number: ${description}`);
-  } catch (err) {
-    bot.lastActionKey = null;
-    console.error(`⚠️ [${bot.name}] Lỗi khi chơi Liar's Number:`, err.message);
-  } finally {
-    setTimeout(() => {
-      bot.isActing = false;
-    }, 400);
+    return null;
+  } catch {
+    return null;
   }
 }
 
-function handleGameView(bot, view) {
-  if (!view?.gameType) return;
+function dispatchGameTurn(bot, view) {
+  if (!view || view.finished || view.phase === 'GAME_OVER') return;
+  const gameType = view.gameType || bot.gameId;
   if (view.you) bot.playerId = view.you;
 
-  if (view.gameType === 'liars-number') {
-    void handleLiarsNumberTurn(bot, view);
-  } else if (view.gameType === 'not-in-my-pot') {
-    void handleNotInMyPotTurn(bot, view);
+  if (gameType === 'not-in-my-pot') {
+    handleNotInMyPotTurn(bot, view);
+  } else if (gameType === 'night-of-bloodlines') {
+    handleNobTurn(bot, view);
+  } else if (gameType === 'wheres-the-bone') {
+    handleWheresTheBoneTurn(bot, view);
+  } else if (gameType === 'liars-number') {
+    handleLiarsNumberTurn(bot, view);
   }
-}
-
-async function fetchGameSnapshot(bot) {
-  if (!['liars-number', 'not-in-my-pot'].includes(bot.gameId)) return null;
-  const response = await fetch(
-    `${BASE_URL}/api/v1/games/${bot.gameId}/rooms/${bot.targetRoomId}/snapshot`,
-    { headers: authHeaders(bot) }
-  );
-  return response.ok ? response.json() : null;
 }
 
 /**
@@ -437,6 +372,394 @@ async function handleNotInMyPotTurn(bot, view) {
   }
 }
 
+/**
+ * Xử lý lượt chơi của Bot trong Night of Bloodlines (Đêm Huyết Nguyệt)
+ */
+async function handleNobTurn(bot, view) {
+  if (!view || view.finished || view.phase === 'GAME_OVER') return;
+
+  const myPlayerId = bot.playerId || view.you;
+  if (!myPlayerId) return;
+  bot.playerId = myPlayerId;
+
+  const pending = view.myPendingDecision;
+  const pendingId = pending?.decisionId || 'none';
+  const actionKey = `${view.roundNumber || 0}_${view.phase}_${view.phaseState || 'none'}_${pendingId}_${view.version || 0}`;
+
+  if (bot.lastActionKey === actionKey || bot.isActing) {
+    return;
+  }
+
+  // 1. Xử lý quyết định đang chờ (Pending Decision)
+  if (pending) {
+    bot.isActing = true;
+    bot.lastActionKey = actionKey;
+    await new Promise((r) => setTimeout(r, 400 + Math.floor(Math.random() * 500)));
+
+    try {
+      if (pending.type === 'CHOOSE_TARGET') {
+        const allowed = pending.allowedTargetIds || [];
+        const validTargets = allowed.filter(id => id !== myPlayerId);
+        const targetId = validTargets[0] || allowed[0];
+        if (targetId) {
+          sendWsCommand(bot, {
+            type: 'NOB_CHOOSE_TARGET',
+            decisionId: pending.decisionId,
+            targetPlayerId: targetId,
+            targetPlayerIds: [targetId]
+          });
+          const targetPlayer = (view.players || []).find(p => p.playerId === targetId);
+          console.log(`🎯 [${bot.name}] Chọn mục tiêu: [${targetPlayer?.displayName || targetId}]`);
+        }
+        return;
+      }
+
+      if (pending.type === 'HUNTER_DECISION') {
+        const opts = pending.allowedOptions || [];
+        const option = opts.includes('ELIMINATE') ? 'ELIMINATE' : opts[0];
+        sendWsCommand(bot, {
+          type: 'NOB_HUNTER_DECISION',
+          decisionId: pending.decisionId,
+          option: option
+        });
+        console.log(`🏹 [${bot.name}] Quyết định Thợ Săn: [${option}]`);
+        return;
+      }
+
+      if (pending.type === 'REACTION') {
+        const option = (pending.allowedOptions || [])[0] || 'SKIP';
+        sendWsCommand(bot, {
+          type: 'NOB_REACTION',
+          decisionId: pending.decisionId,
+          option: option
+        });
+        console.log(`🛡️ [${bot.name}] Phản ứng: [${option}]`);
+        return;
+      }
+
+      if (pending.type === 'ECHO_CHOOSE') {
+        const echoCard = (view.echoCards || [])[0];
+        sendWsCommand(bot, {
+          type: 'NOB_CHOOSE_OPTION',
+          decisionId: pending.decisionId,
+          option: 'PLAY_NOW',
+          cardInstanceId: echoCard?.instanceId
+        });
+        console.log(`✨ [${bot.name}] Chọn Thẻ Vọng Âm`);
+        return;
+      }
+
+      if (pending.type === 'CHOOSE_HIDDEN_CARD') {
+        const hiddenId = (pending.allowedOptions || [])[0];
+        sendWsCommand(bot, {
+          type: 'NOB_CHOOSE_OPTION',
+          decisionId: pending.decisionId,
+          option: hiddenId,
+          cardInstanceId: hiddenId
+        });
+        console.log(`🔮 [${bot.name}] Chọn Thẻ Ẩn`);
+        return;
+      }
+
+      // Các quyết định chọn Option khác (MOON_MARK_PICK, CHOOSE_MOON_TOKEN, MOON_BROKER, etc.)
+      const option = (pending.allowedOptions || [])[0];
+      if (option) {
+        sendWsCommand(bot, {
+          type: 'NOB_CHOOSE_OPTION',
+          decisionId: pending.decisionId,
+          option: option
+        });
+        console.log(`⚡ [${bot.name}] Chọn tùy chọn: [${option}]`);
+      }
+    } catch (err) {
+      console.error(`⚠️ [${bot.name}] Lỗi pending decision NOB:`, err.message);
+    } finally {
+      setTimeout(() => { bot.isActing = false; }, 350);
+    }
+    return;
+  }
+
+  // 2. Xử lý pha Draft bài (DRAFT_PICK_1, DRAFT_PICK_2)
+  if (view.phase === 'DRAFT_PICK_1' || view.phase === 'DRAFT_PICK_2') {
+    if ((view.submittedPlayerIds || []).includes(myPlayerId)) return;
+    const cards = view.myDraftHand || [];
+    if (cards.length === 0) return;
+
+    bot.isActing = true;
+    bot.lastActionKey = actionKey;
+    await new Promise((r) => setTimeout(r, 400 + Math.floor(Math.random() * 500)));
+
+    try {
+      const pickCard = cards[0];
+      sendWsCommand(bot, {
+        type: 'NOB_DRAFT_PICK',
+        cardInstanceId: pickCard.instanceId,
+        cardCode: pickCard.cardCode
+      });
+      console.log(`🃏 [${bot.name}] Draft chọn thẻ [${pickCard.cardCode}]`);
+    } catch (err) {
+      console.error(`⚠️ [${bot.name}] Lỗi draft NOB:`, err.message);
+    } finally {
+      setTimeout(() => { bot.isActing = false; }, 350);
+    }
+    return;
+  }
+
+  // 3. Xử lý pha Ban đêm (SHADOW_STALKER, BLOOD_SEER, SHAPESHIFTER, FERAL_KILLER, HUNTER)
+  const nightPhases = ['SHADOW_STALKER', 'BLOOD_SEER', 'SHAPESHIFTER', 'FERAL_KILLER', 'HUNTER'];
+  if (nightPhases.includes(view.phase)) {
+    if (view.phaseState === 'PHASE_INTRO' || view.phaseState === 'RESOLUTION_RESULT_DISPLAY') {
+      return;
+    }
+    const you = (view.players || []).find(p => p.you || p.playerId === myPlayerId);
+    if (you && you.alive === false) return;
+    if ((view.submittedPlayerIds || []).includes(myPlayerId)) return;
+
+    const roleCodePrefix = {
+      SHADOW_STALKER: 'NOB-SS-',
+      BLOOD_SEER: 'NOB-BS-',
+      SHAPESHIFTER: 'NOB-SF-',
+      FERAL_KILLER: 'NOB-FK-',
+      HUNTER: 'NOB-HT-'
+    }[view.phase];
+
+    const matchingCard = (view.myHand || []).find(c =>
+      c.roleType === view.phase || (c.cardCode && roleCodePrefix && c.cardCode.startsWith(roleCodePrefix))
+    );
+
+    if (matchingCard) {
+      bot.isActing = true;
+      bot.lastActionKey = actionKey;
+      await new Promise((r) => setTimeout(r, 500 + Math.floor(Math.random() * 500)));
+
+      try {
+        sendWsCommand(bot, {
+          type: 'NOB_PHASE_SUBMIT',
+          cardInstanceId: matchingCard.instanceId,
+          cardCode: matchingCard.cardCode
+        });
+        console.log(`🌙 [${bot.name}] [${view.phase}] Đánh thẻ: [${matchingCard.cardCode}]`);
+      } catch (err) {
+        console.error(`⚠️ [${bot.name}] Lỗi submit đêm NOB:`, err.message);
+      } finally {
+        setTimeout(() => { bot.isActing = false; }, 350);
+      }
+    }
+  }
+}
+
+/**
+ * Xử lý lượt chơi của Bot trong Where's The Bone (Chó Trộm Xương)
+ */
+async function handleWheresTheBoneTurn(bot, view) {
+  if (!view || view.finished) return;
+  const myPlayerId = bot.playerId || view.viewerPlayerId;
+  if (!myPlayerId) return;
+
+  const legal = view.legalActions || [];
+  if (legal.length === 0) return;
+
+  const actionKey = `${view.phase}_${view.currentHour || 0}_${view.version || 0}_${legal.join(',')}`;
+  if (bot.lastActionKey === actionKey || bot.isActing) return;
+
+  bot.isActing = true;
+  bot.lastActionKey = actionKey;
+
+  await new Promise((r) => setTimeout(r, 500 + Math.floor(Math.random() * 500)));
+
+  try {
+    if (legal.includes('SELECT_WAKE_TIME') && view.myDice?.length > 0) {
+      const hour = view.myDice[0];
+      sendWsCommand(bot, { type: 'SELECT_WAKE_TIME', hour });
+      console.log(`⏰ [${bot.name}] Chọn giờ thức: ${hour}:00am`);
+      return;
+    }
+
+    if (legal.includes('TAKE_BONE')) {
+      sendWsCommand(bot, { type: 'TAKE_BONE' });
+      console.log(`🦴 [${bot.name}] Lấy trộm xương!`);
+      return;
+    }
+
+    if (legal.includes('SELECT_PACKMATE') && view.packmateCandidateIds?.length > 0) {
+      const needed = view.requiredPackmateCount || 1;
+      const candidates = view.packmateCandidateIds.slice(0, needed);
+      sendWsCommand(bot, { type: 'SELECT_PACKMATE', targetPlayerIds: candidates });
+      console.log(`🐾 [${bot.name}] Chọn đồng bọn`);
+      return;
+    }
+
+    if (legal.includes('PEEK_WAKE_TIME')) {
+      const candidates = (view.players || []).filter(p => !p.me && p.playerId !== myPlayerId);
+      if (candidates.length > 0) {
+        const target = candidates[Math.floor(Math.random() * candidates.length)];
+        sendWsCommand(bot, { type: 'PEEK_WAKE_TIME', targetPlayerId: target.playerId });
+        console.log(`👁️ [${bot.name}] Xem dấu vết của [${target.displayName}]`);
+        return;
+      }
+    }
+
+    if (legal.includes('VOTE')) {
+      const candidates = (view.players || []).filter(p => !p.me && p.playerId !== myPlayerId);
+      if (candidates.length > 0) {
+        const target = candidates[Math.floor(Math.random() * candidates.length)];
+        sendWsCommand(bot, { type: 'VOTE', targetPlayerId: target.playerId });
+        console.log(`🗳️ [${bot.name}] Bỏ phiếu nghi ngờ [${target.displayName}]`);
+        return;
+      }
+    }
+
+    if (legal.includes('RESPOND_SKIP_DISCUSSION')) {
+      sendWsCommand(bot, { type: 'RESPOND_SKIP_DISCUSSION', agree: true });
+      return;
+    }
+
+    if (legal.includes('WAIT')) {
+      sendWsCommand(bot, { type: 'WAIT' });
+      console.log(`💤 [${bot.name}] Đợi qua giờ`);
+      return;
+    }
+  } catch (err) {
+    console.error(`⚠️ [${bot.name}] Lỗi Where's The Bone:`, err.message);
+  } finally {
+    setTimeout(() => {
+      bot.isActing = false;
+    }, 400);
+  }
+}
+
+/**
+ * ============================================================
+ * GAME: Liar's Number (Ăn Gian Nói Dối)
+ * ============================================================
+ */
+async function handleLiarsNumberTurn(bot, view) {
+  if (!view || view.finished || view.phase === 'GAME_OVER') return;
+
+  const myPlayerId = bot.playerId || view.you;
+  if (!myPlayerId) return;
+  bot.playerId = myPlayerId;
+
+  const legalActions = Array.isArray(view.legalActions) ? view.legalActions : [];
+  if (legalActions.length === 0) return;
+
+  const actionKey = `liars_${view.roundNumber || 0}_${view.phase}_${view.stateVersion || 0}_${legalActions.join(',')}`;
+  if (bot.lastActionKey === actionKey || bot.isActing) return;
+
+  bot.isActing = true;
+  bot.lastActionKey = actionKey;
+
+  // Giả lập thời gian suy nghĩ (500ms - 1100ms)
+  await new Promise((resolve) => setTimeout(resolve, 500 + Math.floor(Math.random() * 600)));
+
+  try {
+    // 1. Pha SELECT_CARD: Chọn 1 lá bài trên tay
+    if (view.phase === 'SELECT_CARD' && legalActions.includes('SELECT_CARD')) {
+      const cards = (view.myHand || []).filter(c => c.cardId);
+      if (cards.length > 0) {
+        const chosen = cards[Math.floor(Math.random() * cards.length)];
+        bot.lastSelectedCard = chosen;
+        sendWsCommand(bot, {
+          type: 'SELECT_CARD',
+          cardId: chosen.cardId
+        });
+        console.log(`🃏 [${bot.name}] Liar's Number: Đánh lá bài [${chosen.label || chosen.typeId}]`);
+      }
+      return;
+    }
+
+    // 2. Pha SELECT_TARGET: Chọn người nhận bài úp
+    if (view.phase === 'SELECT_TARGET' && legalActions.includes('SELECT_TARGET')) {
+      const candidates = (view.availableTargetPlayerIds || []).filter(id => id !== myPlayerId);
+      const fallbackTargets = (view.players || [])
+        .filter(p => p.playerId !== myPlayerId && !p.you)
+        .map(p => p.playerId);
+      const pool = candidates.length > 0 ? candidates : fallbackTargets;
+      const targetId = pool[Math.floor(Math.random() * pool.length)];
+      if (targetId) {
+        const targetPlayer = (view.players || []).find(p => p.playerId === targetId);
+        sendWsCommand(bot, {
+          type: 'SELECT_TARGET',
+          targetPlayerId: targetId
+        });
+        console.log(`🎯 [${bot.name}] Liar's Number: Đưa bài úp cho [${targetPlayer?.displayName || targetId}]`);
+      }
+      return;
+    }
+
+    // 3. Pha DECLARE_TYPE: Tuyên bố số (1 - 8)
+    if (view.phase === 'DECLARE_TYPE' && legalActions.includes('DECLARE_TYPE')) {
+      let declared = 1 + Math.floor(Math.random() * 8);
+      // 70% nói thật theo số của bài vừa chọn, 30% nói dối
+      if (bot.lastSelectedCard?.typeId && Math.random() < 0.7) {
+        declared = bot.lastSelectedCard.typeId;
+      }
+      sendWsCommand(bot, {
+        type: 'DECLARE_TYPE',
+        declaredType: declared
+      });
+      console.log(`🗣️ [${bot.name}] Liar's Number: Tuyên bố là số [${declared}]`);
+      return;
+    }
+
+    // 4. Pha RECEIVER_DECISION: Người nhận đoán hoặc xem & chuyền
+    if (view.phase === 'RECEIVER_DECISION') {
+      const canPeek = legalActions.includes('PEEK_AND_PASS');
+      const canGuess = legalActions.includes('GUESS');
+      const roll = Math.random();
+
+      if (canPeek && roll < 0.35) {
+        sendWsCommand(bot, { type: 'PEEK_AND_PASS' });
+        console.log(`👁️ [${bot.name}] Liar's Number: Xem bài rồi chuyền tiếp`);
+        return;
+      }
+
+      if (canGuess) {
+        const guess = roll < 0.65 ? 'FALSE' : 'TRUE';
+        sendWsCommand(bot, {
+          type: 'GUESS',
+          guess: guess
+        });
+        console.log(`🤔 [${bot.name}] Liar's Number: Đoán [${guess === 'TRUE' ? 'NÓI THẬT' : 'NÓI DỐI'}]!`);
+        return;
+      }
+    }
+
+    // 5. Pha SELECT_PASS_TARGET: Chọn người chuyền tiếp sau khi xem bài
+    if (view.phase === 'SELECT_PASS_TARGET' && legalActions.includes('SELECT_PASS_TARGET')) {
+      const candidates = (view.availablePassTargetPlayerIds || []).filter(id => id !== myPlayerId);
+      const targetId = candidates[Math.floor(Math.random() * candidates.length)];
+      if (targetId) {
+        const targetPlayer = (view.players || []).find(p => p.playerId === targetId);
+        sendWsCommand(bot, {
+          type: 'SELECT_PASS_TARGET',
+          targetPlayerId: targetId
+        });
+        console.log(`🔄 [${bot.name}] Liar's Number: Chuyền tiếp cho [${targetPlayer?.displayName || targetId}]`);
+      }
+      return;
+    }
+
+    // 6. Pha PASS_DECLARE_TYPE: Tuyên bố lại số khi chuyền tiếp
+    if (view.phase === 'PASS_DECLARE_TYPE' && legalActions.includes('PASS_DECLARE_TYPE')) {
+      const declared = 1 + Math.floor(Math.random() * 8);
+      sendWsCommand(bot, {
+        type: 'PASS_DECLARE_TYPE',
+        declaredType: declared
+      });
+      console.log(`🗣️ [${bot.name}] Liar's Number: Tuyên bố số mới [${declared}]`);
+      return;
+    }
+  } catch (err) {
+    bot.lastActionKey = null;
+    console.error(`⚠️ [${bot.name}] Lỗi Liar's Number:`, err.message);
+  } finally {
+    setTimeout(() => {
+      bot.isActing = false;
+    }, 350);
+  }
+}
+
 async function createBot(index, targetRoomId) {
   const name = BOT_NAMES[index] || `🤖 Bot_${index + 1}`;
   try {
@@ -448,7 +771,20 @@ async function createBot(index, targetRoomId) {
       console.log(`🔄 [${name}] Đã tự động rời khỏi phòng/ván cũ: ${leftOldRoom}`);
     }
 
-    // 2. Tham gia phòng mục tiêu
+    // 2. Lấy thông tin phòng để biết gameId
+    try {
+      const roomRes = await fetch(`${BASE_URL}/api/v1/rooms/${targetRoomId}`, {
+        headers: authHeaders(bot)
+      });
+      if (roomRes.ok) {
+        const roomData = await roomRes.json();
+        bot.gameId = roomData.gameId;
+      }
+    } catch {
+      // ignore
+    }
+
+    // 3. Tham gia phòng mục tiêu
     let joinRes = await fetch(`${BASE_URL}/api/v1/rooms/${targetRoomId}/join`, {
       method: 'POST',
       headers: {
@@ -479,7 +815,7 @@ async function createBot(index, targetRoomId) {
       }
     }
 
-    // 3. Bật Sẵn sàng (Ready)
+    // 4. Bật Sẵn sàng (Ready)
     const readyRes = await fetch(`${BASE_URL}/api/v1/rooms/${targetRoomId}/ready`, {
       method: 'PUT',
       headers: {
@@ -487,14 +823,14 @@ async function createBot(index, targetRoomId) {
       },
       body: JSON.stringify({ ready: true })
     });
-    if (!readyRes.ok) {
-      const readyError = await readyRes.json().catch(() => ({}));
-      throw new Error(`Không thể sẵn sàng: ${JSON.stringify(readyError)}`);
+    if (readyRes.ok) {
+      const readyRoom = await readyRes.json().catch(() => ({}));
+      if (readyRoom.gameId) {
+        bot.gameId = readyRoom.gameId;
+      }
     }
-    const readyRoom = await readyRes.json();
-    bot.gameId = readyRoom.gameId;
 
-    // 4. Kết nối WebSocket
+    // 5. Kết nối WebSocket
     const ws = new WebSocket(WS_URL, ["boardverse", `bearer.${bot.accessToken}`]);
 
     bot.ws = ws;
@@ -503,6 +839,13 @@ async function createBot(index, targetRoomId) {
 
     ws.onopen = () => {
       console.log(`✅ [${name}] đã vào phòng ${targetRoomId} và SẴN SÀNG (READY)!`);
+      // Thử snapshot ngay nếu ván đã bắt đầu
+      setTimeout(async () => {
+        const snapView = await fetchGameSnapshot(bot);
+        if (snapView) {
+          dispatchGameTurn(bot, snapView);
+        }
+      }, 500);
     };
 
     ws.onmessage = (event) => {
@@ -513,23 +856,23 @@ async function createBot(index, targetRoomId) {
         }
         if (msg.type === 'ACTION_REJECTED') {
           bot.lastActionKey = null;
+          bot.isActing = false;
           console.warn(`⚠️ [${name}] Server từ chối action: ${msg.payload?.errorCode || 'UNKNOWN'}`);
         }
         if (msg.type === 'GAME_STARTED') {
           console.log(`🎮 [${name}] Trò chơi đã bắt đầu!`);
-          // Gọi snapshot kiểm tra lượt đầu
           setTimeout(async () => {
-            try {
-              const snapView = await fetchGameSnapshot(bot);
-              handleGameView(bot, snapView);
-            } catch {
-              // ignore
+            const snapView = await fetchGameSnapshot(bot);
+            if (snapView) {
+              dispatchGameTurn(bot, snapView);
             }
           }, 600);
         }
 
         const view = extractViewFromMessage(msg);
-        handleGameView(bot, view);
+        if (view) {
+          dispatchGameTurn(bot, view);
+        }
       } catch (err) {
         // ignore parse errors
       }
@@ -538,6 +881,20 @@ async function createBot(index, targetRoomId) {
     ws.onerror = (err) => {
       // ignore normal disconnect errors
     };
+
+    // Kiểm tra định kỳ mỗi 2.5s phòng trường hợp mất gói tin WebSocket
+    const poller = setInterval(async () => {
+      if (!bot.ws || bot.ws.readyState !== 1) return;
+      try {
+        const snapView = await fetchGameSnapshot(bot);
+        if (snapView) {
+          dispatchGameTurn(bot, snapView);
+        }
+      } catch {
+        // ignore
+      }
+    }, 2500);
+    bot.poller = poller;
 
     return bot;
   } catch (err) {
@@ -548,6 +905,9 @@ async function createBot(index, targetRoomId) {
 
 async function leaveBot(bot) {
   try {
+    if (bot.poller) {
+      clearInterval(bot.poller);
+    }
     if (bot.ws) {
       try {
         bot.ws.close();
