@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Bot, Brain, Copy, Link2, MessageCircle, Settings, Zap } from "lucide-react";
+import { ArrowLeft, Copy, Link2, MessageCircle, Settings } from "lucide-react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { WHERES_THE_BONE_ID } from "@/games/wheresTheBone";
 import { ConfirmDialog } from "@/shared/components/ConfirmDialog/ConfirmDialog";
 import { useQueryClient } from "@tanstack/react-query";
 import { PlayerSeat } from "@/shared/components/PlayerSeat/PlayerSeat";
 import { useGame } from "@/shared/hooks/useGames";
-import { useAddBot, useCloseRoom, useJoinRoom, useKickRoom, useLeaveRoom, useReadyRoom, useRoom, useStartRoom } from "@/shared/hooks/useRooms";
+import { useCloseRoom, useJoinRoom, useKickRoom, useLeaveRoom, useReadyRoom, useRoom, useStartRoom } from "@/shared/hooks/useRooms";
 import { useRoomRealtime } from "@/shared/hooks/useRoomRealtime";
 import { useMediaQuery } from "@/shared/hooks/useMediaQuery";
 import { useLocale, useT } from "@/shared/i18n/useT";
@@ -34,7 +34,6 @@ export function LobbyPage() {
   const { game } = useGame(room?.gameId);
   const join = useJoinRoom();
   const kick = useKickRoom(roomId);
-  const addBot = useAddBot(roomId);
   const leave = useLeaveRoom();
   const ready = useReadyRoom(roomId);
   const start = useStartRoom(roomId);
@@ -193,23 +192,6 @@ export function LobbyPage() {
   const canStart = occupied.length >= requiredPlayers && waiting.length === 0;
   const gameTitle = locale === "vi" ? game?.displayNameVi : game?.displayName;
 
-  const [isFillingBots, setIsFillingBots] = useState(false);
-  const handleFillBots = async () => {
-    if (!room || occupied.length >= room.capacity || isFillingBots) return;
-    setIsFillingBots(true);
-    try {
-      const needed = room.capacity - occupied.length;
-      for (let i = 0; i < needed; i++) {
-        const type = i % 2 === 0 ? "NORMAL" : "AI";
-        await addBot.mutateAsync({ botType: type });
-      }
-    } catch {
-      /* ignore */
-    } finally {
-      setIsFillingBots(false);
-    }
-  };
-
   if (roomQuery.isError) {
     return <Navigate to="/rooms" replace />;
   }
@@ -304,57 +286,8 @@ export function LobbyPage() {
                   kick.reset();
                   setKickTargetId(id);
                 } : undefined}
-                onAddBot={isHost && isWaiting && occupied.length < room.capacity ? (botType) => addBot.mutate({ botType }) : undefined}
-                isAddingBot={addBot.isPending}
               />
             ))}
-            {isHost && isWaiting && occupied.length < room.capacity && (
-              <div className={styles.botControlBar}>
-                <span className={styles.botControlLabel}>Thêm Bot vào phòng:</span>
-                <div className={styles.botButtonRow}>
-                  <button
-                    type="button"
-                    className={styles.botQuickBtn}
-                    onClick={() => addBot.mutate({ botType: "NORMAL" })}
-                    disabled={addBot.isPending || isFillingBots || occupied.length >= room.capacity}
-                    title="Thêm 1 Bot Thường tuân thủ quy tắc luật chơi"
-                  >
-                    <Bot size={15} />
-                    <span>+ Bot Thường</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`${styles.botQuickBtn} ${styles.aiQuickBtn}`}
-                    onClick={() => addBot.mutate({ botType: "AI" })}
-                    disabled={addBot.isPending || isFillingBots || occupied.length >= room.capacity}
-                    title="Thêm 1 Bot AI có chiến thuật cao"
-                  >
-                    <Brain size={15} />
-                    <span>+ Bot AI</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`${styles.botQuickBtn} ${styles.fillQuickBtn}`}
-                    onClick={handleFillBots}
-                    disabled={addBot.isPending || isFillingBots || occupied.length >= room.capacity}
-                    title="Tự động thêm Bot vào tất cả các ghế trống"
-                  >
-                    <Zap size={15} />
-                    <span>{isFillingBots ? "Đang thêm..." : "⚡ Lấp đầy Bot"}</span>
-                  </button>
-                </div>
-              </div>
-            )}
-            {addBot.isError && (
-              <p className={styles.botErrorMsg}>
-                ⚠️ {addBot.error instanceof Error ? addBot.error.message : "Không thể thêm bot lúc này"}
-              </p>
-            )}
-            {isHost && isWaiting && occupied.length < room.capacity && (
-              <p className={styles.hostBotHint}>
-                💡 Chủ phòng có thể dùng các nút trên hoặc nhấn trực tiếp vào các ghế trống để thêm Bot.
-              </p>
-            )}
           </section>
         </>
       ) : (
@@ -375,58 +308,9 @@ export function LobbyPage() {
                   kick.reset();
                   setKickTargetId(id);
                 } : undefined}
-                onAddBot={isHost && isWaiting && occupied.length < room.capacity ? (botType) => addBot.mutate({ botType }) : undefined}
-                isAddingBot={addBot.isPending}
               />
             ))}
           </div>
-          {isHost && isWaiting && occupied.length < room.capacity && (
-            <div className={styles.botControlBar}>
-              <span className={styles.botControlLabel}>Thêm Bot vào phòng:</span>
-              <div className={styles.botButtonRow}>
-                <button
-                  type="button"
-                  className={styles.botQuickBtn}
-                  onClick={() => addBot.mutate({ botType: "NORMAL" })}
-                  disabled={addBot.isPending || isFillingBots || occupied.length >= room.capacity}
-                  title="Thêm 1 Bot Thường tuân thủ quy tắc luật chơi"
-                >
-                  <Bot size={15} />
-                  <span>+ Bot Thường</span>
-                </button>
-                <button
-                  type="button"
-                  className={`${styles.botQuickBtn} ${styles.aiQuickBtn}`}
-                  onClick={() => addBot.mutate({ botType: "AI" })}
-                  disabled={addBot.isPending || isFillingBots || occupied.length >= room.capacity}
-                  title="Thêm 1 Bot AI có chiến thuật cao"
-                >
-                  <Brain size={15} />
-                  <span>+ Bot AI</span>
-                </button>
-                <button
-                  type="button"
-                  className={`${styles.botQuickBtn} ${styles.fillQuickBtn}`}
-                  onClick={handleFillBots}
-                  disabled={addBot.isPending || isFillingBots || occupied.length >= room.capacity}
-                  title="Tự động thêm Bot vào tất cả các ghế trống"
-                >
-                  <Zap size={15} />
-                  <span>{isFillingBots ? "Đang thêm..." : "⚡ Lấp đầy Bot"}</span>
-                </button>
-              </div>
-            </div>
-          )}
-          {addBot.isError && (
-            <p className={styles.botErrorMsg}>
-              ⚠️ {addBot.error instanceof Error ? addBot.error.message : "Không thể thêm bot lúc này"}
-            </p>
-          )}
-          {isHost && isWaiting && occupied.length < room.capacity && (
-            <p className={styles.hostBotHint}>
-              💡 Chủ phòng có thể dùng các nút trên hoặc nhấn trực tiếp vào các ghế trống để thêm Bot.
-            </p>
-          )}
         </div>
       )}
 

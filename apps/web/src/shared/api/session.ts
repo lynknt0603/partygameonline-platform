@@ -103,6 +103,13 @@ export async function updateAvatar(avatarKey: string): Promise<SessionDto> {
   return session;
 }
 
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  await api<void>("/api/v1/auth/password", {
+    method: "PATCH",
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+}
+
 export async function loginUser(payload: AuthPayload): Promise<SessionDto> {
   const session = await api<SessionDto>("/api/v1/auth/login", {
     method: "POST",
